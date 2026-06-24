@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Meta Ads Manager</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f4;
+    --bg-tertiary: #f0efec;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6b67;
+    --border: rgba(0,0,0,0.1);
+    --border-md: rgba(0,0,0,0.18);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --blue: #185FA5;
+    --blue-light: #E6F1FB;
+    --green: #0F6E56;
+    --green-light: #EAF3DE;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --red: #A32D2D;
+    --red-light: #FCEBEB;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  body { font-family: var(--font); background: var(--bg-tertiary); color: var(--text-primary); font-size: 14px; line-height: 1.5; }
+  .app { min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* NAV */
+  .nav { background: var(--bg-primary); border-bottom: 0.5px solid var(--border); padding: 0 20px; display: flex; align-items: center; height: 46px; position: sticky; top: 0; z-index: 50; }
+  .nav-brand { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-right: 28px; display: flex; align-items: center; gap: 7px; }
+  .nav-brand i { color: var(--blue); font-size: 18px; }
+  .nav-tab { font-size: 13px; color: var(--text-secondary); padding: 0 14px; height: 46px; display: flex; align-items: center; cursor: pointer; border-bottom: 2px solid transparent; gap: 5px; transition: color .15s; white-space: nowrap; }
+  .nav-tab:hover { color: var(--text-primary); }
+  .nav-tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 500; }
+  .nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .badge-dot { background: var(--red-light); color: var(--red); font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+
+  /* BUTTONS */
+  .btn { font-size: 12px; padding: 6px 12px; border-radius: var(--radius-md); border: 0.5px solid var(--border-md); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-family: var(--font); transition: background .12s; white-space: nowrap; }
+  .btn:hover { background: var(--bg-secondary); }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .btn-primary:hover { background: #0C447C; }
+  .btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
+  .btn-sm { font-size: 11px; padding: 4px 9px; }
+
+  /* PAGES */
+  .page { display: none; padding: 20px; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; }
+  .page.active { display: block; }
+
+  /* SETUP */
+  .setup-wrap { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 46px); }
+  .setup-card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 36px; width: 460px; }
+  .setup-card h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+  .setup-card p { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; }
+  .field { margin-bottom: 16px; }
+  .field label { font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 6px; font-weight: 500; }
+  .field input, .field select { width: 100%; padding: 9px 11px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md); font-size: 13px; background: var(--bg-primary); color: var(--text-primary); font-family: var(--font); outline: none; }
+  .field input:focus, .field select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(24,95,165,0.1); }
+  .err-msg { font-size: 12px; color: var(--red); margin-top: 8px; display: none; }
+
+  /* METRICS GRID */
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .metric-card { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 13px 15px; }
+  .metric-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 500; }
+  .metric-value { font-size: 22px; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
+  .metric-sub { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+  .metric-value.good { color: var(--green); }
+  .metric-value.warn { color: var(--amber); }
+  .metric-value.bad { color: var(--red); }
+
+  /* SECTION */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .section-title { font-size: 14px; font-weight: 600; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+  .top-bar-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  /* PILLS */
+  .filter-pill { font-size: 12px; padding: 4px 11px; border-radius: 20px; border: 0.5px solid var(--border-md); background: var(--bg-primary); cursor: pointer; color: var(--text-secondary); transition: all .12s; user-select: none; }
+  .filter-pill:hover { background: var(--bg-secondary); }
+  .filter-pill.active { background: var(--blue-light); color: var(--blue); border-color: #B5D4F4; font-weight: 500; }
+  input[type="date"] { font-size: 12px; padding: 5px 10px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md); background: var(--bg-primary); color: var(--text-primary); font-family: var(--font); outline: none; }
+
+  /* CARD */
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; }
+  .card h3 { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; border-radius: var(--radius-lg); border: 0.5px solid var(--border); background: var(--bg-primary); }
+  .data-table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  .data-table th { font-size: 11px; font-weight: 600; color: var(--text-secondary); padding: 9px 12px; text-align: right; white-space: nowrap; background: var(--bg-secondary); border-bottom: 0.5px solid var(--border); position: sticky; top: 0; }
+  .data-table th:first-child { text-align: left; min-width: 200px; }
+  .data-table td { padding: 8px 12px; text-align: right; border-bottom: 0.5px solid var(--border); white-space: nowrap; }
+  .data-table td:first-child { text-align: left; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--bg-secondary); }
+  .camp-link { color: var(--blue); cursor: pointer; font-weight: 500; text-decoration: none; }
+  .camp-link:hover { text-decoration: underline; }
+
+  /* STATUS DOT */
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px; flex-shrink: 0; }
+  .dot-active { background: #1D9E75; }
+  .dot-paused { background: #EF9F27; }
+  .dot-error { background: #E24B4A; }
+
+  /* BADGE */
+  .badge { font-size: 10px; padding: 2px 7px; border-radius: var(--radius-md); font-weight: 600; }
+  .badge-ok { background: var(--green-light); color: var(--green); }
+  .badge-warn { background: var(--amber-light); color: var(--amber); }
+  .badge-danger { background: var(--red-light); color: var(--red); }
+  .badge-info { background: var(--blue-light); color: var(--blue); }
+
+  /* HEATMAP CELL */
+  .heat-cell { display: inline-block; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
+  .heat-green { background: #C0DD97; color: #27500A; }
+  .heat-amber { background: #FAC775; color: #633806; }
+  .heat-red { background: #F7C1C1; color: #791F1F; }
+
+  /* ALERTS */
+  .alerts-list { display: flex; flex-direction: column; gap: 10px; }
+  .alert-item { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px; }
+  .alert-item .alert-icon { font-size: 18px; margin-top: 1px; flex-shrink: 0; }
+  .alert-body { flex: 1; min-width: 0; }
+  .alert-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; display: flex; align-items: center; gap: 8px; }
+  .alert-camp { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }
+  .alert-desc { font-size: 12px; color: var(--text-secondary); }
+  .alert-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; align-items: flex-start; }
+
+  /* HISTORY */
+  .history-list { display: flex; flex-direction: column; gap: 6px; }
+  .history-item { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 9px 14px; display: flex; align-items: center; gap: 12px; font-size: 12px; }
+  .history-time { color: var(--text-secondary); min-width: 150px; white-space: nowrap; }
+  .history-camp { font-weight: 600; min-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .history-action { flex: 1; color: var(--text-secondary); }
+
+  /* CONFIG */
+  .config-section { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 14px; }
+  .config-section h3 { font-size: 13px; font-weight: 600; margin-bottom: 14px; }
+  .config-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 0.5px solid var(--border); }
+  .config-row:last-child { border-bottom: none; }
+  .config-row label { font-size: 12px; color: var(--text-secondary); flex: 1; }
+  .config-row input { width: 100px; padding: 5px 9px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md); font-size: 12px; background: var(--bg-primary); color: var(--text-primary); font-family: var(--font); outline: none; }
+  .config-row input:focus { border-color: var(--blue); }
+  .config-row .unit { font-size: 11px; color: var(--text-secondary); min-width: 36px; }
+
+  /* BUDGET ROWS */
+  .budget-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--border); }
+  .budget-row:last-child { border-bottom: none; }
+  .budget-camp { font-size: 12px; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .budget-current { font-size: 11px; color: var(--text-secondary); min-width: 100px; white-space: nowrap; }
+  .budget-input { width: 100px; padding: 5px 8px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md); font-size: 12px; background: var(--bg-primary); color: var(--text-primary); font-family: var(--font); outline: none; }
+  .budget-input:focus { border-color: var(--blue); }
+  .budget-pct { font-size: 11px; min-width: 48px; font-weight: 600; }
+  .pct-pos { color: var(--green); }
+  .pct-neg { color: var(--red); }
+
+  /* ROAS TARGET ROWS */
+  .roas-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 0.5px solid var(--border); }
+  .roas-row:last-child { border-bottom: none; }
+  .roas-row label { font-size: 12px; flex: 1; color: var(--text-secondary); }
+  .roas-row input { width: 90px; padding: 5px 8px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md); font-size: 12px; background: var(--bg-primary); color: var(--text-primary); font-family: var(--font); outline: none; }
+
+  /* DETAIL */
+  .detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+  .back-btn { color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px; padding: 5px 0; }
+  .back-btn:hover { color: var(--text-primary); }
+  .detail-name { font-size: 16px; font-weight: 600; }
+  .detail-sub { font-size: 12px; color: var(--text-secondary); margin-top: 3px; display: flex; align-items: center; gap: 8px; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 640px) { .detail-grid { grid-template-columns: 1fr; } }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--bg-primary); border-radius: var(--radius-lg); padding: 28px; width: 440px; max-width: 90vw; border: 0.5px solid var(--border); }
+  .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+  .modal p { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; white-space: pre-line; line-height: 1.6; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #1a1a18; color: #fff; font-size: 13px; padding: 10px 18px; border-radius: var(--radius-md); z-index: 300; transform: translateY(80px); opacity: 0; transition: all .25s; pointer-events: none; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+  .empty i { font-size: 40px; display: block; margin-bottom: 12px; }
+  .empty p { font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand">
+    <i class="ti ti-chart-bar"></i>
+    Meta Ads Manager
+  </div>
+  <div class="nav-tab active" onclick="switchTab('overview')" id="tab-overview">Tổng quan</div>
+  <div class="nav-tab" onclick="switchTab('heatmap')" id="tab-heatmap">Heatmap</div>
+  <div class="nav-tab" onclick="switchTab('alerts')" id="tab-alerts">
+    Cảnh báo
+    <span class="badge-dot" id="alert-dot" style="display:none"></span>
+  </div>
+  <div class="nav-tab" onclick="switchTab('history')" id="tab-history">Lịch sử</div>
+  <div class="nav-tab" onclick="switchTab('config')" id="tab-config">Cấu hình</div>
+  <div class="nav-right">
+    <button class="btn" onclick="syncData()"><i class="ti ti-refresh"></i> Đồng bộ</button>
+    <button class="btn" onclick="switchTab('setup')"><i class="ti ti-settings"></i> API</button>
+  </div>
+</nav>
+
+<!-- SETUP PAGE -->
+<div id="page-setup" class="page active">
+  <div class="setup-wrap">
+    <div class="setup-card">
+      <h2>Kết nối Meta Ads API</h2>
+      <p>Nhập thông tin xác thực để tải dữ liệu chiến dịch của bạn.</p>
+      <div class="field">
+        <label>Access Token</label>
+        <input type="password" id="inp-token" placeholder="EAAxxxxxxxxxxxxxxx..." autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Ad Account ID</label>
+        <input type="text" id="inp-account" placeholder="act_123456789" />
+      </div>
+      <div class="field">
+        <label>Khoảng thời gian</label>
+        <select id="inp-range">
+          <option value="7">7 ngày qua</option>
+          <option value="14">14 ngày qua</option>
+          <option value="30" selected>30 ngày qua</option>
+        </select>
+      </div>
+      <div id="setup-err" class="err-msg"></div>
+      <button class="btn btn-primary" onclick="connectAPI()" style="width:100%;justify-content:center;padding:9px;font-size:13px;margin-top:4px">
+        <i class="ti ti-plug"></i> Kết nối & tải dữ liệu
+      </button>
+      <div style="margin-top:16px;text-align:center;border-top:0.5px solid var(--border);padding-top:16px">
+        <button onclick="loadDemo()" style="background:none;border:none;color:var(--blue);cursor:pointer;font-size:13px;font-family:var(--font)">
+          Dùng dữ liệu demo để xem trước →
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OVERVIEW PAGE -->
+<div id="page-overview" class="page">
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <input type="date" id="ov-from" />
+      <span style="color:var(--text-secondary);font-size:12px">→</span>
+      <input type="date" id="ov-to" />
+      <button class="btn" onclick="renderOverview()"><i class="ti ti-refresh"></i></button>
+    </div>
+    <div style="display:flex;gap:6px">
+      <span class="filter-pill active" onclick="setStatusFilter(this,'all')">Tất cả</span>
+      <span class="filter-pill" onclick="setStatusFilter(this,'ACTIVE')">Đang chạy</span>
+      <span class="filter-pill" onclick="setStatusFilter(this,'PAUSED')">Tạm dừng</span>
+    </div>
+  </div>
+  <div class="metrics-grid" id="ov-metrics"></div>
+  <div class="card">
+    <h3>Chi tiêu & ROAS 7 ngày gần nhất</h3>
+    <div style="position:relative;height:200px">
+      <canvas id="trend-chart" role="img" aria-label="Biểu đồ chi tiêu và ROAS 7 ngày"></canvas>
+    </div>
+    <div style="display:flex;gap:20px;margin-top:10px;font-size:11px;color:var(--text-secondary)">
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:2px;background:rgba(24,95,165,0.25);display:inline-block"></span>Chi tiêu</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:20px;height:2px;background:#1D9E75;display:inline-block"></span>ROAS</span>
+    </div>
+  </div>
+  <div class="section-header">
+    <span class="section-title">Danh sách chiến dịch</span>
+    <button class="btn" onclick="switchTab('heatmap')"><i class="ti ti-layout-grid"></i> Xem heatmap</button>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="text-align:left">Chiến dịch</th>
+          <th>Trạng thái</th>
+          <th>Spend</th>
+          <th>Impr.</th>
+          <th>Clicks</th>
+          <th>CTR</th>
+          <th>CPC</th>
+          <th>Purchases</th>
+          <th>Doanh thu</th>
+          <th>ROAS</th>
+          <th>Target</th>
+          <th>Budget/ngày</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="ov-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- HEATMAP PAGE -->
+<div id="page-heatmap" class="page">
+  <div class="top-bar">
+    <span class="section-title">Heatmap chiến dịch</span>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:12px;color:var(--text-secondary)">Biểu đồ theo:</span>
+      <span class="filter-pill active" onclick="setHeatMetric(this,'roas')">ROAS</span>
+      <span class="filter-pill" onclick="setHeatMetric(this,'spend')">Spend</span>
+      <span class="filter-pill" onclick="setHeatMetric(this,'purchases')">Purchases</span>
+      <span class="filter-pill" onclick="setHeatMetric(this,'ctr')">CTR</span>
+      <span class="filter-pill" onclick="setHeatMetric(this,'cpc')">CPC</span>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Tất cả chỉ số — <span style="color:var(--green)">xanh = tốt</span> / <span style="color:var(--amber)">vàng = trung bình</span> / <span style="color:var(--red)">đỏ = kém</span></h3>
+    <div id="heatmap-grid" style="overflow-x:auto"></div>
+  </div>
+  <div class="card">
+    <h3 id="heat-chart-title">Phân bố ROAS theo chiến dịch</h3>
+    <div style="position:relative;height:240px">
+      <canvas id="heat-chart" role="img" aria-label="Biểu đồ phân bố chỉ số theo chiến dịch"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ALERTS PAGE -->
+<div id="page-alerts" class="page">
+  <div class="section-header">
+    <span class="section-title">Cảnh báo & đề xuất hành động</span>
+    <button class="btn" onclick="renderAlerts()"><i class="ti ti-refresh"></i> Phân tích lại</button>
+  </div>
+  <div id="alerts-container" class="alerts-list"></div>
+</div>
+
+<!-- HISTORY PAGE -->
+<div id="page-history" class="page">
+  <div class="section-header">
+    <span class="section-title">Lịch sử hành động</span>
+    <button class="btn" onclick="clearHistory()"><i class="ti ti-trash"></i> Xóa tất cả</button>
+  </div>
+  <div id="history-container" class="history-list"></div>
+</div>
+
+<!-- CONFIG PAGE -->
+<div id="page-config" class="page">
+  <div class="section-header">
+    <span class="section-title">Cấu hình</span>
+    <button class="btn btn-primary" onclick="saveConfig()"><i class="ti ti-check"></i> Lưu cấu hình</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div>
+      <div class="config-section">
+        <h3>Ngưỡng camp tốt</h3>
+        <div class="config-row"><label>ROAS tối thiểu</label><input type="number" id="cfg-roas-min" step="0.1" /><span class="unit">x</span></div>
+        <div class="config-row"><label>CTR tối thiểu</label><input type="number" id="cfg-ctr-min" step="0.01" /><span class="unit">%</span></div>
+        <div class="config-row"><label>CPC tối đa</label><input type="number" id="cfg-cpc-max" /><span class="unit">VNĐ</span></div>
+        <div class="config-row"><label>CPM tối đa</label><input type="number" id="cfg-cpm-max" /><span class="unit">VNĐ</span></div>
+      </div>
+      <div class="config-section">
+        <h3>Target ROAS từng chiến dịch</h3>
+        <div id="target-roas-rows"></div>
+      </div>
+    </div>
+    <div>
+      <div class="config-section">
+        <h3>Ngưỡng cảnh báo</h3>
+        <div class="config-row"><label>Chậm tiêu (% budget còn lại)</label><input type="number" id="cfg-slow" /><span class="unit">%</span></div>
+        <div class="config-row"><label>Tiêu vống (% vượt budget)</label><input type="number" id="cfg-over" /><span class="unit">%</span></div>
+        <div class="config-row"><label>ROAS giảm so với TB</label><input type="number" id="cfg-roas-drop" /><span class="unit">%</span></div>
+        <div class="config-row"><label>Dừng tiêu (không có spend)</label><input type="number" id="cfg-stop" /><span class="unit">giờ</span></div>
+      </div>
+      <div class="config-section">
+        <h3>Điều chỉnh budget</h3>
+        <div id="budget-rows"></div>
+        <button class="btn btn-primary" onclick="applyBudgets()" style="margin-top:12px;width:100%;justify-content:center">
+          <i class="ti ti-currency-dollar"></i> Áp dụng thay đổi budget
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL PAGE -->
+<div id="page-detail" class="page">
+  <div class="detail-header">
+    <div class="back-btn" onclick="backToOverview()"><i class="ti ti-arrow-left"></i> Quay lại</div>
+    <div style="flex:1">
+      <div class="detail-name" id="detail-name"></div>
+      <div class="detail-sub" id="detail-sub"></div>
+    </div>
+    <button class="btn" onclick="togglePauseCamp()" id="btn-pause"><i class="ti ti-player-pause"></i> Tạm dừng</button>
+    <button class="btn btn-primary" onclick="boostBudget()"><i class="ti ti-trending-up"></i> Tăng budget 20%</button>
+  </div>
+  <div class="metrics-grid" id="detail-metrics"></div>
+  <div class="detail-grid">
+    <div class="card" style="margin-bottom:0">
+      <h3>Chi tiêu 7 ngày</h3>
+      <div style="position:relative;height:170px">
+        <canvas id="detail-spend-chart" role="img" aria-label="Chi tiêu 7 ngày của chiến dịch"></canvas>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <h3>ROAS 7 ngày vs target</h3>
+      <div style="position:relative;height:170px">
+        <canvas id="detail-roas-chart" role="img" aria-label="ROAS 7 ngày của chiến dịch"></canvas>
+      </div>
+    </div>
+  </div>
+  <div style="height:14px"></div>
+  <div class="card">
+    <h3>Target ROAS</h3>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+      <label style="font-size:12px;color:var(--text-secondary)">Target ROAS hiện tại:</label>
+      <input type="number" id="detail-target-roas" step="0.1" style="width:100px;padding:6px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius-md);font-size:13px;background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);outline:none" />
+      <span style="font-size:13px;color:var(--text-secondary)">x</span>
+      <button class="btn btn-primary btn-sm" onclick="saveDetailTargetRoas()"><i class="ti ti-check"></i> Lưu</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Lịch sử action của chiến dịch này</h3>
+    <div id="detail-history"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h3 id="modal-title"></h3>
+    <p id="modal-desc"></p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Hủy</button>
+      <button class="btn btn-primary" id="modal-confirm">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────
+let campaigns = [];
+let actionHistory = [];
+let currentCampId = null;
+let statusFilter = 'all';
+let heatMetric = 'roas';
+let trendChart = null, heatChart = null, detailSpendChart = null, detailRoasChart = null;
+let targetRoas = {};
+let budgetEdits = {};
+let config = {
+  roasMin: 2, ctrMin: 1, cpcMax: 5000, cpmMax: 50000,
+  slowSpend: 30, overSpend: 110, roasDrop: 30, stopHours: 4
+};
+
+const DAYS = ['T2','T3','T4','T5','T6','T7','CN'];
+
+// ─── DEMO DATA ────────────────────────────────────────────────────────────
+const DEMO = [
+  { id:'c1', name:'[MUA NGAY] Balo học sinh 2025', status:'ACTIVE',
+    spend:4200000, impressions:182000, clicks:3640, ctr:2.0, cpc:1154,
+    purchases:87, revenue:14700000, roas:3.5, budget:5000000,
+    daily_data:{ spend:[380000,420000,390000,450000,400000,370000,410000], roas:[3.2,3.8,3.4,4.1,3.6,3.0,3.9] }},
+  { id:'c2', name:'[SALE] Phụ kiện điện thoại Q3', status:'ACTIVE',
+    spend:8900000, impressions:310000, clicks:4030, ctr:1.3, cpc:2209,
+    purchases:124, revenue:11600000, roas:1.3, budget:9000000,
+    daily_data:{ spend:[1300000,1280000,1320000,1250000,1350000,1300000,1100000], roas:[1.5,1.4,1.3,1.2,1.1,1.3,1.2] }},
+  { id:'c3', name:'[RETARGET] Khách xem SP tuần trước', status:'ACTIVE',
+    spend:1200000, impressions:45000, clicks:1800, ctr:4.0, cpc:667,
+    purchases:56, revenue:8400000, roas:7.0, budget:3000000,
+    daily_data:{ spend:[150000,180000,160000,175000,190000,170000,175000], roas:[6.5,7.2,6.8,7.5,7.1,6.9,7.0] }},
+  { id:'c4', name:'[BRAND] Nhận diện thương hiệu T6', status:'PAUSED',
+    spend:2100000, impressions:250000, clicks:1250, ctr:0.5, cpc:1680,
+    purchases:12, revenue:1800000, roas:0.86, budget:2500000,
+    daily_data:{ spend:[350000,380000,400000,370000,300000,200000,100000], roas:[0.9,0.8,1.0,0.7,0.8,0.9,0.86] }},
+  { id:'c5', name:'[LAL] Lookalike khách VIP', status:'ACTIVE',
+    spend:5500000, impressions:198000, clicks:3168, ctr:1.6, cpc:1736,
+    purchases:98, revenue:14700000, roas:2.67, budget:6000000,
+    daily_data:{ spend:[780000,800000,790000,810000,785000,780000,755000], roas:[2.5,2.8,2.6,2.9,2.7,2.6,2.67] }},
+  { id:'c6', name:'[DPA] Dynamic Product Ads', status:'ACTIVE',
+    spend:550000, impressions:28000, clicks:560, ctr:2.0, cpc:982,
+    purchases:8, revenue:960000, roas:1.75, budget:2000000,
+    daily_data:{ spend:[40000,60000,80000,120000,90000,80000,80000], roas:[2.1,1.9,1.8,1.6,1.7,1.7,1.75] }},
+  { id:'c7', name:'[TEST] Creative mới video 15s', status:'ACTIVE',
+    spend:900000, impressions:95000, clicks:950, ctr:1.0, cpc:947,
+    purchases:15, revenue:2250000, roas:2.5, budget:1000000,
+    daily_data:{ spend:[100000,120000,130000,150000,140000,130000,130000], roas:[2.3,2.4,2.5,2.6,2.5,2.5,2.5] }},
+];
+
+// ─── FORMAT HELPERS ───────────────────────────────────────────────────────
+function fmtVnd(v) {
+  if (v >= 1000000000) return (v/1000000000).toFixed(1).replace(/\.0$/,'') + 'B';
+  if (v >= 1000000)    return (v/1000000).toFixed(1).replace(/\.0$/,'') + 'M';
+  if (v >= 1000)       return Math.round(v/1000) + 'K';
+  return Math.round(v) + '';
+}
+function fmtNum(v) { return v >= 1000 ? (v/1000).toFixed(1) + 'K' : String(v); }
+function qs(id) { return document.getElementById(id); }
+
+// ─── DATE HELPERS ─────────────────────────────────────────────────────────
+function setDefaultDates() {
+  const to = new Date(), from = new Date();
+  from.setDate(to.getDate() - 6);
+  qs('ov-from').value = from.toISOString().slice(0,10);
+  qs('ov-to').value   = to.toISOString().slice(0,10);
+}
+
+// ─── CONNECT / LOAD ───────────────────────────────────────────────────────
+let API_TOKEN = '';
+let API_ACCOUNT = '';
+const API_VER = 'v20.0';
+const BASE = 'https://graph.facebook.com/' + API_VER;
+
+async function connectAPI() {
+  const tok = qs('inp-token').value.trim();
+  const acc = qs('inp-account').value.trim();
+  const errEl = qs('setup-err');
+  if (!tok || !acc) {
+    errEl.style.display = 'block'; errEl.style.color = 'var(--red)';
+    errEl.textContent = 'Vui lòng nhập đủ Access Token và Ad Account ID.';
+    return;
+  }
+  errEl.style.display = 'block'; errEl.style.color = 'var(--blue)';
+  errEl.textContent = 'Đang xác thực token...';
+
+  // normalize account id
+  API_TOKEN   = tok;
+  API_ACCOUNT = acc.startsWith('act_') ? acc : 'act_' + acc;
+
+  try {
+    // 1. verify token
+    const me = await apiFetch('/me?fields=name');
+    errEl.textContent = `Xác thực OK (${me.name}). Đang tải chiến dịch...`;
+
+    // 2. fetch campaigns + insights
+    await fetchRealData();
+
+    errEl.style.display = 'none';
+    // save to localStorage
+    localStorage.setItem('meta_token', API_TOKEN);
+    localStorage.setItem('meta_account', API_ACCOUNT);
+    toast(`Đã tải ${campaigns.length} chiến dịch từ Meta Ads!`);
+    switchTab('overview');
+  } catch(e) {
+    errEl.style.color = 'var(--red)';
+    errEl.textContent = 'Lỗi: ' + (e.message || 'Không kết nối được. Kiểm tra lại token và account ID.');
+    console.error(e);
+  }
+}
+
+function apiFetch(path) {
+  const sep = path.includes('?') ? '&' : '?';
+  return fetch(BASE + path + sep + 'access_token=' + encodeURIComponent(API_TOKEN))
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) throw new Error(data.error.message);
+      return data;
+    });
+}
+
+async function fetchRealData() {
+  const dateRange = qs('inp-range').value || '30';
+  const preset = { '7':'last_7d', '14':'last_14d', '30':'last_30d' }[dateRange] || 'last_30d';
+
+  // fetch all campaigns
+  const campRes = await apiFetch(
+    `/${API_ACCOUNT}/campaigns?fields=name,status,daily_budget,lifetime_budget,objective&limit=100`
+  );
+  const rawCamps = campRes.data || [];
+  if (!rawCamps.length) throw new Error('Tài khoản không có chiến dịch nào.');
+
+  const errEl = qs('setup-err');
+
+  // fetch insights for each campaign in parallel (batches of 10)
+  const results = [];
+  for (let i = 0; i < rawCamps.length; i += 10) {
+    const batch = rawCamps.slice(i, i + 10);
+    errEl.textContent = `Đang tải insights (${i+1}–${Math.min(i+10, rawCamps.length)} / ${rawCamps.length})...`;
+    const insightPromises = batch.map(c => fetchCampaignInsights(c.id, preset));
+    const batchInsights = await Promise.all(insightPromises);
+    batch.forEach((c, idx) => results.push({ camp: c, insights: batchInsights[idx] }));
+  }
+
+  // fetch 7-day daily breakdown for each
+  errEl.textContent = 'Đang tải dữ liệu 7 ngày...';
+  const dailyPromises = rawCamps.map(c => fetchDailyInsights(c.id));
+  const allDaily = await Promise.all(dailyPromises);
+
+  campaigns = results.map((r, idx) => {
+    const ins = r.insights;
+    const daily = allDaily[idx];
+    const budget = parseInt(r.camp.daily_budget || r.camp.lifetime_budget || 0) / 100;
+    return {
+      id:          r.camp.id,
+      name:        r.camp.name,
+      status:      r.camp.status,
+      spend:       parseFloat(ins.spend || 0),
+      impressions: parseInt(ins.impressions || 0),
+      clicks:      parseInt(ins.clicks || 0),
+      ctr:         parseFloat(ins.ctr || 0),
+      cpc:         parseFloat(ins.cpc || 0),
+      purchases:   getAction(ins.actions, 'purchase'),
+      revenue:     getActionVal(ins.action_values, 'purchase'),
+      roas:        parseFloat((ins.purchase_roas || [{ value:'0' }])[0].value || 0),
+      budget:      budget || parseFloat(ins.spend || 0) * 1.2,
+      daily_data:  daily,
+    };
+  });
+
+  updateAlertBadge();
+}
+
+async function fetchCampaignInsights(campId, preset) {
+  try {
+    const fields = 'spend,impressions,clicks,ctr,cpc,actions,action_values,purchase_roas';
+    const res = await apiFetch(`/${campId}/insights?fields=${fields}&date_preset=${preset}&level=campaign`);
+    return (res.data && res.data[0]) || {};
+  } catch(e) { return {}; }
+}
+
+async function fetchDailyInsights(campId) {
+  try {
+    const today = new Date();
+    const from  = new Date(); from.setDate(today.getDate() - 6);
+    const since = from.toISOString().slice(0,10);
+    const until = today.toISOString().slice(0,10);
+    const fields = 'spend,purchase_roas,actions,action_values';
+    const res = await apiFetch(
+      `/${campId}/insights?fields=${fields}&time_range={"since":"${since}","until":"${until}"}&time_increment=1&level=campaign`
+    );
+    const rows = res.data || [];
+    // build 7-slot arrays (fill missing days with 0)
+    const spendArr = [], roasArr = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(from); d.setDate(from.getDate() + i);
+      const key = d.toISOString().slice(0,10);
+      const row = rows.find(r => r.date_start === key) || {};
+      spendArr.push(parseFloat(row.spend || 0));
+      roasArr.push(parseFloat((row.purchase_roas || [{ value:'0' }])[0]?.value || 0));
+    }
+    return { spend: spendArr, roas: roasArr };
+  } catch(e) { return { spend: Array(7).fill(0), roas: Array(7).fill(0) }; }
+}
+
+function getAction(actions, type) {
+  if (!actions) return 0;
+  const a = actions.find(x => x.action_type === 'purchase' || x.action_type === 'offsite_conversion.fb_pixel_purchase');
+  return a ? parseInt(a.value) : 0;
+}
+
+function getActionVal(action_values, type) {
+  if (!action_values) return 0;
+  const a = action_values.find(x => x.action_type === 'purchase' || x.action_type === 'offsite_conversion.fb_pixel_purchase');
+  return a ? parseFloat(a.value) : 0;
+}
+
+async function syncData() {
+  if (!campaigns.length) { toast('Chưa kết nối API.'); return; }
+  if (!API_TOKEN) { toast('Dùng dữ liệu demo — không có token thật.'); return; }
+  openModal('Đồng bộ dữ liệu', 'Tải lại toàn bộ dữ liệu từ Meta Ads API?', async () => {
+    try {
+      toast('Đang đồng bộ...');
+      await fetchRealData();
+      addHistory('Hệ thống', 'Đồng bộ Meta Ads API', '');
+      renderOverview();
+      updateAlertBadge();
+      toast('Đồng bộ thành công!');
+    } catch(e) {
+      toast('Lỗi đồng bộ: ' + e.message);
+    }
+  });
+}
+
+function loadDemo() {
+  campaigns = JSON.parse(JSON.stringify(DEMO));
+  targetRoas = { c1:3.0, c2:2.5, c3:5.0, c4:1.5, c5:2.5, c6:2.0, c7:2.0 };
+  budgetEdits = {};
+  updateAlertBadge();
+  switchTab('overview');
+}
+
+// ─── TAB SWITCHING ────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  qs('page-' + tab).classList.add('active');
+  const tabEl = qs('tab-' + tab);
+  if (tabEl) tabEl.classList.add('active');
+  if (tab === 'overview') { setDefaultDates(); renderOverview(); }
+  if (tab === 'heatmap')  renderHeatmap();
+  if (tab === 'alerts')   renderAlerts();
+  if (tab === 'history')  renderHistory();
+  if (tab === 'config')   renderConfig();
+}
+
+// ─── OVERVIEW ─────────────────────────────────────────────────────────────
+function setStatusFilter(el, f) {
+  document.querySelectorAll('#page-overview .filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  statusFilter = f;
+  renderOverview();
+}
+
+function renderOverview() {
+  if (!campaigns.length) return;
+  const list = statusFilter === 'all' ? campaigns : campaigns.filter(c => c.status === statusFilter);
+
+  const totSpend   = list.reduce((s,c) => s + c.spend, 0);
+  const totRev     = list.reduce((s,c) => s + c.revenue, 0);
+  const totPurch   = list.reduce((s,c) => s + c.purchases, 0);
+  const totImpr    = list.reduce((s,c) => s + c.impressions, 0);
+  const totClicks  = list.reduce((s,c) => s + c.clicks, 0);
+  const avgRoas    = totSpend > 0 ? totRev / totSpend : 0;
+  const avgCtr     = totImpr  > 0 ? totClicks / totImpr * 100 : 0;
+
+  qs('ov-metrics').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-label">Tổng chi tiêu</div>
+      <div class="metric-value">${fmtVnd(totSpend)}</div>
+      <div class="metric-sub">${list.length} chiến dịch</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Doanh thu</div>
+      <div class="metric-value good">${fmtVnd(totRev)}</div>
+      <div class="metric-sub">từ ads</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">ROAS trung bình</div>
+      <div class="metric-value ${avgRoas >= config.roasMin ? 'good' : 'bad'}">${avgRoas.toFixed(2)}x</div>
+      <div class="metric-sub">target ≥ ${config.roasMin}x</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Purchases</div>
+      <div class="metric-value">${totPurch}</div>
+      <div class="metric-sub">tổng đơn hàng</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">CTR TB</div>
+      <div class="metric-value ${avgCtr >= config.ctrMin ? 'good' : 'warn'}">${avgCtr.toFixed(2)}%</div>
+      <div class="metric-sub">target ≥ ${config.ctrMin}%</div>
+    </div>
+  `;
+
+  renderTrendChart(list);
+  renderOvTable(list);
+}
+
+function renderTrendChart(list) {
+  const ctx = qs('trend-chart');
+  const spend7 = DAYS.map((_,i) => list.reduce((s,c) => s + (c.daily_data.spend[i]||0), 0));
+  const roas7  = DAYS.map((_,i) => {
+    const sp  = list.reduce((s,c) => s + (c.daily_data.spend[i]||0), 0);
+    const rev = list.reduce((s,c) => s + (c.daily_data.spend[i]||0) * (c.daily_data.roas[i]||0), 0);
+    return sp > 0 ? parseFloat((rev/sp).toFixed(2)) : 0;
+  });
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(ctx, {
+    data: { labels: DAYS, datasets: [
+      { type:'bar',  label:'Chi tiêu', data: spend7, backgroundColor:'rgba(24,95,165,0.2)', borderColor:'#185FA5', borderWidth:1, borderRadius:3, yAxisID:'y' },
+      { type:'line', label:'ROAS',     data: roas7,  borderColor:'#1D9E75', borderWidth:2, pointRadius:3, fill:false, yAxisID:'y1', tension:0.3 }
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
+      scales: {
+        y:  { position:'left',  ticks:{ callback: v => fmtVnd(v), font:{size:10} } },
+        y1: { position:'right', grid:{ drawOnChartArea:false }, ticks:{ callback: v => v+'x', font:{size:10} } }
+      }
+    }
+  });
+}
+
+function renderOvTable(list) {
+  qs('ov-body').innerHTML = list.map(c => {
+    const tr = targetRoas[c.id] || config.roasMin;
+    const roasColor = c.roas >= tr ? '#0F6E56' : c.roas >= tr * 0.7 ? '#BA7517' : '#A32D2D';
+    const spendPct  = Math.round(c.spend / c.budget * 100);
+    const spColor   = spendPct > 100 ? '#A32D2D' : spendPct < 50 ? '#BA7517' : '#0F6E56';
+    const dotClass  = c.status === 'ACTIVE' ? 'dot-active' : c.status === 'PAUSED' ? 'dot-paused' : 'dot-error';
+    const badgeCls  = c.status === 'ACTIVE' ? 'badge-ok' : 'badge-warn';
+    const badgeTxt  = c.status === 'ACTIVE' ? 'Chạy' : 'Dừng';
+    return `<tr>
+      <td><span class="status-dot ${dotClass}"></span><a class="camp-link" onclick="openDetail('${c.id}')">${c.name}</a></td>
+      <td style="text-align:center"><span class="badge ${badgeCls}">${badgeTxt}</span></td>
+      <td>${fmtVnd(c.spend)}</td>
+      <td>${fmtNum(c.impressions)}</td>
+      <td>${fmtNum(c.clicks)}</td>
+      <td>${c.ctr.toFixed(2)}%</td>
+      <td>${fmtVnd(c.cpc)}</td>
+      <td>${c.purchases}</td>
+      <td>${fmtVnd(c.revenue)}</td>
+      <td><span style="color:${roasColor};font-weight:600">${c.roas.toFixed(2)}x</span></td>
+      <td style="color:var(--text-secondary)">${tr.toFixed(1)}x</td>
+      <td><span style="color:${spColor}">${fmtVnd(c.budget)}</span> <span style="font-size:10px;color:var(--text-secondary)">(${spendPct}%)</span></td>
+      <td><button class="btn btn-sm" onclick="openDetail('${c.id}')"><i class="ti ti-eye"></i></button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── HEATMAP ──────────────────────────────────────────────────────────────
+function setHeatMetric(el, m) {
+  document.querySelectorAll('#page-heatmap .filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  heatMetric = m;
+  renderHeatChart();
+  const labels = { spend:'Spend',impressions:'Impressions',clicks:'Clicks',ctr:'CTR (%)',cpc:'CPC',purchases:'Purchases',revenue:'Doanh thu',roas:'ROAS' };
+  qs('heat-chart-title').textContent = 'Phân bố ' + labels[m] + ' theo chiến dịch';
+}
+
+function renderHeatmap() {
+  if (!campaigns.length) return;
+  const metrics = ['spend','impressions','clicks','ctr','cpc','purchases','revenue','roas'];
+  const mLabel  = { spend:'Spend', impressions:'Impr.', clicks:'Clicks', ctr:'CTR%', cpc:'CPC', purchases:'Purch.', revenue:'Revenue', roas:'ROAS' };
+  const lowIsBetter = ['cpc'];
+
+  // compute min/max per metric
+  const ranges = {};
+  metrics.forEach(m => {
+    const vals = campaigns.map(c => c[m]);
+    ranges[m] = { min: Math.min(...vals), max: Math.max(...vals) };
+  });
+
+  function heatClass(m, v) {
+    const { min, max } = ranges[m];
+    let pct = (max - min) === 0 ? 0.5 : (v - min) / (max - min);
+    if (lowIsBetter.includes(m)) pct = 1 - pct;
+    if (pct > 0.65) return 'heat-green';
+    if (pct > 0.35) return 'heat-amber';
+    return 'heat-red';
+  }
+
+  function fmtCell(m, v) {
+    if (m === 'spend' || m === 'revenue' || m === 'cpc') return fmtVnd(v);
+    if (m === 'roas')   return v.toFixed(2) + 'x';
+    if (m === 'ctr')    return v.toFixed(2) + '%';
+    return fmtNum(v);
+  }
+
+  const header = `<tr>
+    <th style="text-align:left;min-width:200px;position:sticky;left:0;background:var(--bg-secondary)">Chiến dịch</th>
+    ${metrics.map(m => '<th>' + mLabel[m] + '</th>').join('')}
+  </tr>`;
+
+  const rows = campaigns.map(c => `<tr>
+    <td style="text-align:left;font-weight:500;cursor:pointer;position:sticky;left:0;background:var(--bg-primary)" onclick="openDetail('${c.id}')">
+      <span class="status-dot ${c.status==='ACTIVE'?'dot-active':'dot-paused'}"></span>${c.name.slice(0,28)}${c.name.length>28?'…':''}
+    </td>
+    ${metrics.map(m => `<td><span class="heat-cell ${heatClass(m, c[m])}">${fmtCell(m, c[m])}</span></td>`).join('')}
+  </tr>`).join('');
+
+  qs('heatmap-grid').innerHTML = `
+    <table class="data-table" style="min-width:900px">
+      <thead>${header}</thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+  renderHeatChart();
+}
+
+function renderHeatChart() {
+  if (!campaigns.length) return;
+  const ctx = qs('heat-chart');
+  const data = campaigns.map(c => c[heatMetric]);
+  const colors = ['#378ADD','#1D9E75','#EF9F27','#E24B4A','#7F77DD','#D85A30','#639922'];
+  const labels = { spend:'Chi tiêu (VNĐ)',impressions:'Impressions',clicks:'Clicks',ctr:'CTR (%)',cpc:'CPC (VNĐ)',purchases:'Purchases',revenue:'Doanh thu',roas:'ROAS' };
+  if (heatChart) heatChart.destroy();
+  heatChart = new Chart(ctx, {
+    type:'bar',
+    data: {
+      labels: campaigns.map(c => c.name.slice(0,22) + (c.name.length>22?'…':'')),
+      datasets:[{ label: labels[heatMetric], data, backgroundColor: campaigns.map((_,i) => colors[i % colors.length]), borderRadius:4 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
+      scales:{
+        x:{ ticks:{ font:{size:10}, maxRotation:30 } },
+        y:{ ticks:{ font:{size:10}, callback: v => {
+          if (heatMetric==='roas') return v + 'x';
+          if (heatMetric==='ctr')  return v + '%';
+          if (['spend','cpc','revenue'].includes(heatMetric)) return fmtVnd(v);
+          return v;
+        }}}
+      }
+    }
+  });
+}
+
+// ─── ALERTS ───────────────────────────────────────────────────────────────
+function getAlerts() {
+  const alerts = [];
+  const active = campaigns.filter(c => c.status === 'ACTIVE');
+  const avgSpendPct = active.length
+    ? active.reduce((s,c) => s + c.spend/c.budget, 0) / active.length * 100
+    : 50;
+
+  campaigns.forEach(c => {
+    const tr = targetRoas[c.id] || config.roasMin;
+    const spendPct = c.spend / c.budget * 100;
+
+    if (c.status === 'ACTIVE' && spendPct < (100 - config.slowSpend) && spendPct < avgSpendPct - 15)
+      alerts.push({ type:'warn', icon:'ti-clock', id:c.id, name:c.name,
+        title:'Chậm tiêu ngân sách',
+        desc:`Mới tiêu ${Math.round(spendPct)}% budget (${fmtVnd(c.spend)} / ${fmtVnd(c.budget)}). Kiểm tra audience hoặc giá thầu.`,
+        actions:[{lbl:'Xem chi tiết', fn:()=>openDetail(c.id)}, {lbl:'Tắt giới hạn ngân sách', fn:()=>logAction(c,'Tắt giới hạn ngân sách')}] });
+
+    if (c.status === 'ACTIVE' && spendPct > config.overSpend)
+      alerts.push({ type:'danger', icon:'ti-alert-triangle', id:c.id, name:c.name,
+        title:'Tiêu vống ngân sách',
+        desc:`Đã tiêu ${Math.round(spendPct)}% ngân sách (${fmtVnd(c.spend)} / ${fmtVnd(c.budget)}). Rủi ro vượt budget ngày.`,
+        actions:[{lbl:'Giảm budget 20%', fn:()=>changeBudget(c,-0.2)}, {lbl:'Tạm dừng camp', fn:()=>pauseCamp(c)}] });
+
+    if (c.status === 'ACTIVE' && c.roas < tr * 0.7)
+      alerts.push({ type:'danger', icon:'ti-trending-down', id:c.id, name:c.name,
+        title:'ROAS thấp hơn target ' + Math.round((1 - c.roas/tr)*100) + '%',
+        desc:`ROAS hiện tại ${c.roas.toFixed(2)}x — target ${tr}x. Cân nhắc tối ưu creative, audience, hoặc giảm giá thầu.`,
+        actions:[{lbl:'Tối ưu camp', fn:()=>logAction(c,'Ghi nhận cần tối ưu camp')}, {lbl:'Giảm budget 20%', fn:()=>changeBudget(c,-0.2)}] });
+
+    if (c.status === 'ACTIVE' && c.roas >= tr * 1.5)
+      alerts.push({ type:'info', icon:'ti-rocket', id:c.id, name:c.name,
+        title:'Camp hiệu suất cao — cơ hội scale',
+        desc:`ROAS ${c.roas.toFixed(2)}x vượt target ${Math.round((c.roas/tr-1)*100)}%. Scale budget để tối đa doanh thu.`,
+        actions:[{lbl:'Tăng budget 20%', fn:()=>changeBudget(c,0.2)}, {lbl:'Tăng budget 50%', fn:()=>changeBudget(c,0.5)}] });
+
+    if (c.status === 'PAUSED')
+      alerts.push({ type:'warn', icon:'ti-player-pause', id:c.id, name:c.name,
+        title:'Camp đang tạm dừng',
+        desc:`ROAS lần cuối ${c.roas.toFixed(2)}x. Bật lại nếu muốn tiếp tục chạy.`,
+        actions:[{lbl:'Bật lại camp', fn:()=>pauseCamp(c)}] });
+  });
+  return alerts;
+}
+
+function updateAlertBadge() {
+  const n = getAlerts().filter(a => a.type === 'danger').length;
+  const el = qs('alert-dot');
+  el.textContent = n;
+  el.style.display = n ? 'inline' : 'none';
+}
+
+function renderAlerts() {
+  const alerts = getAlerts();
+  updateAlertBadge();
+  if (!alerts.length) {
+    qs('alerts-container').innerHTML = `<div class="empty"><i class="ti ti-circle-check" style="color:#1D9E75"></i><p>Không có cảnh báo nào. Tất cả chiến dịch đang hoạt động tốt!</p></div>`;
+    return;
+  }
+  const borderColor = { warn:'#EF9F27', danger:'#E24B4A', info:'#378ADD' };
+  const iconColor   = { warn:'#BA7517', danger:'#A32D2D', info:'#185FA5' };
+  const badgeLbl    = { warn:'Cảnh báo', danger:'Khẩn', info:'Cơ hội' };
+  const badgeCls    = { warn:'badge-warn', danger:'badge-danger', info:'badge-info' };
+
+  qs('alerts-container').innerHTML = alerts.map((a,i) => `
+    <div class="alert-item" style="border-left:3px solid ${borderColor[a.type]}">
+      <i class="ti ${a.icon} alert-icon" style="color:${iconColor[a.type]}"></i>
+      <div class="alert-body">
+        <div class="alert-title">${a.title} <span class="badge ${badgeCls[a.type]}">${badgeLbl[a.type]}</span></div>
+        <div class="alert-camp">${a.name}</div>
+        <div class="alert-desc">${a.desc}</div>
+      </div>
+      <div class="alert-actions">
+        ${a.actions.map((ac,j) => `<button class="btn btn-sm ${j===0?'btn-primary':''}" onclick="alertAction(${i},${j})">${ac.lbl}</button>`).join('')}
+      </div>
+    </div>`).join('');
+
+  // store alerts for onclick
+  window._alerts = alerts;
+}
+
+function alertAction(alertIdx, actionIdx) {
+  const a = window._alerts[alertIdx];
+  if (a) a.actions[actionIdx].fn();
+}
+
+function logAction(c, action) { addHistory(c.name, action, ''); toast('Đã ghi nhận: ' + action); }
+
+function changeBudget(c, pct) {
+  const newBudget = Math.round(c.budget * (1 + pct));
+  const label = pct > 0 ? `Tăng budget ${Math.round(pct*100)}%` : `Giảm budget ${Math.round(-pct*100)}%`;
+  openModal(label, `${label} "${c.name}"\n${fmtVnd(c.budget)} → ${fmtVnd(newBudget)}`, () => {
+    addHistory(c.name, label, `${fmtVnd(c.budget)} → ${fmtVnd(newBudget)}`);
+    c.budget = newBudget;
+    updateAlertBadge();
+    renderAlerts();
+    toast(label + ' thành công!');
+  });
+}
+
+function pauseCamp(c) {
+  const action = c.status === 'ACTIVE' ? 'Tạm dừng camp' : 'Bật lại camp';
+  openModal(action, `${action}: "${c.name}"?`, () => {
+    c.status = c.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
+    addHistory(c.name, action, '');
+    updateAlertBadge();
+    renderAlerts();
+    toast(action + ' thành công!');
+  });
+}
+
+// ─── HISTORY ──────────────────────────────────────────────────────────────
+function addHistory(camp, action, note) {
+  actionHistory.unshift({ time: new Date().toLocaleString('vi-VN'), camp, action, note });
+}
+
+function renderHistory() {
+  qs('history-container').innerHTML = actionHistory.length
+    ? actionHistory.map(h => `
+      <div class="history-item">
+        <span class="history-time"><i class="ti ti-clock" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>${h.time}</span>
+        <span class="history-camp">${h.camp}</span>
+        <span class="history-action">${h.action}${h.note ? ' — ' + h.note : ''}</span>
+      </div>`).join('')
+    : '<div class="empty"><i class="ti ti-notes"></i><p>Chưa có hành động nào được ghi lại.</p></div>';
+}
+
+function clearHistory() {
+  openModal('Xóa lịch sử', 'Xóa toàn bộ lịch sử hành động?', () => {
+    actionHistory = [];
+    renderHistory();
+    toast('Đã xóa lịch sử.');
+  });
+}
+
+// ─── CONFIG ───────────────────────────────────────────────────────────────
+function renderConfig() {
+  qs('cfg-roas-min').value  = config.roasMin;
+  qs('cfg-ctr-min').value   = config.ctrMin;
+  qs('cfg-cpc-max').value   = config.cpcMax;
+  qs('cfg-cpm-max').value   = config.cpmMax;
+  qs('cfg-slow').value      = config.slowSpend;
+  qs('cfg-over').value      = config.overSpend;
+  qs('cfg-roas-drop').value = config.roasDrop;
+  qs('cfg-stop').value      = config.stopHours;
+
+  qs('target-roas-rows').innerHTML = campaigns.map(c => `
+    <div class="roas-row">
+      <label>${c.name.slice(0,32)}${c.name.length>32?'…':''}</label>
+      <input type="number" step="0.1" value="${targetRoas[c.id] || config.roasMin}" onchange="targetRoas['${c.id}']=parseFloat(this.value)||config.roasMin" />
+      <span style="font-size:12px;color:var(--text-secondary)">x</span>
+    </div>`).join('');
+
+  qs('budget-rows').innerHTML = campaigns.map(c => {
+    const cur = budgetEdits[c.id] !== undefined ? budgetEdits[c.id] : c.budget;
+    const pct = cur === c.budget ? 0 : Math.round((cur - c.budget) / c.budget * 100);
+    return `<div class="budget-row">
+      <span class="budget-camp">${c.name.slice(0,26)}${c.name.length>26?'…':''}</span>
+      <span class="budget-current">Hiện: ${fmtVnd(c.budget)}</span>
+      <input type="number" class="budget-input" step="100000" value="${cur}" id="bud-${c.id}" onchange="onBudgetEdit('${c.id}',this)" />
+      <span class="budget-pct ${pct>0?'pct-pos':pct<0?'pct-neg':''}" id="budpct-${c.id}">${pct===0?'—':(pct>0?'+':'')+pct+'%'}</span>
+    </div>`;
+  }).join('');
+}
+
+function onBudgetEdit(id, el) {
+  budgetEdits[id] = parseInt(el.value) || 0;
+  const orig = campaigns.find(c => c.id === id)?.budget || 0;
+  const pct  = orig === 0 ? 0 : Math.round((budgetEdits[id] - orig) / orig * 100);
+  const span = qs('budpct-' + id);
+  if (span) {
+    span.textContent = pct === 0 ? '—' : (pct > 0 ? '+' : '') + pct + '%';
+    span.className = 'budget-pct ' + (pct > 0 ? 'pct-pos' : pct < 0 ? 'pct-neg' : '');
+  }
+}
+
+function applyBudgets() {
+  const changes = Object.entries(budgetEdits).filter(([id, v]) => {
+    const c = campaigns.find(x => x.id === id);
+    return c && v !== c.budget && v > 0;
+  });
+  if (!changes.length) { toast('Không có thay đổi nào.'); return; }
+  const desc = changes.map(([id, v]) => {
+    const c = campaigns.find(x => x.id === id);
+    return `• ${c.name.slice(0,30)}: ${fmtVnd(c.budget)} → ${fmtVnd(v)}`;
+  }).join('\n');
+  openModal('Áp dụng thay đổi budget', desc + '\n\nXác nhận cập nhật ' + changes.length + ' chiến dịch?', () => {
+    changes.forEach(([id, v]) => {
+      const c = campaigns.find(x => x.id === id);
+      if (c) { addHistory(c.name, 'Cập nhật budget', `${fmtVnd(c.budget)} → ${fmtVnd(v)}`); c.budget = v; }
+    });
+    budgetEdits = {};
+    renderConfig();
+    updateAlertBadge();
+    toast('Đã cập nhật budget thành công!');
+  });
+}
+
+function saveConfig() {
+  config.roasMin    = parseFloat(qs('cfg-roas-min').value)  || 2;
+  config.ctrMin     = parseFloat(qs('cfg-ctr-min').value)   || 1;
+  config.cpcMax     = parseInt(qs('cfg-cpc-max').value)     || 5000;
+  config.cpmMax     = parseInt(qs('cfg-cpm-max').value)     || 50000;
+  config.slowSpend  = parseInt(qs('cfg-slow').value)        || 30;
+  config.overSpend  = parseInt(qs('cfg-over').value)        || 110;
+  config.roasDrop   = parseInt(qs('cfg-roas-drop').value)   || 30;
+  config.stopHours  = parseInt(qs('cfg-stop').value)        || 4;
+  addHistory('Hệ thống', 'Cập nhật cấu hình ngưỡng', '');
+  updateAlertBadge();
+  toast('Đã lưu cấu hình!');
+}
+
+// ─── DETAIL ───────────────────────────────────────────────────────────────
+function openDetail(id) {
+  currentCampId = id;
+  const c = campaigns.find(x => x.id === id);
+  if (!c) return;
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  qs('page-detail').classList.add('active');
+
+  qs('detail-name').textContent = c.name;
+  const spendPct = Math.round(c.spend / c.budget * 100);
+  qs('detail-sub').innerHTML = `
+    <span class="badge ${c.status==='ACTIVE'?'badge-ok':'badge-warn'}">${c.status==='ACTIVE'?'Đang chạy':'Tạm dừng'}</span>
+    <span>Budget: ${fmtVnd(c.budget)} — đã tiêu ${spendPct}%</span>
+  `;
+  qs('btn-pause').innerHTML = `<i class="ti ${c.status==='ACTIVE'?'ti-player-pause':'ti-player-play'}"></i> ${c.status==='ACTIVE'?'Tạm dừng':'Bật lại'}`;
+
+  const tr = targetRoas[c.id] || config.roasMin;
+  qs('detail-target-roas').value = tr;
+
+  const roasCls = c.roas >= tr ? 'good' : c.roas >= tr * 0.7 ? 'warn' : 'bad';
+  qs('detail-metrics').innerHTML = `
+    <div class="metric-card"><div class="metric-label">Chi tiêu</div><div class="metric-value">${fmtVnd(c.spend)}</div><div class="metric-sub">/ ${fmtVnd(c.budget)}</div></div>
+    <div class="metric-card"><div class="metric-label">Doanh thu</div><div class="metric-value good">${fmtVnd(c.revenue)}</div></div>
+    <div class="metric-card"><div class="metric-label">ROAS</div><div class="metric-value ${roasCls}">${c.roas.toFixed(2)}x</div><div class="metric-sub">target ${tr}x</div></div>
+    <div class="metric-card"><div class="metric-label">Purchases</div><div class="metric-value">${c.purchases}</div></div>
+    <div class="metric-card"><div class="metric-label">CTR</div><div class="metric-value ${c.ctr>=config.ctrMin?'good':'warn'}">${c.ctr.toFixed(2)}%</div></div>
+    <div class="metric-card"><div class="metric-label">CPC</div><div class="metric-value ${c.cpc<=config.cpcMax?'good':'warn'}">${fmtVnd(c.cpc)}</div></div>
+  `;
+
+  renderDetailCharts(c);
+
+  const campHist = actionHistory.filter(h => h.camp === c.name);
+  qs('detail-history').innerHTML = campHist.length
+    ? campHist.map(h => `<div class="history-item" style="border:none;padding:6px 0;border-bottom:0.5px solid var(--border)">
+        <span class="history-time">${h.time}</span>
+        <span class="history-action">${h.action}${h.note?' — '+h.note:''}</span>
+      </div>`).join('')
+    : '<div style="font-size:12px;color:var(--text-secondary);padding:8px 0">Chưa có hành động nào được ghi lại.</div>';
+}
+
+function renderDetailCharts(c) {
+  const tr = targetRoas[c.id] || config.roasMin;
+
+  if (detailSpendChart) detailSpendChart.destroy();
+  detailSpendChart = new Chart(qs('detail-spend-chart'), {
+    type:'bar',
+    data: { labels: DAYS, datasets:[{ label:'Spend', data: c.daily_data.spend, backgroundColor:'rgba(24,95,165,0.2)', borderColor:'#185FA5', borderWidth:1, borderRadius:3 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ ticks:{ callback: v => fmtVnd(v), font:{size:10} } }, x:{ ticks:{ font:{size:10} } } } }
+  });
+
+  if (detailRoasChart) detailRoasChart.destroy();
+  detailRoasChart = new Chart(qs('detail-roas-chart'), {
+    data: { labels: DAYS, datasets:[
+      { type:'line', label:'ROAS',   data: c.daily_data.roas, borderColor:'#1D9E75', borderWidth:2, pointRadius:3, fill:false, tension:0.3 },
+      { type:'line', label:'Target', data: Array(7).fill(tr), borderColor:'#E24B4A', borderWidth:1.5, borderDash:[5,4], pointRadius:0, fill:false }
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ ticks:{ callback: v => v+'x', font:{size:10} } }, x:{ ticks:{ font:{size:10} } } } }
+  });
+}
+
+function backToOverview() { switchTab('overview'); }
+
+function togglePauseCamp() {
+  const c = campaigns.find(x => x.id === currentCampId);
+  if (!c) return;
+  pauseCamp(c);
+  setTimeout(() => openDetail(c.id), 300);
+}
+
+function boostBudget() {
+  const c = campaigns.find(x => x.id === currentCampId);
+  if (!c) return;
+  changeBudget(c, 0.2);
+  setTimeout(() => openDetail(c.id), 300);
+}
+
+function saveDetailTargetRoas() {
+  const val = parseFloat(qs('detail-target-roas').value);
+  if (!val || val <= 0) { toast('Nhập giá trị ROAS hợp lệ.'); return; }
+  const c = campaigns.find(x => x.id === currentCampId);
+  if (!c) return;
+  targetRoas[currentCampId] = val;
+  addHistory(c.name, 'Cập nhật target ROAS', `→ ${val}x`);
+  openDetail(currentCampId);
+  updateAlertBadge();
+  toast('Đã cập nhật target ROAS!');
+}
+
+// ─── MODAL ────────────────────────────────────────────────────────────────
+function openModal(title, desc, onConfirm) {
+  qs('modal-title').textContent = title;
+  qs('modal-desc').textContent  = desc;
+  qs('modal-overlay').classList.add('open');
+  qs('modal-confirm').onclick = () => { closeModal(); onConfirm(); };
+}
+function closeModal() { qs('modal-overlay').classList.remove('open'); }
+
+// ─── TOAST ────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  const el = qs('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+// Close modal on overlay click
+qs('modal-overlay').addEventListener('click', e => { if (e.target === qs('modal-overlay')) closeModal(); });
+</script>
+</body>
+</html>

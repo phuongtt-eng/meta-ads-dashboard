@@ -211,6 +211,8 @@
   <div class="nav-tab" onclick="switchTab('history')" id="tab-history">Lịch sử</div>
   <div class="nav-tab" onclick="switchTab('config')" id="tab-config">Cấu hình</div>
   <div class="nav-right">
+    <select id="account-switcher" class="btn" onchange="switchAccount(this.value)" style="display:none;min-width:160px;cursor:pointer">
+    </select>
     <button class="btn" onclick="syncData()"><i class="ti ti-refresh"></i> Đồng bộ</button>
     <button class="btn" onclick="switchTab('setup')"><i class="ti ti-settings"></i> API</button>
   </div>
@@ -1213,30 +1215,73 @@ function toast(msg) {
 // ─── INIT ─────────────────────────────────────────────────────────────────
 qs('modal-overlay').addEventListener('click', e => { if (e.target === qs('modal-overlay')) closeModal(); });
 
+let ALL_ACCOUNTS = [];
+let ACCOUNT_NAMES = {};
+
+async function switchAccount(accountId) {
+  API_ACCOUNT = accountId;
+  campaigns = [];
+  budgetEdits = {};
+  toast('Đang chuyển sang account ' + (ACCOUNT_NAMES[accountId] || accountId) + '...');
+  try {
+    await fetchRealData();
+    switchTab('overview');
+    toast('Đã tải ' + campaigns.length + ' chiến dịch từ ' + (ACCOUNT_NAMES[accountId] || accountId));
+  } catch(e) {
+    toast('Lỗi: ' + e.message);
+  }
+}
+
+function buildAccountSwitcher(accounts, names) {
+  const el = qs('account-switcher');
+  if (accounts.length <= 1) { el.style.display = 'none'; return; }
+  el.innerHTML = accounts.map(id =>
+    `<option value="${id}">${names[id] || id}</option>`
+  ).join('');
+  el.value = API_ACCOUNT;
+  el.style.display = '';
+}
+
 (async () => {
   try {
     const res = await fetch('/api/config');
     if (!res.ok) return;
     const cfg = await res.json();
-    if (!cfg.token || !cfg.account) return;
-    API_TOKEN   = cfg.token;
-    API_ACCOUNT = cfg.account.startsWith('act_') ? cfg.account : 'act_' + cfg.account;
+    if (!cfg.token || !cfg.accounts || !cfg.accounts.length) return;
+
+    API_TOKEN    = cfg.token;
+    ALL_ACCOUNTS = cfg.accounts;
+    API_ACCOUNT  = cfg.accounts[0];
+
     const errEl = qs('setup-err');
     errEl.style.display = 'block';
     errEl.style.color = 'var(--blue)';
-    errEl.textContent = 'Đang tự động kết nối...';
-    try {
-      const me = await apiFetch('/me?fields=name');
-      errEl.textContent = `Xác thực OK (${me.name}). Đang tải chiến dịch...`;
-      await fetchRealData();
-      errEl.style.display = 'none';
-      toast(`Đã tải ${campaigns.length} chiến dịch!`);
-      switchTab('overview');
-    } catch(e) {
-      errEl.style.color = 'var(--red)';
-      errEl.textContent = 'Lỗi: ' + e.message;
-    }
-  } catch(_) {}
+    errEl.textContent = 'Đang xác thực...';
+
+    const me = await apiFetch('/me?fields=name');
+    errEl.textContent = `Xin chào ${me.name}! Đang tải ${ALL_ACCOUNTS.length} account...`;
+
+    // fetch account names
+    await Promise.all(ALL_ACCOUNTS.map(async id => {
+      try {
+        const info = await apiFetch('/' + id + '?fields=name');
+        ACCOUNT_NAMES[id] = info.name || id;
+      } catch(_) { ACCOUNT_NAMES[id] = id; }
+    }));
+
+    buildAccountSwitcher(ALL_ACCOUNTS, ACCOUNT_NAMES);
+
+    errEl.textContent = 'Đang tải chiến dịch...';
+    await fetchRealData();
+    errEl.style.display = 'none';
+    toast('Đã tải ' + campaigns.length + ' chiến dịch!');
+    switchTab('overview');
+  } catch(e) {
+    const errEl = qs('setup-err');
+    errEl.style.display = 'block';
+    errEl.style.color = 'var(--red)';
+    errEl.textContent = 'Lỗi kết nối: ' + e.message;
+  }
 })();
 </script>
 </body>

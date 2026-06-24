@@ -1211,8 +1211,33 @@ function toast(msg) {
 
 
 // ─── INIT ─────────────────────────────────────────────────────────────────
-// Close modal on overlay click
 qs('modal-overlay').addEventListener('click', e => { if (e.target === qs('modal-overlay')) closeModal(); });
+
+(async () => {
+  try {
+    const res = await fetch('/api/config');
+    if (!res.ok) return;
+    const cfg = await res.json();
+    if (!cfg.token || !cfg.account) return;
+    API_TOKEN   = cfg.token;
+    API_ACCOUNT = cfg.account.startsWith('act_') ? cfg.account : 'act_' + cfg.account;
+    const errEl = qs('setup-err');
+    errEl.style.display = 'block';
+    errEl.style.color = 'var(--blue)';
+    errEl.textContent = 'Đang tự động kết nối...';
+    try {
+      const me = await apiFetch('/me?fields=name');
+      errEl.textContent = `Xác thực OK (${me.name}). Đang tải chiến dịch...`;
+      await fetchRealData();
+      errEl.style.display = 'none';
+      toast(`Đã tải ${campaigns.length} chiến dịch!`);
+      switchTab('overview');
+    } catch(e) {
+      errEl.style.color = 'var(--red)';
+      errEl.textContent = 'Lỗi: ' + e.message;
+    }
+  } catch(_) {}
+})();
 </script>
 </body>
 </html>

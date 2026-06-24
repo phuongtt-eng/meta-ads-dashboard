@@ -297,6 +297,9 @@
           <th>Purchases</th>
           <th>Doanh thu</th>
           <th>ROAS</th>
+          <th>Installs</th>
+          <th>CVR</th>
+          <th>Score</th>
           <th>Target</th>
           <th>Budget/ngày</th>
           <th></th>
@@ -360,8 +363,10 @@
     <div>
       <div class="config-section">
         <h3>Ngưỡng camp tốt</h3>
-        <div class="config-row"><label>ROAS tối thiểu</label><input type="number" id="cfg-roas-min" step="0.1" /><span class="unit">x</span></div>
+        <div class="config-row"><label>ROAS tối thiểu<br><span style="font-size:10px;color:var(--text-secondary)">ROAS 45 = spend 100đ thu về 45đ</span></label><input type="number" id="cfg-roas-min" step="1" /><span class="unit">%</span></div>
         <div class="config-row"><label>CTR tối thiểu</label><input type="number" id="cfg-ctr-min" step="0.01" /><span class="unit">%</span></div>
+        <div class="config-row"><label>CVR tối thiểu</label><input type="number" id="cfg-cvr-min" step="0.1" /><span class="unit">%</span></div>
+        <div class="config-row"><label>Install tối thiểu</label><input type="number" id="cfg-install-min" /><span class="unit">install</span></div>
         <div class="config-row"><label>CPC tối đa</label><input type="number" id="cfg-cpc-max" /><span class="unit">VNĐ</span></div>
         <div class="config-row"><label>CPM tối đa</label><input type="number" id="cfg-cpm-max" /><span class="unit">VNĐ</span></div>
       </div>
@@ -457,8 +462,16 @@ let trendChart = null, heatChart = null, detailSpendChart = null, detailRoasChar
 let targetRoas = {};
 let budgetEdits = {};
 let config = {
-  roasMin: 2, ctrMin: 1, cpcMax: 5000, cpmMax: 50000,
-  slowSpend: 30, overSpend: 110, roasDrop: 30, stopHours: 4
+  roasMin: 45,       // ROAS % (45% = spend 100 get 45 back)
+  ctrMin: 1,         // CTR %
+  cvrMin: 25,        // CVR % (installs/clicks)
+  installMin: 10,    // minimum installs
+  cpcMax: 5000,
+  cpmMax: 50000,
+  slowSpend: 30,
+  overSpend: 110,
+  roasDrop: 30,
+  stopHours: 4
 };
 
 const DAYS = ['T2','T3','T4','T5','T6','T7','CN'];
@@ -468,30 +481,37 @@ const DEMO = [
   { id:'c1', name:'[MUA NGAY] Balo học sinh 2025', status:'ACTIVE',
     spend:4200000, impressions:182000, clicks:3640, ctr:2.0, cpc:1154,
     purchases:87, revenue:14700000, roas:3.5, budget:5000000,
+    installs:45, cvr:1.24,
     daily_data:{ spend:[380000,420000,390000,450000,400000,370000,410000], roas:[3.2,3.8,3.4,4.1,3.6,3.0,3.9] }},
   { id:'c2', name:'[SALE] Phụ kiện điện thoại Q3', status:'ACTIVE',
     spend:8900000, impressions:310000, clicks:4030, ctr:1.3, cpc:2209,
     purchases:124, revenue:11600000, roas:1.3, budget:9000000,
+    installs:8, cvr:0.20,
     daily_data:{ spend:[1300000,1280000,1320000,1250000,1350000,1300000,1100000], roas:[1.5,1.4,1.3,1.2,1.1,1.3,1.2] }},
   { id:'c3', name:'[RETARGET] Khách xem SP tuần trước', status:'ACTIVE',
     spend:1200000, impressions:45000, clicks:1800, ctr:4.0, cpc:667,
     purchases:56, revenue:8400000, roas:7.0, budget:3000000,
+    installs:98, cvr:5.44,
     daily_data:{ spend:[150000,180000,160000,175000,190000,170000,175000], roas:[6.5,7.2,6.8,7.5,7.1,6.9,7.0] }},
   { id:'c4', name:'[BRAND] Nhận diện thương hiệu T6', status:'PAUSED',
     spend:2100000, impressions:250000, clicks:1250, ctr:0.5, cpc:1680,
     purchases:12, revenue:1800000, roas:0.86, budget:2500000,
+    installs:3, cvr:0.24,
     daily_data:{ spend:[350000,380000,400000,370000,300000,200000,100000], roas:[0.9,0.8,1.0,0.7,0.8,0.9,0.86] }},
   { id:'c5', name:'[LAL] Lookalike khách VIP', status:'ACTIVE',
     spend:5500000, impressions:198000, clicks:3168, ctr:1.6, cpc:1736,
     purchases:98, revenue:14700000, roas:2.67, budget:6000000,
+    installs:62, cvr:1.96,
     daily_data:{ spend:[780000,800000,790000,810000,785000,780000,755000], roas:[2.5,2.8,2.6,2.9,2.7,2.6,2.67] }},
   { id:'c6', name:'[DPA] Dynamic Product Ads', status:'ACTIVE',
     spend:550000, impressions:28000, clicks:560, ctr:2.0, cpc:982,
     purchases:8, revenue:960000, roas:1.75, budget:2000000,
+    installs:15, cvr:2.68,
     daily_data:{ spend:[40000,60000,80000,120000,90000,80000,80000], roas:[2.1,1.9,1.8,1.6,1.7,1.7,1.75] }},
   { id:'c7', name:'[TEST] Creative mới video 15s', status:'ACTIVE',
     spend:900000, impressions:95000, clicks:950, ctr:1.0, cpc:947,
     purchases:15, revenue:2250000, roas:2.5, budget:1000000,
+    installs:28, cvr:2.95,
     daily_data:{ spend:[100000,120000,130000,150000,140000,130000,130000], roas:[2.3,2.4,2.5,2.6,2.5,2.5,2.5] }},
 ];
 
@@ -611,6 +631,8 @@ async function fetchRealData() {
       revenue:     getActionVal(ins.action_values, 'purchase'),
       roas:        parseFloat((ins.purchase_roas || [{ value:'0' }])[0].value || 0),
       budget:      budget || parseFloat(ins.spend || 0) * 1.2,
+      installs:    getAction(ins.actions, 'mobile_app_install') || getAction(ins.actions, 'app_install') || 0,
+      cvr:         getCvr(getAction(ins.actions, 'mobile_app_install') || getAction(ins.actions, 'app_install') || 0, parseInt(ins.clicks || 0)),
       daily_data:  daily,
     };
   });
@@ -620,7 +642,7 @@ async function fetchRealData() {
 
 async function fetchCampaignInsights(campId, preset) {
   try {
-    const fields = 'spend,impressions,clicks,ctr,cpc,actions,action_values,purchase_roas';
+    const fields = 'spend,impressions,clicks,ctr,cpc,actions,action_values,purchase_roas,cost_per_action_type';
     const res = await apiFetch(`/${campId}/insights?fields=${fields}&date_preset=${preset}&level=campaign`);
     return (res.data && res.data[0]) || {};
   } catch(e) { return {}; }
@@ -660,6 +682,11 @@ function getActionVal(action_values, type) {
   if (!action_values) return 0;
   const a = action_values.find(x => x.action_type === 'purchase' || x.action_type === 'offsite_conversion.fb_pixel_purchase');
   return a ? parseFloat(a.value) : 0;
+}
+
+function getCvr(installs, clicks) {
+  if (!clicks) return 0;
+  return parseFloat(((installs / clicks) * 100).toFixed(2));
 }
 
 async function syncData() {
@@ -720,6 +747,8 @@ function renderOverview() {
   const totClicks  = list.reduce((s,c) => s + c.clicks, 0);
   const avgRoas    = totSpend > 0 ? totRev / totSpend : 0;
   const avgCtr     = totImpr  > 0 ? totClicks / totImpr * 100 : 0;
+  const totInstalls = list.reduce((s,c) => s + (c.installs||0), 0);
+  const avgCvr      = totClicks > 0 ? (totInstalls / totClicks * 100) : 0;
 
   qs('ov-metrics').innerHTML = `
     <div class="metric-card">
@@ -734,8 +763,8 @@ function renderOverview() {
     </div>
     <div class="metric-card">
       <div class="metric-label">ROAS trung bình</div>
-      <div class="metric-value ${avgRoas >= config.roasMin ? 'good' : 'bad'}">${avgRoas.toFixed(2)}x</div>
-      <div class="metric-sub">target ≥ ${config.roasMin}x</div>
+      <div class="metric-value ${(avgRoas*100) >= config.roasMin ? 'good' : 'bad'}">${avgRoas.toFixed(2)}x</div>
+      <div class="metric-sub">target ≥ ${config.roasMin}%</div>
     </div>
     <div class="metric-card">
       <div class="metric-label">Purchases</div>
@@ -746,6 +775,16 @@ function renderOverview() {
       <div class="metric-label">CTR TB</div>
       <div class="metric-value ${avgCtr >= config.ctrMin ? 'good' : 'warn'}">${avgCtr.toFixed(2)}%</div>
       <div class="metric-sub">target ≥ ${config.ctrMin}%</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Installs</div>
+      <div class="metric-value ${totInstalls >= config.installMin ? 'good' : 'bad'}">${totInstalls}</div>
+      <div class="metric-sub">target ≥ ${config.installMin}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">CVR</div>
+      <div class="metric-value ${avgCvr >= config.cvrMin ? 'good' : 'warn'}">${avgCvr.toFixed(1)}%</div>
+      <div class="metric-sub">target ≥ ${config.cvrMin}%</div>
     </div>
   `;
 
@@ -785,6 +824,13 @@ function renderOvTable(list) {
     const dotClass  = c.status === 'ACTIVE' ? 'dot-active' : c.status === 'PAUSED' ? 'dot-paused' : 'dot-error';
     const badgeCls  = c.status === 'ACTIVE' ? 'badge-ok' : 'badge-warn';
     const badgeTxt  = c.status === 'ACTIVE' ? 'Chạy' : 'Dừng';
+    const roasOk    = (c.roas * 100) >= config.roasMin;
+    const ctrOk     = c.ctr >= config.ctrMin;
+    const installOk = (c.installs || 0) >= config.installMin;
+    const cvrOk     = (c.cvr || 0) >= config.cvrMin;
+    const score     = [roasOk, ctrOk, installOk, cvrOk].filter(Boolean).length;
+    const scoreColor = score === 4 ? '#0F6E56' : score >= 2 ? '#BA7517' : '#A32D2D';
+    const scoreBg    = score === 4 ? '#EAF3DE' : score >= 2 ? '#FAEEDA' : '#FCEBEB';
     return `<tr>
       <td><span class="status-dot ${dotClass}"></span><a class="camp-link" onclick="openDetail('${c.id}')">${c.name}</a></td>
       <td style="text-align:center"><span class="badge ${badgeCls}">${badgeTxt}</span></td>
@@ -796,6 +842,9 @@ function renderOvTable(list) {
       <td>${c.purchases}</td>
       <td>${fmtVnd(c.revenue)}</td>
       <td><span style="color:${roasColor};font-weight:600">${c.roas.toFixed(2)}x</span></td>
+      <td style="color:${installOk?'#0F6E56':'#A32D2D'};font-weight:500">${c.installs || 0}</td>
+      <td style="color:${cvrOk?'#0F6E56':'#A32D2D'}">${(c.cvr || 0).toFixed(1)}%</td>
+      <td><span style="background:${scoreBg};color:${scoreColor};font-weight:600;padding:2px 8px;border-radius:4px;font-size:11px">${score}/4</span></td>
       <td style="color:var(--text-secondary)">${tr.toFixed(1)}x</td>
       <td><span style="color:${spColor}">${fmtVnd(c.budget)}</span> <span style="font-size:10px;color:var(--text-secondary)">(${spendPct}%)</span></td>
       <td><button class="btn btn-sm" onclick="openDetail('${c.id}')"><i class="ti ti-eye"></i></button></td>
@@ -815,8 +864,8 @@ function setHeatMetric(el, m) {
 
 function renderHeatmap() {
   if (!campaigns.length) return;
-  const metrics = ['spend','impressions','clicks','ctr','cpc','purchases','revenue','roas'];
-  const mLabel  = { spend:'Spend', impressions:'Impr.', clicks:'Clicks', ctr:'CTR%', cpc:'CPC', purchases:'Purch.', revenue:'Revenue', roas:'ROAS' };
+  const metrics = ['spend','impressions','clicks','ctr','cpc','purchases','installs','cvr','revenue','roas'];
+  const mLabel  = { spend:'Spend', impressions:'Impr.', clicks:'Clicks', ctr:'CTR%', cpc:'CPC', purchases:'Purch.', installs:'Installs', cvr:'CVR%', revenue:'Revenue', roas:'ROAS' };
   const lowIsBetter = ['cpc'];
 
   // compute min/max per metric
@@ -839,6 +888,8 @@ function renderHeatmap() {
     if (m === 'spend' || m === 'revenue' || m === 'cpc') return fmtVnd(v);
     if (m === 'roas')   return v.toFixed(2) + 'x';
     if (m === 'ctr')    return v.toFixed(2) + '%';
+    if (m === 'cvr')    return (v||0).toFixed(1) + '%';
+    if (m === 'installs') return String(v||0);
     return fmtNum(v);
   }
 
@@ -931,6 +982,18 @@ function getAlerts() {
         title:'Camp đang tạm dừng',
         desc:`ROAS lần cuối ${c.roas.toFixed(2)}x. Bật lại nếu muốn tiếp tục chạy.`,
         actions:[{lbl:'Bật lại camp', fn:()=>pauseCamp(c)}] });
+
+    if (c.status === 'ACTIVE' && (c.installs||0) < config.installMin && c.spend > 100000)
+      alerts.push({ type:'warn', icon:'ti-device-mobile', id:c.id, name:c.name,
+        title:'Install thấp',
+        desc:`Chỉ có ${c.installs||0} install — dưới ngưỡng ${config.installMin}. Kiểm tra creative hoặc audience targeting.`,
+        actions:[{lbl:'Xem chi tiết', fn:()=>openDetail(c.id)}] });
+
+    if (c.status === 'ACTIVE' && (c.cvr||0) < config.cvrMin && (c.installs||0) > 0)
+      alerts.push({ type:'warn', icon:'ti-percentage', id:c.id, name:c.name,
+        title:'CVR thấp',
+        desc:`CVR ${(c.cvr||0).toFixed(1)}% thấp hơn target ${config.cvrMin}%. Kiểm tra landing page hoặc store listing.`,
+        actions:[{lbl:'Xem chi tiết', fn:()=>openDetail(c.id)}] });
   });
   return alerts;
 }
@@ -1027,10 +1090,12 @@ function clearHistory() {
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────
 function renderConfig() {
-  qs('cfg-roas-min').value  = config.roasMin;
-  qs('cfg-ctr-min').value   = config.ctrMin;
-  qs('cfg-cpc-max').value   = config.cpcMax;
-  qs('cfg-cpm-max').value   = config.cpmMax;
+  qs('cfg-roas-min').value    = config.roasMin;
+  qs('cfg-ctr-min').value     = config.ctrMin;
+  qs('cfg-cvr-min').value     = config.cvrMin;
+  qs('cfg-install-min').value = config.installMin;
+  qs('cfg-cpc-max').value     = config.cpcMax;
+  qs('cfg-cpm-max').value     = config.cpmMax;
   qs('cfg-slow').value      = config.slowSpend;
   qs('cfg-over').value      = config.overSpend;
   qs('cfg-roas-drop').value = config.roasDrop;
@@ -1089,10 +1154,12 @@ function applyBudgets() {
 }
 
 function saveConfig() {
-  config.roasMin    = parseFloat(qs('cfg-roas-min').value)  || 2;
-  config.ctrMin     = parseFloat(qs('cfg-ctr-min').value)   || 1;
-  config.cpcMax     = parseInt(qs('cfg-cpc-max').value)     || 5000;
-  config.cpmMax     = parseInt(qs('cfg-cpm-max').value)     || 50000;
+  config.roasMin    = parseFloat(qs('cfg-roas-min').value)    || 45;
+  config.ctrMin     = parseFloat(qs('cfg-ctr-min').value)     || 1;
+  config.cvrMin     = parseFloat(qs('cfg-cvr-min').value)     || 25;
+  config.installMin = parseInt(qs('cfg-install-min').value)   || 10;
+  config.cpcMax     = parseInt(qs('cfg-cpc-max').value)       || 5000;
+  config.cpmMax     = parseInt(qs('cfg-cpm-max').value)       || 50000;
   config.slowSpend  = parseInt(qs('cfg-slow').value)        || 30;
   config.overSpend  = parseInt(qs('cfg-over').value)        || 110;
   config.roasDrop   = parseInt(qs('cfg-roas-drop').value)   || 30;
@@ -1123,7 +1190,17 @@ function openDetail(id) {
   const tr = targetRoas[c.id] || config.roasMin;
   qs('detail-target-roas').value = tr;
 
-  const roasCls = c.roas >= tr ? 'good' : c.roas >= tr * 0.7 ? 'warn' : 'bad';
+  const roasCls   = c.roas >= tr ? 'good' : c.roas >= tr * 0.7 ? 'warn' : 'bad';
+  const roasOk    = (c.roas * 100) >= config.roasMin;
+  const ctrOk     = c.ctr >= config.ctrMin;
+  const cvrOk     = (c.cvr || 0) >= config.cvrMin;
+  const installOk = (c.installs || 0) >= config.installMin;
+  function kpiBadge(label, ok) {
+    const bg = ok ? '#EAF3DE' : '#FCEBEB';
+    const col = ok ? '#0F6E56' : '#A32D2D';
+    const icon = ok ? '✓' : '✗';
+    return `<span style="background:${bg};color:${col};font-weight:600;padding:3px 10px;border-radius:4px;font-size:12px;display:inline-flex;align-items:center;gap:4px">${icon} ${label}</span>`;
+  }
   qs('detail-metrics').innerHTML = `
     <div class="metric-card"><div class="metric-label">Chi tiêu</div><div class="metric-value">${fmtVnd(c.spend)}</div><div class="metric-sub">/ ${fmtVnd(c.budget)}</div></div>
     <div class="metric-card"><div class="metric-label">Doanh thu</div><div class="metric-value good">${fmtVnd(c.revenue)}</div></div>
@@ -1131,7 +1208,14 @@ function openDetail(id) {
     <div class="metric-card"><div class="metric-label">Purchases</div><div class="metric-value">${c.purchases}</div></div>
     <div class="metric-card"><div class="metric-label">CTR</div><div class="metric-value ${c.ctr>=config.ctrMin?'good':'warn'}">${c.ctr.toFixed(2)}%</div></div>
     <div class="metric-card"><div class="metric-label">CPC</div><div class="metric-value ${c.cpc<=config.cpcMax?'good':'warn'}">${fmtVnd(c.cpc)}</div></div>
+    <div class="metric-card"><div class="metric-label">Installs</div><div class="metric-value ${installOk?'good':'bad'}">${c.installs||0}</div><div class="metric-sub">target ≥ ${config.installMin}</div></div>
+    <div class="metric-card"><div class="metric-label">CVR</div><div class="metric-value ${cvrOk?'good':'warn'}">${(c.cvr||0).toFixed(1)}%</div><div class="metric-sub">target ≥ ${config.cvrMin}%</div></div>
   `;
+  // KPI badge row
+  const kpiRow = document.createElement('div');
+  kpiRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px';
+  kpiRow.innerHTML = kpiBadge('ROAS', roasOk) + kpiBadge('CTR', ctrOk) + kpiBadge('CVR', cvrOk) + kpiBadge('Installs', installOk);
+  qs('detail-metrics').after(kpiRow);
 
   renderDetailCharts(c);
 

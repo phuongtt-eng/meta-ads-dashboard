@@ -204,6 +204,7 @@
   </div>
   <div class="nav-tab active" onclick="switchTab('overview')" id="tab-overview">Tổng quan</div>
   <div class="nav-tab" onclick="switchTab('heatmap')" id="tab-heatmap">Heatmap</div>
+  <div class="nav-tab" onclick="switchTab('analytics')" id="tab-analytics">Phân tích</div>
   <div class="nav-tab" onclick="switchTab('alerts')" id="tab-alerts">
     Cảnh báo
     <span class="badge-dot" id="alert-dot" style="display:none"></span>
@@ -267,6 +268,24 @@
       <span class="filter-pill" onclick="setStatusFilter(this,'ACTIVE')">Đang chạy</span>
       <span class="filter-pill" onclick="setStatusFilter(this,'PAUSED')">Tạm dừng</span>
     </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+    <div style="position:relative;flex:1;min-width:200px">
+      <i class="ti ti-search" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text-secondary);font-size:14px"></i>
+      <input type="text" id="camp-search" placeholder="Tìm tên chiến dịch..." oninput="renderOverview()" style="width:100%;padding:6px 10px 6px 30px;border:0.5px solid var(--border-md);border-radius:var(--radius-md);font-size:12px;background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);outline:none" />
+    </div>
+    <span style="font-size:12px;color:var(--text-secondary)">Score:</span>
+    <span class="filter-pill" id="pill-score-all" onclick="setScoreFilter(this,'all')" style="background:var(--blue-light);color:var(--blue);border-color:#B5D4F4">Tất cả</span>
+    <span class="filter-pill" id="pill-score-good" onclick="setScoreFilter(this,'good')">Tốt ≥4/5</span>
+    <span class="filter-pill" id="pill-score-mid" onclick="setScoreFilter(this,'mid')">TB 2-3/5</span>
+    <span class="filter-pill" id="pill-score-bad" onclick="setScoreFilter(this,'bad')">Kém ≤1/5</span>
+    <select onchange="setSortBy(this.value)" style="font-size:12px;padding:5px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);outline:none">
+      <option value="spend_desc">Spend ↓</option>
+      <option value="roas_desc">ROAS ↓</option>
+      <option value="install_desc">Installs ↓</option>
+      <option value="cvr_desc">CVR ↓</option>
+      <option value="score_desc">Score ↓</option>
+    </select>
   </div>
   <div class="metrics-grid" id="ov-metrics"></div>
   <div class="card">
@@ -338,11 +357,59 @@
   </div>
 </div>
 
+<!-- ANALYTICS PAGE -->
+<div id="page-analytics" class="page">
+  <div class="top-bar">
+    <span class="section-title">Phân tích theo thời gian</span>
+    <div style="display:flex;gap:6px;align-items:center">
+      <span style="font-size:12px;color:var(--text-secondary)">Xem theo:</span>
+      <span class="filter-pill active" id="gran-day" onclick="setGranularity(this,'day')">Ngày</span>
+      <span class="filter-pill" id="gran-hour" onclick="setGranularity(this,'hour')">Giờ (hôm nay)</span>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+    <label style="font-size:12px;color:var(--text-secondary)">Chiến dịch:</label>
+    <select id="analytics-camp-select" onchange="renderAnalytics()" style="font-size:12px;padding:5px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);outline:none;min-width:200px">
+      <option value="all">Tất cả chiến dịch</option>
+    </select>
+    <label style="font-size:12px;color:var(--text-secondary)">Chỉ số:</label>
+    <select id="analytics-metric-select" onchange="renderAnalytics()" style="font-size:12px;padding:5px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);outline:none">
+      <option value="spend">Spend</option>
+      <option value="roas">ROAS</option>
+      <option value="ctr">CTR</option>
+      <option value="cvr">CVR</option>
+      <option value="installs">Installs</option>
+      <option value="cpi">CPI</option>
+      <option value="payrate">Payrate</option>
+    </select>
+  </div>
+  <div class="card">
+    <h3 id="analytics-chart-title">Chi tiêu 7 ngày — Tất cả chiến dịch</h3>
+    <div style="position:relative;height:260px">
+      <canvas id="analytics-chart" role="img" aria-label="Biểu đồ phân tích theo thời gian"></canvas>
+    </div>
+  </div>
+  <div class="metrics-grid" id="analytics-summary"></div>
+  <div class="card">
+    <h3>So sánh các chiến dịch</h3>
+    <div style="position:relative;height:240px">
+      <canvas id="analytics-compare-chart" role="img" aria-label="So sánh chiến dịch"></canvas>
+    </div>
+  </div>
+</div>
+
 <!-- ALERTS PAGE -->
 <div id="page-alerts" class="page">
+  <div class="card" style="border-left:3px solid var(--blue);margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <h3 style="color:var(--blue)"><i class="ti ti-bulb" style="font-size:15px;vertical-align:-2px;margin-right:5px"></i>Gợi ý action hôm nay</h3>
+      <button class="btn btn-primary btn-sm" onclick="generateSuggestions()"><i class="ti ti-refresh"></i> Phân tích lại</button>
+    </div>
+    <div id="suggestions-list" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
   <div class="section-header">
-    <span class="section-title">Cảnh báo & đề xuất hành động</span>
-    <button class="btn" onclick="renderAlerts()"><i class="ti ti-refresh"></i> Phân tích lại</button>
+    <span class="section-title">Cảnh báo bất thường</span>
+    <button class="btn" onclick="renderAlerts()"><i class="ti ti-refresh"></i> Refresh</button>
   </div>
   <div id="alerts-container" class="alerts-list"></div>
 </div>
@@ -472,7 +539,11 @@ let campaigns = [];
 let actionHistory = [];
 let currentCampId = null;
 let statusFilter = 'all';
+let scoreFilter = 'all';
+let sortBy = 'spend_desc';
 let heatMetric = 'roas';
+let granularity = 'day';
+let analyticsChart = null, analyticsCompareChart = null;
 let trendChart = null, heatChart = null, detailSpendChart = null, detailRoasChart = null;
 let targetRoas = {};
 let budgetEdits = {};
@@ -773,24 +844,56 @@ function switchTab(tab) {
   qs('page-' + tab).classList.add('active');
   const tabEl = qs('tab-' + tab);
   if (tabEl) tabEl.classList.add('active');
-  if (tab === 'overview') { setDefaultDates(); renderOverview(); }
-  if (tab === 'heatmap')  renderHeatmap();
-  if (tab === 'alerts')   renderAlerts();
-  if (tab === 'history')  renderHistory();
-  if (tab === 'config')   renderConfig();
+  if (tab === 'overview')   { setDefaultDates(); renderOverview(); }
+  if (tab === 'heatmap')    renderHeatmap();
+  if (tab === 'analytics')  renderAnalytics();
+  if (tab === 'alerts')     renderAlerts();
+  if (tab === 'history')    renderHistory();
+  if (tab === 'config')     renderConfig();
 }
 
 // ─── OVERVIEW ─────────────────────────────────────────────────────────────
 function setStatusFilter(el, f) {
-  document.querySelectorAll('#page-overview .filter-pill').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#page-overview .top-bar .filter-pill').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
   statusFilter = f;
   renderOverview();
 }
 
+function setScoreFilter(el, f) {
+  document.querySelectorAll('[id^="pill-score"]').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  scoreFilter = f;
+  renderOverview();
+}
+function setSortBy(v) { sortBy = v; renderOverview(); }
+
 function renderOverview() {
   if (!campaigns.length) return;
-  const list = statusFilter === 'all' ? campaigns : campaigns.filter(c => c.status === statusFilter);
+  let list = statusFilter === 'all' ? campaigns : campaigns.filter(c => c.status === statusFilter);
+
+  const q = (qs('camp-search')?.value || '').toLowerCase();
+  if (q) list = list.filter(c => c.name.toLowerCase().includes(q));
+  if (scoreFilter !== 'all') {
+    list = list.filter(c => {
+      const checks = [c.roas >= config.roasMin, c.ctr >= config.ctrMin, (c.cvr||0) >= config.cvrMin, (c.installs||0) >= config.installMin, (c.payrate||0) >= config.payrateMin];
+      const s = checks.filter(Boolean).length;
+      if (scoreFilter === 'good') return s >= 4;
+      if (scoreFilter === 'mid')  return s >= 2 && s <= 3;
+      if (scoreFilter === 'bad')  return s <= 1;
+      return true;
+    });
+  }
+  list = [...list].sort((a, b) => {
+    if (sortBy === 'roas_desc')    return b.roas - a.roas;
+    if (sortBy === 'install_desc') return (b.installs||0) - (a.installs||0);
+    if (sortBy === 'cvr_desc')     return (b.cvr||0) - (a.cvr||0);
+    if (sortBy === 'score_desc') {
+      const sc = c => [c.roas>=config.roasMin,c.ctr>=config.ctrMin,(c.cvr||0)>=config.cvrMin,(c.installs||0)>=config.installMin,(c.payrate||0)>=config.payrateMin].filter(Boolean).length;
+      return sc(b) - sc(a);
+    }
+    return b.spend - a.spend;
+  });
 
   const totSpend   = list.reduce((s,c) => s + c.spend, 0);
   const totRev     = list.reduce((s,c) => s + c.revenue, 0);
@@ -1029,7 +1132,248 @@ function renderHeatChart() {
   });
 }
 
+// ─── ANALYTICS ────────────────────────────────────────────────────────────
+function setGranularity(el, g) {
+  document.querySelectorAll('#page-analytics .filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  granularity = g;
+  renderAnalytics();
+}
+
+function renderAnalytics() {
+  if (!campaigns.length) return;
+  // populate camp select
+  const sel = qs('analytics-camp-select');
+  if (sel.options.length === 1) {
+    campaigns.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.name.slice(0,40);
+      sel.appendChild(opt);
+    });
+  }
+  const campId = sel.value;
+  const metric = qs('analytics-metric-select').value;
+  const metricLabel = {spend:'Spend',roas:'ROAS',ctr:'CTR',cvr:'CVR',installs:'Installs',cpi:'CPI',payrate:'Payrate'};
+
+  let labels, datasets;
+  const colors = ['#378ADD','#1D9E75','#EF9F27','#E24B4A','#7F77DD','#D85A30','#639922'];
+
+  if (granularity === 'hour') {
+    labels = Array.from({length:24}, (_,i) => i+'h');
+    const list = campId === 'all' ? campaigns : campaigns.filter(c => c.id === campId);
+    datasets = list.slice(0,5).map((c,i) => {
+      const hourlyWeights = [0.5,0.3,0.2,0.2,0.3,0.5,0.8,1.2,1.5,1.8,2.0,2.2,2.5,2.3,2.1,2.0,1.9,1.8,1.6,1.4,1.2,1.0,0.8,0.6];
+      const totalW = hourlyWeights.reduce((a,b)=>a+b,0);
+      const dailyVal = c.daily_data[metric] ? c.daily_data[metric][6] : c[metric]||0;
+      return {
+        label: c.name.slice(0,20),
+        data: hourlyWeights.map(w => parseFloat(((w/totalW)*dailyVal).toFixed(2))),
+        borderColor: colors[i%colors.length],
+        backgroundColor: colors[i%colors.length]+'33',
+        borderWidth: 2, pointRadius: 2, fill: metric==='spend', tension: 0.4,
+        type: metric==='spend'?'bar':'line'
+      };
+    });
+    qs('analytics-chart-title').textContent = metricLabel[metric] + ' theo giờ hôm nay';
+  } else {
+    labels = ['T2','T3','T4','T5','T6','T7','CN'];
+    const list = campId === 'all' ? campaigns : campaigns.filter(c => c.id === campId);
+    datasets = list.slice(0,5).map((c,i) => {
+      const data = c.daily_data[metric] || c.daily_data.spend.map(() => c[metric]||0);
+      return {
+        label: c.name.slice(0,20),
+        data: data.map(v => parseFloat((v||0).toFixed(2))),
+        borderColor: colors[i%colors.length],
+        backgroundColor: colors[i%colors.length]+'33',
+        borderWidth: 2, pointRadius: 3, fill: metric==='spend', tension: 0.3,
+        type: metric==='spend'?'bar':'line'
+      };
+    });
+    qs('analytics-chart-title').textContent = metricLabel[metric] + ' 7 ngày — ' + (campId==='all'?'Tất cả':'1 chiến dịch');
+  }
+
+  const ctx = qs('analytics-chart');
+  if (analyticsChart) analyticsChart.destroy();
+  analyticsChart = new Chart(ctx, {
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: datasets.length > 1, labels: { font:{size:10}, boxWidth:10 } } },
+      scales: {
+        y: { ticks: { font:{size:10}, callback: v => {
+          if (metric==='spend'||metric==='cpi') return fmtVnd(v);
+          if (['roas','ctr','cvr','payrate'].includes(metric)) return v.toFixed(1)+(metric==='roas'?'x':'%');
+          return v;
+        }}},
+        x: { ticks: { font:{size:10} } }
+      }
+    }
+  });
+
+  // Summary stats
+  const allList = campId==='all' ? campaigns : campaigns.filter(c=>c.id===campId);
+  const vals = allList.map(c=>c[metric]||0);
+  const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+  const max = Math.max(...vals); const min = Math.min(...vals);
+  const best = allList[vals.indexOf(max)];
+  const worst = allList[vals.indexOf(min)];
+  const fmtV = v => metric==='spend'||metric==='cpi' ? fmtVnd(v) : ['roas','ctr','cvr','payrate'].includes(metric) ? v.toFixed(2)+(metric==='roas'?'x':'%') : Math.round(v);
+  qs('analytics-summary').innerHTML = `
+    <div class="metric-card"><div class="metric-label">TB ${metricLabel[metric]}</div><div class="metric-value">${fmtV(avg)}</div></div>
+    <div class="metric-card"><div class="metric-label">Tốt nhất</div><div class="metric-value good">${fmtV(max)}</div><div class="metric-sub">${best?.name.slice(0,20)}</div></div>
+    <div class="metric-card"><div class="metric-label">Kém nhất</div><div class="metric-value bad">${fmtV(min)}</div><div class="metric-sub">${worst?.name.slice(0,20)}</div></div>
+    <div class="metric-card"><div class="metric-label">Tổng camp</div><div class="metric-value">${allList.length}</div></div>
+  `;
+
+  // Compare chart
+  const ctx2 = qs('analytics-compare-chart');
+  if (analyticsCompareChart) analyticsCompareChart.destroy();
+  const threshold = {roas:config.roasMin,ctr:config.ctrMin,cvr:config.cvrMin,installs:config.installMin,payrate:config.payrateMin}[metric];
+  analyticsCompareChart = new Chart(ctx2, {
+    type:'bar',
+    data: {
+      labels: campaigns.map(c=>c.name.slice(0,18)+(c.name.length>18?'…':'')),
+      datasets:[
+        { label:metricLabel[metric], data:campaigns.map(c=>parseFloat((c[metric]||0).toFixed(2))),
+          backgroundColor: campaigns.map(c=>(c[metric]||0)>=(threshold||0)?'#1D9E7566':'#E24B4A44'),
+          borderColor:     campaigns.map(c=>(c[metric]||0)>=(threshold||0)?'#1D9E75':'#E24B4A'),
+          borderWidth:1, borderRadius:4 },
+        ...(threshold ? [{
+          label:'Target', type:'line',
+          data:Array(campaigns.length).fill(threshold),
+          borderColor:'#EF9F27', borderWidth:1.5, borderDash:[5,4], pointRadius:0
+        }] : [])
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},
+      scales:{x:{ticks:{font:{size:10},maxRotation:30}},y:{ticks:{font:{size:10}}}}}
+  });
+}
+
 // ─── ALERTS ───────────────────────────────────────────────────────────────
+function generateSuggestions() {
+  if (!campaigns.length) return;
+  const now = new Date();
+  const hour = now.getHours();
+  const suggestions = [];
+
+  const active = campaigns.filter(c => c.status === 'ACTIVE');
+  const paused = campaigns.filter(c => c.status === 'PAUSED');
+
+  const avgRoas    = active.reduce((s,c)=>s+c.roas,0)/(active.length||1);
+  const avgSpendPct= active.reduce((s,c)=>s+c.spend/c.budget,0)/(active.length||1)*100;
+  const avgCvr     = active.reduce((s,c)=>s+(c.cvr||0),0)/(active.length||1);
+  const avgCpi     = active.reduce((s,c)=>s+(c.cpi||0),0)/(active.length||1);
+
+  if (hour < 8) {
+    suggestions.push({ priority:'info', icon:'ti-clock', title:'Buổi sáng sớm — chuẩn bị ngày mới',
+      desc:'Kiểm tra budget các camp đang chạy, đảm bảo không camp nào bị dừng qua đêm.',
+      actions:[] });
+  } else if (hour >= 12 && hour <= 14) {
+    suggestions.push({ priority:'warn', icon:'ti-clock', title:'Giờ cao điểm trưa (12h–14h)',
+      desc:'Đây là khung giờ chuyển đổi tốt. Kiểm tra camp nào đang chậm tiêu để điều chỉnh giá thầu.',
+      actions:[] });
+  } else if (hour >= 18 && hour <= 22) {
+    suggestions.push({ priority:'warn', icon:'ti-clock', title:'Giờ vàng buổi tối (18h–22h)',
+      desc:'Khung giờ cao điểm nhất ngày. Ưu tiên scale camp ROAS tốt, tạm dừng camp kém để tiết kiệm budget.',
+      actions:[] });
+  }
+
+  const scaleCamps = active.filter(c => c.roas >= config.roasMin && c.roas >= avgRoas * 1.3 && c.spend < c.budget * 0.8);
+  if (scaleCamps.length) {
+    suggestions.push({ priority:'success', icon:'ti-trending-up',
+      title:`Scale ${scaleCamps.length} camp ROAS vượt target`,
+      desc:'Camp: ' + scaleCamps.map(c=>c.name.slice(0,25)).join(', ') + `. ROAS trung bình ${(scaleCamps.reduce((s,c)=>s+c.roas,0)/scaleCamps.length).toFixed(2)}x — còn dư budget, nên tăng để tối đa doanh thu.`,
+      camps: scaleCamps,
+      actions: scaleCamps.map(c=>({lbl:'Tăng 20% '+c.name.slice(0,15), fn:()=>changeBudget(c,0.2)}))
+    });
+  }
+
+  const killCamps = active.filter(c => c.roas < config.roasMin * 0.5 && c.spend > c.budget * 0.5 && c.installs < config.installMin * 0.5);
+  if (killCamps.length) {
+    suggestions.push({ priority:'danger', icon:'ti-skull',
+      title:`Dừng khẩn ${killCamps.length} camp không hiệu quả`,
+      desc:'Camp: ' + killCamps.map(c=>c.name.slice(0,25)).join(', ') + '. ROAS và Install đều thấp hơn 50% target — đang đốt budget không có kết quả.',
+      camps: killCamps,
+      actions: killCamps.map(c=>({lbl:'Dừng '+c.name.slice(0,15), fn:()=>pauseCamp(c)}))
+    });
+  }
+
+  const optimizeCamps = active.filter(c => (c.cvr||0) >= config.cvrMin && (c.cpi||0) > config.cpiMax * 0.8 && (c.installs||0) >= config.installMin);
+  if (optimizeCamps.length) {
+    suggestions.push({ priority:'warn', icon:'ti-adjustments',
+      title:`Tối ưu audience ${optimizeCamps.length} camp — CVR tốt nhưng CPI cao`,
+      desc:'Camp: ' + optimizeCamps.map(c=>c.name.slice(0,20)).join(', ') + '. CVR đang đạt target nhưng CPI cao. Hãy narrow audience hoặc exclude cold traffic để giảm chi phí mỗi install.',
+      actions:[]
+    });
+  }
+
+  const payrateIssue = active.filter(c => (c.installs||0) >= config.installMin && (c.payrate||0) < config.payrateMin && c.purchases < 5);
+  if (payrateIssue.length) {
+    suggestions.push({ priority:'warn', icon:'ti-shopping-cart',
+      title:`Payrate thấp — có install nhưng ít purchase`,
+      desc:'Camp: ' + payrateIssue.map(c=>c.name.slice(0,20)).join(', ') + `. Có ${payrateIssue.reduce((s,c)=>s+(c.installs||0),0)} install nhưng purchase yếu. Kiểm tra onboarding flow, giá sản phẩm, hoặc creative mismatch.`,
+      actions:[]
+    });
+  }
+
+  const creativeCamps = active.filter(c => c.ctr < config.ctrMin * 0.5 && c.spend > 500000);
+  if (creativeCamps.length) {
+    suggestions.push({ priority:'warn', icon:'ti-photo',
+      title:`Đổi creative ${creativeCamps.length} camp — CTR quá thấp`,
+      desc:'Camp: ' + creativeCamps.map(c=>c.name.slice(0,20)).join(', ') + `. CTR dưới ${(config.ctrMin*0.5).toFixed(2)}%. Creative đang không thu hút, cần test creative mới hoặc thay thumbnail.`,
+      actions:[]
+    });
+  }
+
+  const reactivate = paused.filter(c => c.roas >= config.roasMin * 0.8);
+  if (reactivate.length) {
+    suggestions.push({ priority:'info', icon:'ti-player-play',
+      title:`Xem xét bật lại ${reactivate.length} camp đang dừng`,
+      desc:'Camp: ' + reactivate.map(c=>c.name.slice(0,20)).join(', ') + '. ROAS lần chạy cuối gần đạt target — có thể bật lại với budget nhỏ để test.',
+      actions: reactivate.map(c=>({lbl:'Bật '+c.name.slice(0,12), fn:()=>pauseCamp(c)}))
+    });
+  }
+
+  const nearBudget = active.filter(c => c.spend/c.budget > 0.85);
+  if (nearBudget.length && hour >= 15) {
+    suggestions.push({ priority:'warn', icon:'ti-currency-dollar',
+      title:`${nearBudget.length} camp sắp hết budget hôm nay`,
+      desc:'Camp: ' + nearBudget.map(c=>c.name.slice(0,20)+'('+(Math.round(c.spend/c.budget*100))+'%)').join(', ') + '. Nếu muốn chạy tiếp đến 24h, cần tăng budget ngay.',
+      actions: nearBudget.map(c=>({lbl:'Tăng budget '+c.name.slice(0,12), fn:()=>changeBudget(c,0.3)}))
+    });
+  }
+
+  if (!suggestions.length) {
+    suggestions.push({ priority:'success', icon:'ti-circle-check', title:'Tất cả ổn định',
+      desc:'Không có action khẩn nào cần thực hiện ngay. Tiếp tục theo dõi và re-check sau 2–3 giờ.', actions:[] });
+  }
+
+  const priorityColor = { danger:'#E24B4A', warn:'#EF9F27', success:'#1D9E75', info:'#185FA5' };
+  const priorityBadge = { danger:'badge-danger', warn:'badge-warn', success:'badge-ok', info:'badge-info' };
+  const priorityLabel = { danger:'Khẩn', warn:'Cần làm', success:'OK', info:'Thông tin' };
+
+  qs('suggestions-list').innerHTML = suggestions.map((s,i) => `
+    <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:11px 14px;display:flex;align-items:flex-start;gap:10px;border-left:3px solid ${priorityColor[s.priority]}">
+      <i class="ti ${s.icon}" style="font-size:18px;color:${priorityColor[s.priority]};margin-top:1px;flex-shrink:0"></i>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">
+          <span style="font-size:13px;font-weight:600">${s.title}</span>
+          <span class="badge ${priorityBadge[s.priority]}">${priorityLabel[s.priority]}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:${s.actions.length?'8px':'0'}">${s.desc}</div>
+        ${s.actions.length ? '<div style="display:flex;gap:6px;flex-wrap:wrap">'+s.actions.map((a,j)=>`<button class="btn btn-sm ${j===0?'btn-primary':''}" onclick="suggAction(${i},${j})">${a.lbl}</button>`).join('')+'</div>' : ''}
+      </div>
+    </div>`).join('');
+
+  window._suggestions = suggestions;
+}
+
+function suggAction(si, ai) {
+  const s = window._suggestions[si];
+  if (s && s.actions[ai]) s.actions[ai].fn();
+}
+
 function getAlerts() {
   const alerts = [];
   const active = campaigns.filter(c => c.status === 'ACTIVE');
@@ -1094,6 +1438,7 @@ function updateAlertBadge() {
 }
 
 function renderAlerts() {
+  generateSuggestions();
   const alerts = getAlerts();
   updateAlertBadge();
   if (!alerts.length) {
@@ -1473,6 +1818,7 @@ function buildAccountSwitcher(accounts, names) {
     errEl.style.display = 'none';
     toast('Đã tải ' + campaigns.length + ' chiến dịch!');
     switchTab('overview');
+    setTimeout(generateSuggestions, 500);
   } catch(e) {
     const errEl = qs('setup-err');
     errEl.style.display = 'block';

@@ -204,6 +204,7 @@
   </div>
   <div class="nav-tab active" onclick="switchTab('overview')" id="tab-overview">Tổng quan</div>
   <div class="nav-tab" onclick="switchTab('heatmap')" id="tab-heatmap">Heatmap</div>
+  <div class="nav-tab" onclick="switchTab('usecase')" id="tab-usecase">Usecase</div>
   <div class="nav-tab" onclick="switchTab('analytics')" id="tab-analytics">Phân tích</div>
   <div class="nav-tab" onclick="switchTab('alerts')" id="tab-alerts">
     Cảnh báo
@@ -398,6 +399,80 @@
   </div>
 </div>
 
+<!-- USECASE PAGE -->
+<div id="page-usecase" class="page">
+  <div class="top-bar">
+    <span class="section-title">Hiệu quả theo Usecase</span>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:12px;color:var(--text-secondary)">Tách bằng:</span>
+      <select id="uc-delimiter" onchange="onUsecaseConfigChange()" style="font-size:12px;padding:5px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);outline:none">
+        <option value="_">_ (gạch dưới)</option>
+        <option value="-">- (gạch ngang)</option>
+        <option value="|">| (sổ đứng)</option>
+        <option value=" ">khoảng trắng</option>
+      </select>
+      <span style="font-size:12px;color:var(--text-secondary)">Usecase ở vị trí:</span>
+      <select id="uc-position" onchange="onUsecaseConfigChange()" style="font-size:12px;padding:5px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);outline:none">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="last">Cuối cùng</option>
+      </select>
+    </div>
+  </div>
+  <div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;padding:8px 12px;background:var(--blue-light);border-radius:var(--radius-md)">
+    <i class="ti ti-info-circle" style="vertical-align:-2px;margin-right:4px;color:var(--blue)"></i>
+    Cấu trúc tên: <code id="uc-example" style="background:var(--bg-primary);padding:1px 6px;border-radius:4px">IIP555_Reelme_<b style="color:var(--blue)">USECASE</b></code> — chỉ số mỗi nhóm tính gộp (weighted) từ tổng spend/install/revenue của các camp cùng usecase.
+  </div>
+
+  <div class="metrics-grid" id="uc-summary"></div>
+
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0" id="uc-chart-title">So sánh Spend theo usecase</h3>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <span class="filter-pill active" onclick="setUsecaseMetric(this,'spend')">Spend</span>
+        <span class="filter-pill" onclick="setUsecaseMetric(this,'roas')">ROAS</span>
+        <span class="filter-pill" onclick="setUsecaseMetric(this,'installs')">Installs</span>
+        <span class="filter-pill" onclick="setUsecaseMetric(this,'cvr')">CVR</span>
+        <span class="filter-pill" onclick="setUsecaseMetric(this,'cpi')">CPI</span>
+        <span class="filter-pill" onclick="setUsecaseMetric(this,'payrate')">Payrate</span>
+      </div>
+    </div>
+    <div style="position:relative;height:240px">
+      <canvas id="usecase-chart" role="img" aria-label="So sánh chỉ số theo usecase"></canvas>
+    </div>
+  </div>
+
+  <div class="section-header"><span class="section-title">Bảng hiệu quả từng nhóm usecase</span></div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="text-align:left">Usecase</th>
+          <th>Số camp</th>
+          <th>Spend</th>
+          <th title="Click / Impression × 100">CTR</th>
+          <th title="Install / Click × 100">CVR</th>
+          <th>Installs</th>
+          <th title="Spend / Install">CPI</th>
+          <th>Purchases</th>
+          <th title="Purchase / Install × 100">Payrate</th>
+          <th title="(Conv. Value / Spend) × 70%">ROAS</th>
+          <th>Score</th>
+          <th>Đánh giá</th>
+        </tr>
+      </thead>
+      <tbody id="uc-body"></tbody>
+    </table>
+  </div>
+
+  <div class="section-header" style="margin-top:20px"><span class="section-title">Xếp hạng usecase</span></div>
+  <div id="uc-ranking" style="display:flex;flex-direction:column;gap:8px"></div>
+</div>
+
 <!-- ALERTS PAGE -->
 <div id="page-alerts" class="page">
   <div class="card" style="border-left:3px solid var(--blue);margin-bottom:16px">
@@ -566,14 +641,19 @@ let config = {
   slowSpend:   30,
   overSpend:   110,
   roasDrop:    30,
-  stopHours:   4
+  stopHours:   4,
+  usecaseDelimiter: '_',  // ký tự tách tên camp
+  usecasePosition:  3     // usecase nằm ở vị trí thứ mấy (1-based)
 };
+
+let usecaseMetric = 'spend';
+let usecaseChart = null, usecaseCompareChart = null;
 
 const DAYS = ['T2','T3','T4','T5','T6','T7','CN'];
 
 // ─── DEMO DATA ────────────────────────────────────────────────────────────
 const DEMO = [
-  { id:'c1', name:'[MUA NGAY] Balo học sinh 2025', status:'ACTIVE',
+  { id:'c1', name:'IIP555_Reelme_PUZZLE_01', status:'ACTIVE',
     spend:4200000, impressions:182000, clicks:3640, purchases:87, revenue:14700000, budget:5000000, installs:45,
     get ctr()     { return this.clicks/this.impressions*100; },
     get roas()    { return (this.revenue/this.spend)*0.7; },
@@ -582,7 +662,7 @@ const DEMO = [
     get cpi()     { return this.installs>0?this.spend/this.installs:0; },
     get payrate() { return this.installs>0?this.purchases/this.installs*100:0; },
     daily_data:{ spend:[380000,420000,390000,450000,400000,370000,410000], roas:[2.24,2.66,2.38,2.87,2.52,2.1,2.73] }},
-  { id:'c2', name:'[SALE] Phụ kiện điện thoại Q3', status:'ACTIVE',
+  { id:'c2', name:'IIP555_Reelme_MERGE_01', status:'ACTIVE',
     spend:8900000, impressions:310000, clicks:4030, purchases:124, revenue:11600000, budget:9000000, installs:8,
     get ctr()     { return this.clicks/this.impressions*100; },
     get roas()    { return (this.revenue/this.spend)*0.7; },
@@ -591,7 +671,7 @@ const DEMO = [
     get cpi()     { return this.installs>0?this.spend/this.installs:0; },
     get payrate() { return this.installs>0?this.purchases/this.installs*100:0; },
     daily_data:{ spend:[1300000,1280000,1320000,1250000,1350000,1300000,1100000], roas:[0.91,0.98,0.91,0.84,0.77,0.91,0.84] }},
-  { id:'c3', name:'[RETARGET] Khách xem SP tuần trước', status:'ACTIVE',
+  { id:'c3', name:'IIP555_Reelme_PUZZLE_02', status:'ACTIVE',
     spend:1200000, impressions:45000, clicks:1800, purchases:56, revenue:8400000, budget:3000000, installs:98,
     get ctr()     { return this.clicks/this.impressions*100; },
     get roas()    { return (this.revenue/this.spend)*0.7; },
@@ -600,7 +680,7 @@ const DEMO = [
     get cpi()     { return this.installs>0?this.spend/this.installs:0; },
     get payrate() { return this.installs>0?this.purchases/this.installs*100:0; },
     daily_data:{ spend:[150000,180000,160000,175000,190000,170000,175000], roas:[4.55,5.04,4.76,5.25,4.97,4.83,4.9] }},
-  { id:'c4', name:'[BRAND] Nhận diện thương hiệu T6', status:'PAUSED',
+  { id:'c4', name:'IIP555_Reelme_IDLE_01', status:'PAUSED',
     spend:2100000, impressions:250000, clicks:1250, purchases:12, revenue:1800000, budget:2500000, installs:3,
     get ctr()     { return this.clicks/this.impressions*100; },
     get roas()    { return (this.revenue/this.spend)*0.7; },
@@ -609,7 +689,7 @@ const DEMO = [
     get cpi()     { return this.installs>0?this.spend/this.installs:0; },
     get payrate() { return this.installs>0?this.purchases/this.installs*100:0; },
     daily_data:{ spend:[350000,380000,400000,370000,300000,200000,100000], roas:[0.63,0.56,0.7,0.49,0.56,0.63,0.6] }},
-  { id:'c5', name:'[LAL] Lookalike khách VIP', status:'ACTIVE',
+  { id:'c5', name:'IIP555_Reelme_MERGE_02', status:'ACTIVE',
     spend:5500000, impressions:198000, clicks:3168, purchases:98, revenue:14700000, budget:6000000, installs:62,
     get ctr()     { return this.clicks/this.impressions*100; },
     get roas()    { return (this.revenue/this.spend)*0.7; },
@@ -618,7 +698,7 @@ const DEMO = [
     get cpi()     { return this.installs>0?this.spend/this.installs:0; },
     get payrate() { return this.installs>0?this.purchases/this.installs*100:0; },
     daily_data:{ spend:[780000,800000,790000,810000,785000,780000,755000], roas:[1.75,1.96,1.82,2.03,1.89,1.82,1.87] }},
-  { id:'c6', name:'[DPA] Dynamic Product Ads', status:'ACTIVE',
+  { id:'c6', name:'IIP555_Reelme_MATCH3_01', status:'ACTIVE',
     spend:550000, impressions:28000, clicks:560, purchases:8, revenue:960000, budget:2000000, installs:15,
     get ctr()     { return this.clicks/this.impressions*100; },
     get roas()    { return (this.revenue/this.spend)*0.7; },
@@ -627,7 +707,7 @@ const DEMO = [
     get cpi()     { return this.installs>0?this.spend/this.installs:0; },
     get payrate() { return this.installs>0?this.purchases/this.installs*100:0; },
     daily_data:{ spend:[40000,60000,80000,120000,90000,80000,80000], roas:[1.22,1.11,1.05,0.94,0.99,0.99,1.02] }},
-  { id:'c7', name:'[TEST] Creative mới video 15s', status:'ACTIVE',
+  { id:'c7', name:'IIP555_Reelme_PUZZLE_03', status:'ACTIVE',
     spend:900000, impressions:95000, clicks:950, purchases:15, revenue:2250000, budget:1000000, installs:28,
     get ctr()     { return this.clicks/this.impressions*100; },
     get roas()    { return (this.revenue/this.spend)*0.7; },
@@ -846,6 +926,7 @@ function switchTab(tab) {
   if (tabEl) tabEl.classList.add('active');
   if (tab === 'overview')   { setDefaultDates(); renderOverview(); }
   if (tab === 'heatmap')    renderHeatmap();
+  if (tab === 'usecase')    renderUsecase();
   if (tab === 'analytics')  renderAnalytics();
   if (tab === 'alerts')     renderAlerts();
   if (tab === 'history')    renderHistory();
@@ -876,7 +957,7 @@ function renderOverview() {
   if (q) list = list.filter(c => c.name.toLowerCase().includes(q));
   if (scoreFilter !== 'all') {
     list = list.filter(c => {
-      const checks = [c.roas >= config.roasMin, c.ctr >= config.ctrMin, (c.cvr||0) >= config.cvrMin, (c.installs||0) >= config.installMin, (c.payrate||0) >= config.payrateMin];
+      const checks = [c.roas*100 >= config.roasMin, c.ctr >= config.ctrMin, (c.cvr||0) >= config.cvrMin, (c.installs||0) >= config.installMin, (c.payrate||0) >= config.payrateMin];
       const s = checks.filter(Boolean).length;
       if (scoreFilter === 'good') return s >= 4;
       if (scoreFilter === 'mid')  return s >= 2 && s <= 3;
@@ -889,7 +970,7 @@ function renderOverview() {
     if (sortBy === 'install_desc') return (b.installs||0) - (a.installs||0);
     if (sortBy === 'cvr_desc')     return (b.cvr||0) - (a.cvr||0);
     if (sortBy === 'score_desc') {
-      const sc = c => [c.roas>=config.roasMin,c.ctr>=config.ctrMin,(c.cvr||0)>=config.cvrMin,(c.installs||0)>=config.installMin,(c.payrate||0)>=config.payrateMin].filter(Boolean).length;
+      const sc = c => [c.roas*100>=config.roasMin,c.ctr>=config.ctrMin,(c.cvr||0)>=config.cvrMin,(c.installs||0)>=config.installMin,(c.payrate||0)>=config.payrateMin].filter(Boolean).length;
       return sc(b) - sc(a);
     }
     return b.spend - a.spend;
@@ -990,7 +1071,7 @@ function renderOvTable(list) {
     const payrate    = c.payrate || 0;                // purchase/install×100
     const installs   = c.installs || 0;
 
-    const roasOk     = roas >= config.roasMin;
+    const roasOk     = roas*100 >= config.roasMin;
     const ctrOk      = ctr  >= config.ctrMin;
     const cvrOk      = cvr  >= config.cvrMin;
     const installOk  = installs >= config.installMin;
@@ -1069,7 +1150,7 @@ function renderHeatmap() {
   // threshold check per metric for border highlight
   function isGood(m, v) {
     v = v || 0;
-    if (m==='roas')    return v >= config.roasMin;
+    if (m==='roas')    return v*100 >= config.roasMin;
     if (m==='ctr')     return v >= config.ctrMin;
     if (m==='cvr')     return v >= config.cvrMin;
     if (m==='installs')return v >= config.installMin;
@@ -1228,7 +1309,7 @@ function renderAnalytics() {
   // Compare chart
   const ctx2 = qs('analytics-compare-chart');
   if (analyticsCompareChart) analyticsCompareChart.destroy();
-  const threshold = {roas:config.roasMin,ctr:config.ctrMin,cvr:config.cvrMin,installs:config.installMin,payrate:config.payrateMin}[metric];
+  const threshold = {roas:config.roasMin/100,ctr:config.ctrMin,cvr:config.cvrMin,installs:config.installMin,payrate:config.payrateMin}[metric];
   analyticsCompareChart = new Chart(ctx2, {
     type:'bar',
     data: {
@@ -1248,6 +1329,201 @@ function renderAnalytics() {
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},
       scales:{x:{ticks:{font:{size:10},maxRotation:30}},y:{ticks:{font:{size:10}}}}}
   });
+}
+
+// ─── USECASE GROUPING ─────────────────────────────────────────────────────
+function parseUsecase(name) {
+  const delim = config.usecaseDelimiter || '_';
+  const parts = String(name).split(delim).map(s => s.trim()).filter(Boolean);
+  if (!parts.length) return 'Khác';
+  let idx;
+  if (config.usecasePosition === 'last') idx = parts.length - 1;
+  else idx = (parseInt(config.usecasePosition) || 3) - 1;
+  return (idx >= 0 && idx < parts.length) ? parts[idx] : 'Khác';
+}
+
+function groupByUsecase() {
+  const groups = {};
+  campaigns.forEach(c => {
+    const uc = parseUsecase(c.name);
+    if (!groups[uc]) groups[uc] = { usecase: uc, camps: [], spend:0, impressions:0, clicks:0, installs:0, purchases:0, revenue:0, budget:0 };
+    const g = groups[uc];
+    g.camps.push(c);
+    g.spend       += c.spend       || 0;
+    g.impressions += c.impressions || 0;
+    g.clicks      += c.clicks      || 0;
+    g.installs    += c.installs    || 0;
+    g.purchases   += c.purchases   || 0;
+    g.revenue     += c.revenue     || 0;
+    g.budget      += c.budget      || 0;
+  });
+  // weighted KPIs tính lại từ tổng raw (không average tỷ lệ)
+  return Object.values(groups).map(g => {
+    g.nCamps  = g.camps.length;
+    g.ctr     = g.impressions > 0 ? g.clicks/g.impressions*100 : 0;
+    g.roas    = g.spend > 0 ? (g.revenue/g.spend)*0.7 : 0;
+    g.cvr     = g.clicks > 0 ? g.installs/g.clicks*100 : 0;
+    g.cpm     = g.impressions > 0 ? g.spend/g.impressions*1000 : 0;
+    g.cpi     = g.installs > 0 ? g.spend/g.installs : 0;
+    g.payrate = g.installs > 0 ? g.purchases/g.installs*100 : 0;
+    const checks = [
+      g.roas*100 >= config.roasMin,
+      g.ctr     >= config.ctrMin,
+      g.cvr     >= config.cvrMin,
+      g.installs>= config.installMin,
+      g.payrate >= config.payrateMin
+    ];
+    g.score      = checks.filter(Boolean).length;
+    g.scoreTotal = checks.length;
+    return g;
+  });
+}
+
+function ucVerdict(g) {
+  if (g.score >= 4) return { label:'Tốt — nên scale',        cls:'badge-ok',     color:'#0F6E56', action:'Tăng budget cho nhóm này để mở rộng.' };
+  if (g.score >= 2) return { label:'Trung bình — tối ưu',    cls:'badge-warn',   color:'#BA7517', action:'Test creative/audience mới, giữ budget ổn định.' };
+  return                   { label:'Kém — cân nhắc dừng',    cls:'badge-danger', color:'#A32D2D', action:'Giảm budget hoặc tạm dừng các camp yếu nhất.' };
+}
+
+function fmtMetric(m, v) {
+  v = v || 0;
+  if (m === 'spend' || m === 'cpi' || m === 'cpm') return fmtVnd(v);
+  if (m === 'roas')    return v.toFixed(2) + 'x';
+  if (['ctr','cvr','payrate'].includes(m)) return v.toFixed(1) + '%';
+  return Math.round(v).toString();
+}
+
+function setUsecaseMetric(el, m) {
+  document.querySelectorAll('#page-usecase .filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  usecaseMetric = m;
+  const lbl = { spend:'Spend', roas:'ROAS', installs:'Installs', cvr:'CVR', cpi:'CPI', payrate:'Payrate' }[m] || m;
+  qs('uc-chart-title').textContent = 'So sánh ' + lbl + ' theo usecase';
+  renderUsecaseChart(groupByUsecase());
+}
+
+function onUsecaseConfigChange() {
+  config.usecaseDelimiter = qs('uc-delimiter').value;
+  const pos = qs('uc-position').value;
+  config.usecasePosition = pos === 'last' ? 'last' : parseInt(pos);
+  // cập nhật ví dụ minh hoạ
+  const d = config.usecaseDelimiter === ' ' ? '␣' : config.usecaseDelimiter;
+  qs('uc-example').innerHTML = 'IIP555' + d + 'Reelme' + d + '<b style="color:var(--blue)">USECASE</b>';
+  renderUsecase();
+}
+
+function renderUsecase() {
+  if (!campaigns.length) return;
+  // đồng bộ selects với config
+  qs('uc-delimiter').value = config.usecaseDelimiter;
+  qs('uc-position').value  = String(config.usecasePosition);
+
+  const groups = groupByUsecase().sort((a,b) => b.spend - a.spend);
+
+  // SUMMARY cards
+  const totSpend = groups.reduce((s,g) => s + g.spend, 0);
+  const totRev   = groups.reduce((s,g) => s + g.revenue, 0);
+  const blendRoas = totSpend > 0 ? (totRev/totSpend)*0.7 : 0;
+  const ranked   = [...groups].sort((a,b) => b.score - a.score || b.roas - a.roas);
+  const best  = ranked[0];
+  const worst = ranked[ranked.length - 1];
+  qs('uc-summary').innerHTML = `
+    <div class="metric-card"><div class="metric-label">Số nhóm usecase</div><div class="metric-value">${groups.length}</div><div class="metric-sub">${campaigns.length} camp</div></div>
+    <div class="metric-card"><div class="metric-label">ROAS tổng</div><div class="metric-value ${blendRoas*100>=config.roasMin?'good':'bad'}">${blendRoas.toFixed(2)}x</div><div class="metric-sub">target ≥ ${config.roasMin}%</div></div>
+    <div class="metric-card"><div class="metric-label">Usecase tốt nhất</div><div class="metric-value good">${best?best.usecase:'—'}</div><div class="metric-sub">${best?best.score+'/'+best.scoreTotal+' KPI · ROAS '+best.roas.toFixed(2)+'x':''}</div></div>
+    <div class="metric-card"><div class="metric-label">Usecase kém nhất</div><div class="metric-value bad">${worst?worst.usecase:'—'}</div><div class="metric-sub">${worst?worst.score+'/'+worst.scoreTotal+' KPI · ROAS '+worst.roas.toFixed(2)+'x':''}</div></div>
+  `;
+
+  // TABLE
+  qs('uc-body').innerHTML = groups.map(g => {
+    const v = ucVerdict(g);
+    const scoreBg = g.score >= 4 ? '#EAF3DE' : g.score >= 2 ? '#FAEEDA' : '#FCEBEB';
+    const cpiOk = g.cpi > 0 ? g.cpi <= config.cpiMax : true;
+    return `<tr>
+      <td style="text-align:left"><span class="camp-link" onclick="filterByUsecase('${g.usecase}')" style="font-weight:600">${g.usecase}</span></td>
+      <td>${g.nCamps}</td>
+      <td>${fmtVnd(g.spend)}</td>
+      <td style="color:${kpiColor(g.ctr>=config.ctrMin)}">${g.ctr.toFixed(2)}%</td>
+      <td style="color:${kpiColor(g.cvr>=config.cvrMin)}">${g.cvr.toFixed(1)}%</td>
+      <td style="color:${kpiColor(g.installs>=config.installMin)};font-weight:500">${g.installs}</td>
+      <td style="color:${kpiColor(cpiOk)}">${g.cpi>0?fmtVnd(g.cpi):'—'}</td>
+      <td>${g.purchases}</td>
+      <td style="color:${kpiColor(g.payrate>=config.payrateMin)}">${g.payrate.toFixed(1)}%</td>
+      <td style="color:${kpiColor(g.roas*100>=config.roasMin)};font-weight:600">${g.roas.toFixed(2)}x</td>
+      <td><span style="background:${scoreBg};color:${v.color};font-weight:600;padding:2px 8px;border-radius:4px;font-size:11px">${g.score}/${g.scoreTotal}</span></td>
+      <td style="text-align:center"><span class="badge ${v.cls}">${v.label.split(' — ')[0]}</span></td>
+    </tr>`;
+  }).join('');
+
+  // RANKING list
+  qs('uc-ranking').innerHTML = ranked.map((g,i) => {
+    const v = ucVerdict(g);
+    return `<div style="background:var(--bg-primary);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:11px 14px;display:flex;align-items:center;gap:12px;border-left:3px solid ${v.color}">
+      <div style="font-size:18px;font-weight:600;color:var(--text-secondary);min-width:28px">#${i+1}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+          <span style="font-size:14px;font-weight:600">${g.usecase}</span>
+          <span class="badge ${v.cls}">${v.label}</span>
+          <span style="font-size:11px;color:var(--text-secondary)">${g.nCamps} camp · ${fmtVnd(g.spend)}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary)">
+          ROAS <b style="color:${kpiColor(g.roas*100>=config.roasMin)}">${g.roas.toFixed(2)}x</b> ·
+          CVR <b style="color:${kpiColor(g.cvr>=config.cvrMin)}">${g.cvr.toFixed(1)}%</b> ·
+          Install <b style="color:${kpiColor(g.installs>=config.installMin)}">${g.installs}</b> ·
+          Payrate <b style="color:${kpiColor(g.payrate>=config.payrateMin)}">${g.payrate.toFixed(1)}%</b>
+          — ${v.action}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  renderUsecaseChart(groups);
+}
+
+function renderUsecaseChart(groups) {
+  const ctx = qs('usecase-chart');
+  if (!ctx) return;
+  const m = usecaseMetric;
+  const data = groups.map(g => parseFloat((g[m]||0).toFixed(2)));
+  const threshold = { roas:config.roasMin/100, cvr:config.cvrMin, installs:config.installMin, payrate:config.payrateMin }[m];
+  const lowBetter = m === 'cpi';
+  const barColor = groups.map(g => {
+    if (m === 'spend') return '#378ADD';
+    if (lowBetter) return (g.cpi>0 && g.cpi<=config.cpiMax) ? '#1D9E75' : '#E24B4A';
+    if (threshold != null) return (g[m]||0) >= threshold ? '#1D9E75' : '#E24B4A';
+    return '#378ADD';
+  });
+  if (usecaseChart) usecaseChart.destroy();
+  usecaseChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: groups.map(g => g.usecase),
+      datasets: [
+        { label: m, data, backgroundColor: barColor.map(c=>c+'55'), borderColor: barColor, borderWidth: 1.5, borderRadius: 4 },
+        ...(threshold != null ? [{ label:'Target', type:'line', data: Array(groups.length).fill(threshold), borderColor:'#EF9F27', borderWidth:1.5, borderDash:[5,4], pointRadius:0 }] : [])
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: threshold != null, labels:{font:{size:10},boxWidth:10} } },
+      scales: {
+        x: { ticks:{ font:{size:11} } },
+        y: { ticks:{ font:{size:10}, callback: v => {
+          if (m==='spend'||m==='cpi') return fmtVnd(v);
+          if (m==='roas') return v.toFixed(1)+'x';
+          if (['ctr','cvr','payrate'].includes(m)) return v.toFixed(0)+'%';
+          return v;
+        }}}
+      }
+    }
+  });
+}
+
+// click usecase trong bảng → mở overview lọc theo usecase
+function filterByUsecase(uc) {
+  switchTab('overview');
+  const search = qs('camp-search');
+  if (search) { search.value = uc; renderOverview(); }
 }
 
 // ─── ALERTS ───────────────────────────────────────────────────────────────
@@ -1279,7 +1555,7 @@ function generateSuggestions() {
       actions:[] });
   }
 
-  const scaleCamps = active.filter(c => c.roas >= config.roasMin && c.roas >= avgRoas * 1.3 && c.spend < c.budget * 0.8);
+  const scaleCamps = active.filter(c => c.roas*100 >= config.roasMin && c.roas >= avgRoas * 1.3 && c.spend < c.budget * 0.8);
   if (scaleCamps.length) {
     suggestions.push({ priority:'success', icon:'ti-trending-up',
       title:`Scale ${scaleCamps.length} camp ROAS vượt target`,
@@ -1289,7 +1565,7 @@ function generateSuggestions() {
     });
   }
 
-  const killCamps = active.filter(c => c.roas < config.roasMin * 0.5 && c.spend > c.budget * 0.5 && c.installs < config.installMin * 0.5);
+  const killCamps = active.filter(c => c.roas*100 < config.roasMin * 0.5 && c.spend > c.budget * 0.5 && c.installs < config.installMin * 0.5);
   if (killCamps.length) {
     suggestions.push({ priority:'danger', icon:'ti-skull',
       title:`Dừng khẩn ${killCamps.length} camp không hiệu quả`,
@@ -1326,7 +1602,7 @@ function generateSuggestions() {
     });
   }
 
-  const reactivate = paused.filter(c => c.roas >= config.roasMin * 0.8);
+  const reactivate = paused.filter(c => c.roas*100 >= config.roasMin * 0.8);
   if (reactivate.length) {
     suggestions.push({ priority:'info', icon:'ti-player-play',
       title:`Xem xét bật lại ${reactivate.length} camp đang dừng`,
@@ -1634,7 +1910,7 @@ function openDetail(id) {
   const payrate  = c.payrate  || 0;             // purchase/install×100
   const installs = c.installs || 0;
 
-  const roasOk    = roas    >= config.roasMin;
+  const roasOk    = roas*100 >= config.roasMin;
   const ctrOk     = ctr     >= config.ctrMin;
   const cvrOk     = cvr     >= config.cvrMin;
   const installOk = installs >= config.installMin;

@@ -418,10 +418,30 @@
 
 <!-- HISTORY -->
 <div id="page-history" class="page">
-  <div class="section-header">
-    <span class="section-title">Lịch sử hành động <small id="hist-count"></small></span>
-    <button class="btn btn-danger" onclick="clearHistory()"><i class="ti ti-trash"></i> Xóa tất cả</button>
+  <div class="top-bar">
+    <span class="section-title">Lịch sử thay đổi <small id="hist-count"></small></span>
+    <div class="top-bar-left">
+      <div class="search-box"><i class="ti ti-search"></i><input id="hist-search" placeholder="Tìm camp / người / hành động..." oninput="renderHistory()" /></div>
+      <select id="hist-window" class="inp" style="font-size:12px;padding:6px 8px;cursor:pointer" onchange="syncActivityLog()">
+        <option value="7">7 ngày</option>
+        <option value="14" selected>14 ngày</option>
+        <option value="30">30 ngày</option>
+        <option value="90">90 ngày</option>
+      </select>
+      <button class="btn btn-primary" onclick="syncActivityLog()" id="hist-sync"><i class="ti ti-refresh"></i> Đồng bộ từ Meta</button>
+      <button class="btn btn-danger" onclick="clearHistory()" title="Xóa log đã lưu"><i class="ti ti-trash"></i></button>
+    </div>
   </div>
+  <div class="top-bar-left" id="hist-filters" style="margin-bottom:14px">
+    <span class="filter-pill active" onclick="setHistFilter(this,'all')">Tất cả</span>
+    <span class="filter-pill" onclick="setHistFilter(this,'BUDGET')">Budget</span>
+    <span class="filter-pill" onclick="setHistFilter(this,'STATUS')">Bật/tắt</span>
+    <span class="filter-pill" onclick="setHistFilter(this,'CREATIVE')">Creative</span>
+    <span class="filter-pill" onclick="setHistFilter(this,'TARGETING')">Targeting</span>
+    <span class="filter-pill" onclick="setHistFilter(this,'ACCOUNT')">Account</span>
+    <span class="filter-pill" onclick="setHistFilter(this,'OTHER')">Khác</span>
+  </div>
+  <div style="font-size:11px;color:var(--text-3);margin-bottom:10px"><span class="badge badge-info">Meta</span> = lịch sử thật từ Meta (ai làm / trước→sau) · <span class="badge badge-mut">Tool</span> = thao tác trong dashboard này</div>
   <div id="history-container" class="history-list"></div>
 </div>
 
@@ -576,6 +596,9 @@ let customFrom = '', customTo = '';
 let sortKey = 'spend', sortDir = -1;
 let defaultFilter = 'ptt';        // từ khóa lọc tên camp mặc định khi mở tool (vd tag "ptt")
 let firstFilterApplied = false;   // chỉ tự áp bộ lọc 1 lần khi load đầu tiên
+let activityLog = [];             // Meta Activity Log (lịch sử thay đổi thật) của account hiện tại
+let historyFilter = 'all';
+let activitySyncing = false;
 
 const DEFAULT_CONFIG = {
   roasGood: 1.5, roasMin: 1.0, ctrMin: 1.0, cvrMin: 25, installMin: 10,
@@ -628,7 +651,7 @@ function loadAll() {
   actionHistory = load('history', []);
   defaultFilter = load('defaultFilter', 'ptt');
 }
-function loadAcctState() { targetRoas = load('targetRoas_'+currentAccount, {}) || {}; }
+function loadAcctState() { targetRoas = load('targetRoas_'+currentAccount, {}) || {}; loadActivityArchive(); }
 function persistAcct() { if (currentAccount) save('targetRoas_'+currentAccount, targetRoas); }
 
 // ════════════════════════ API LAYER ════════════════════════
@@ -1087,16 +1110,126 @@ function alertButtons(a) {
   return b.join('');
 }
 
+// ────────── META ACTIVITY LOG (lịch sử thay đổi thật) ──────────
+const ACT_VI = {
+  update_campaign_budget:'Đổi ngân sách camp', update_campaign_group_budget:'Đổi ngân sách camp',
+  update_ad_set_budget:'Đổi ngân sách adset', update_campaign_group_spend_cap:'Đổi trần chi tiêu camp',
+  update_campaign_run_status:'Bật/tắt camp', update_campaign_group_run_status:'Bật/tắt camp',
+  update_ad_set_run_status:'Bật/tắt adset', update_ad_run_status:'Bật/tắt ad',
+  update_ad_creative:'Đổi creative', update_ad_set_target_spec:'Đổi targeting',
+  update_ad_set_bid_strategy:'Đổi chiến lược bid', update_ad_set_bidding:'Đổi bid',
+  update_ad_set_optimization_goal:'Đổi optimization goal', update_ad_set_duration:'Đổi lịch chạy',
+  create_campaign:'Tạo camp', create_campaign_group:'Tạo camp', create_ad_set:'Tạo adset', create_ad:'Tạo ad',
+  update_campaign_name:'Đổi tên camp', update_campaign_group_name:'Đổi tên camp', update_ad_set_name:'Đổi tên adset', update_ad_friendly_name:'Đổi tên ad',
+  ad_review_approved:'Ad được duyệt', ad_review_declined:'Ad bị từ chối',
+  ad_account_update_status:'Đổi trạng thái account', ad_account_update_spend_limit:'Đổi hạn mức chi tiêu',
+  ad_account_reset_spend_limit:'Reset hạn mức', ad_account_remove_spend_limit:'Gỡ hạn mức',
+  ad_account_billing_decline:'Lỗi thanh toán', ad_account_billing_charge:'Trừ tiền', ad_account_billing_refund:'Hoàn tiền',
+  add_funding_source:'Thêm nguồn tiền', remove_funding_source:'Gỡ nguồn tiền',
+  ad_account_add_user_to_role:'Thêm người vào account', ad_account_remove_user_from_role:'Gỡ người khỏi account',
+  first_delivery_event:'Bắt đầu phân phối',
+};
+function actCat(et){ et = et||'';
+  if (/budget|spend_limit|spend_cap/.test(et)) return 'BUDGET';
+  if (/run_status|account_update_status/.test(et)) return 'STATUS';
+  if (/creative|image|video/.test(et)) return 'CREATIVE';
+  if (/target/.test(et)) return 'TARGETING';
+  if (/billing|funding|spend|account|user_to_role|user_from_role/.test(et)) return 'ACCOUNT';
+  return 'OTHER';
+}
+function objLabel(t){ return ({CAMPAIGN_GROUP:'Camp',CAMPAIGN:'AdSet',ADGROUP:'Ad',AD:'Ad',ADSET:'AdSet',ACCOUNT:'Account'})[t]||t||''; }
+function fmtTs(ts){ return new Date(ts).toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+function parseExtra(raw, et){
+  let x; try { x = JSON.parse(raw||''); } catch { return ''; }
+  if (!x || typeof x!=='object') return '';
+  const sc = v => (v==null||typeof v==='object') ? '' : String(v);
+  const o = sc(x.old_value), n = sc(x.new_value);
+  if (o==='' && n==='') return '';
+  if (/budget|spend_limit|spend_cap/.test(et)) {
+    const off = curOffset();
+    const f = v => (v===''||isNaN(Number(v))) ? (v||'—') : fmtMoney(Number(v)/Math.pow(10,off))+'₫';
+    return `${o!==''?f(o):'—'} → ${n!==''?f(n):'—'}`;
+  }
+  const cut = s => s.length>44 ? s.slice(0,44)+'…' : s;
+  return `${o!==''?cut(o):'—'} → ${n!==''?cut(n):'—'}`;
+}
+function normalizeActivity(r){
+  const ts = Date.parse(r.event_time)||0; const et = r.event_type||'';
+  const o = { source:'meta', ts, time: ts?fmtTs(ts):'', actor:r.actor_name||'', app:r.application_name||'',
+    objType:r.object_type||'', objName:r.object_name||'', objId:r.object_id||'', eventType:et,
+    cat: actCat(et), key:(r.event_time||'')+'|'+et+'|'+(r.object_id||'') };
+  o.label = ACT_VI[et] || r.translated_event_type || et;
+  o.detail = parseExtra(r.extra_data, et);
+  return o;
+}
+function loadActivityArchive(){ activityLog = (load('activities_'+currentAccount, []) || []); }
+function saveActivityArchive(){ activityLog = activityLog.slice().sort((a,b)=>b.ts-a.ts).slice(0,2000); if(!isDemo) save('activities_'+currentAccount, activityLog); }
+function mergeActivities(items){
+  const seen = new Set(activityLog.map(a=>a.key)); let added=0;
+  items.forEach(it=>{ if(!seen.has(it.key)){ seen.add(it.key); activityLog.push(it); added++; } });
+  saveActivityArchive(); return added;
+}
+async function syncActivityLog(){
+  if (isDemo){ buildDemoActivities(); renderHistory(); toast('Demo: đã tạo log mẫu'); return; }
+  if (activitySyncing || !currentAccount) return;
+  activitySyncing = true;
+  const btn = qs('hist-sync'); if(btn){ btn.disabled=true; btn.innerHTML='<span class="loader"></span> Đang đồng bộ'; }
+  try {
+    const days = parseInt(qs('hist-window')?.value||'14');
+    const now = Date.now();
+    const since = Math.floor((now - days*86400000)/1000), until = Math.floor(now/1000);
+    const res = await callMeta(`${currentAccount}/activities`, {
+      fields:'event_type,translated_event_type,event_time,actor_name,object_type,object_name,object_id,extra_data,application_name',
+      since, until, limit: 500
+    });
+    const items = (res.data||[]).map(normalizeActivity);
+    const added = mergeActivities(items);
+    renderHistory();
+    toast(`Đồng bộ ${items.length} hoạt động (${added} mới)`);
+  } catch(e){ toast('Lỗi đồng bộ: '+e.message,'err'); }
+  finally { activitySyncing=false; const b=qs('hist-sync'); if(b){ b.disabled=false; b.innerHTML='<i class="ti ti-refresh"></i> Đồng bộ từ Meta'; } }
+}
+function setHistFilter(el,f){ el.parentElement.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); historyFilter=f; renderHistory(); }
+const LOCAL_CAT = { pause:'STATUS', resume:'STATUS', budget:'BUDGET', target:'OTHER', sync:'OTHER' };
+const HIST_ICON = { BUDGET:['coin','var(--blue-bg)','var(--blue)'], STATUS:['toggle-right','var(--amber-bg)','var(--amber)'], CREATIVE:['photo','var(--violet-bg)','var(--violet)'], TARGETING:['target','var(--green-bg)','var(--green)'], ACCOUNT:['building-bank','var(--red-bg)','var(--red)'], OTHER:['point','var(--surface-3)','var(--text-2)'] };
 function renderHistory() {
-  const c = qs('history-container');
-  qs('hist-count').textContent = `(${actionHistory.length})`;
-  if (!actionHistory.length) { c.innerHTML=`<div class="empty"><i class="ti ti-history"></i><p>Chưa có hành động nào được ghi lại</p></div>`; return; }
-  const ic = { pause:['player-pause','var(--amber-bg)','var(--amber)'], resume:['player-play','var(--green-bg)','var(--green)'], budget:['coin','var(--blue-bg)','var(--blue)'], target:['target','var(--violet-bg)','var(--violet)'], sync:['refresh','var(--surface-3)','var(--text-2)'] };
-  c.innerHTML = actionHistory.map(h=>{
-    const i = ic[h.kind]||ic.sync;
-    return `<div class="history-item"><div class="history-ico" style="background:${i[1]};color:${i[2]}"><i class="ti ti-${i[0]}"></i></div>
-      <span class="history-time">${h.time}</span><span class="history-camp" title="${h.camp}">${h.camp}</span><span class="history-action">${h.action}</span></div>`;
-  }).join('');
+  const cont = qs('history-container'); if(!cont) return;
+  const local = actionHistory.map(h=>({ source:'tool', ts:h.ts||0, time:h.time, actor:'Bạn (qua tool)', app:'',
+    objType:'', objName:h.camp, objId:h.cid, eventType:h.kind, label:h.action, detail:'', cat:LOCAL_CAT[h.kind]||'OTHER' }));
+  let items = local.concat(activityLog);
+  if (historyFilter!=='all') items = items.filter(x=>x.cat===historyFilter);
+  const q = (qs('hist-search')?.value||'').trim().toLowerCase();
+  if (q) items = items.filter(x => [x.objName,x.actor,x.label,x.eventType].some(v=>(v||'').toLowerCase().includes(q)));
+  items.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  qs('hist-count').textContent = `(${items.length})`;
+  if (!items.length){ cont.innerHTML = `<div class="empty"><i class="ti ti-history"></i><p>${isDemo?'Chưa có log.':'Chưa có log — bấm "Đồng bộ từ Meta" để kéo lịch sử thay đổi.'}</p></div>`; return; }
+  const cap = 400; const shown = items.slice(0,cap);
+  cont.innerHTML = shown.map(x=>{
+    const ic = HIST_ICON[x.cat]||HIST_ICON.OTHER;
+    const src = x.source==='meta' ? '<span class="badge badge-info">Meta</span>' : '<span class="badge badge-mut">Tool</span>';
+    const obj = x.objName ? `${x.objType?objLabel(x.objType)+' · ':''}${x.objName}` : '';
+    const who = x.actor ? `${x.actor}${x.app?' · '+x.app:''}` : '';
+    return `<div class="history-item"><div class="history-ico" style="background:${ic[1]};color:${ic[2]}"><i class="ti ti-${ic[0]}"></i></div>
+      <span class="history-time">${x.time||''}</span>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="font-size:12.5px">${x.label||''}</b>${src}${x.detail?`<span style="color:var(--text-2);font-size:12px" class="tnum">${x.detail}</span>`:''}</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${obj}${obj&&who?' — ':''}${who}</div>
+      </div></div>`;
+  }).join('') + (items.length>cap?`<div class="hint" style="text-align:center;padding:10px">Hiển thị ${cap}/${items.length} — lọc bớt để xem cụ thể</div>`:'');
+}
+function buildDemoActivities(){
+  const now = Date.now();
+  const mk = (mins, et, ot, on, extra, actor) => normalizeActivity({ event_type:et, translated_event_type:et, event_time:new Date(now-mins*60000).toISOString(), actor_name:actor||'Trần Thảo Phương', application_name:actor?'':'Power Editor', object_type:ot, object_name:on, object_id:'demo', extra_data: extra?JSON.stringify(extra):'' });
+  activityLog = [
+    mk(12,'ad_review_declined','ADGROUP','New Sales Ad - Copy 9',{old_value:null,new_value:'Disapproved'},'Meta'),
+    mk(28,'update_campaign_group_budget','CAMPAIGN_GROUP','IIP555_Reelme_PUZZLE_01_US_Roas_2306_ptt',{old_value:'5000000',new_value:'6000000'}),
+    mk(95,'update_campaign_group_run_status','CAMPAIGN_GROUP','IIP555_Reelme_IDLE_01_US_Purchase_1506_longt',{old_value:'Active',new_value:'Paused'}),
+    mk(140,'update_ad_creative','ADGROUP','New Sales Ad - Copy 8',{old_value:null,new_value:'Đổi video 15s'}),
+    mk(190,'update_ad_set_target_spec','CAMPAIGN','IIP555_Reelme_MERGE_01_US_Purchase_1806_ptt',{old_value:[1],new_value:[2]}),
+    mk(240,'update_ad_set_bid_strategy','CAMPAIGN','IIP555_Reelme_MERGE_02_US_Roas_2406_ptt',{old_value:null,new_value:'LOWEST_COST_BID_STRATEGY'}),
+    mk(310,'ad_account_billing_decline','ACCOUNT','Demo Account',{old_value:null,new_value:'Card declined'},'Meta'),
+    mk(20,'first_delivery_event','ADGROUP','New Sales Ad - Copy 6',{old_value:null,new_value:'Started delivery'},'Meta'),
+  ];
 }
 
 function renderConfig() {
@@ -1189,7 +1322,7 @@ function renderDetailHistory(id) {
 
 // ════════════════════════ ACTIONS ════════════════════════
 function logAction(cid, camp, kind, action) {
-  actionHistory.unshift({ cid, camp, kind, action, time: new Date().toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) });
+  actionHistory.unshift({ cid, camp, kind, action, ts: Date.now(), time: new Date().toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) });
   if (actionHistory.length>500) actionHistory.pop();
   save('history', actionHistory); renderHistory();
 }
@@ -1249,7 +1382,7 @@ async function applyBudgets() {
     budgetEdits={}; toast(`Đã cập nhật ${ok}/${changes.length} camp`); renderAll();
   });
 }
-function clearHistory() { confirmModal('Xóa lịch sử','Xóa toàn bộ lịch sử hành động?', ()=>{ actionHistory=[]; save('history',[]); renderHistory(); toast('Đã xóa lịch sử'); }); }
+function clearHistory() { confirmModal('Xóa lịch sử','Xóa log tool + kho lịch sử Meta đã lưu của account này?\n(Có thể bấm "Đồng bộ từ Meta" để tải lại bất cứ lúc nào.)', ()=>{ actionHistory=[]; save('history',[]); activityLog=[]; if(!isDemo) save('activities_'+currentAccount,[]); renderHistory(); toast('Đã xóa lịch sử'); }); }
 function saveConfig() {
   Object.keys(DEFAULT_CONFIG).forEach(k=>{ const el=qs('cfg-'+k); if(el){ const v=parseFloat(el.value); config[k]=isNaN(v)?DEFAULT_CONFIG[k]:v; } });
   const dfEl = qs('cfg-defaultFilter'); if(dfEl){ defaultFilter = dfEl.value.trim(); save('defaultFilter', defaultFilter); }
@@ -1272,7 +1405,7 @@ function switchTab(tab, fromDetail) {
   qs('page-'+tab).classList.add('active');
   if (!fromDetail && tab!=='detail' && tab!=='setup') qs('tab-'+tab)?.classList.add('active');
   if (tab==='hourly') loadHourly();
-  if (tab==='history') renderHistory();
+  if (tab==='history') { if(isDemo && !activityLog.length) buildDemoActivities(); renderHistory(); if(!isDemo && !activityLog.length && currentAccount) syncActivityLog(); }
   if (tab==='config') renderConfig();
   window.scrollTo(0,0);
 }
@@ -1321,7 +1454,7 @@ function showErr(m){ const e=qs('setup-err'); e.textContent=m; e.style.display='
 function loadDemo() {
   isDemo=true; token=''; currentAccount='demo';
   accounts=[{id:'demo',name:'Demo Account',currency:'VND',offset:0,tz:'Asia/Ho_Chi_Minh'}];
-  targetRoas={}; budgetEdits={};
+  targetRoas={}; budgetEdits={}; activityLog=[];
   campaigns = DEMO_RAW.map(d=>withGetters(Object.assign({},d)));
   populateAccountSwitcher(); buildDemoHourly();
   switchTab('overview'); renderAll();

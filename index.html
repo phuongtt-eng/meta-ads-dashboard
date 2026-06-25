@@ -231,8 +231,8 @@
         <input type="password" id="inp-token" placeholder="EAAxxxxxxxxxxxxxxx..." autocomplete="off" />
       </div>
       <div class="field">
-        <label>Ad Account ID</label>
-        <input type="text" id="inp-account" placeholder="act_123456789" />
+        <label>Ad Account ID <span style="font-weight:400;color:var(--text-secondary);font-size:11px">— nhiều account cách nhau dấu phẩy</span></label>
+        <input type="text" id="inp-account" placeholder="act_123456789, act_987654321" />
       </div>
       <div class="field">
         <label>Khoảng thời gian</label>
@@ -246,9 +246,15 @@
       <button class="btn btn-primary" onclick="connectAPI()" style="width:100%;justify-content:center;padding:9px;font-size:13px;margin-top:4px">
         <i class="ti ti-plug"></i> Kết nối & tải dữ liệu
       </button>
-      <div style="margin-top:16px;text-align:center;border-top:0.5px solid var(--border);padding-top:16px">
+      <div style="margin-top:14px;font-size:11px;color:var(--text-secondary);text-align:center;line-height:1.5">
+        <i class="ti ti-device-floppy" style="vertical-align:-2px"></i> Token &amp; account được lưu ngay trên trình duyệt này — lần sau mở tool sẽ tự động kết nối.
+      </div>
+      <div style="margin-top:12px;text-align:center;border-top:0.5px solid var(--border);padding-top:14px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap">
         <button onclick="loadDemo()" style="background:none;border:none;color:var(--blue);cursor:pointer;font-size:13px;font-family:var(--font)">
-          Dùng dữ liệu demo để xem trước →
+          Dùng dữ liệu demo →
+        </button>
+        <button onclick="disconnectAPI()" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:13px;font-family:var(--font)">
+          Xóa thông tin đã lưu
         </button>
       </div>
     </div>
@@ -649,6 +655,30 @@ let config = {
 let usecaseMetric = 'spend';
 let usecaseChart = null, usecaseCompareChart = null;
 
+// ─── PERSISTENCE (localStorage) ───────────────────────────────────────────
+// Everything the user sets up is saved on this device and restored on reload:
+// credentials, KPI config, per-camp target ROAS, and action history.
+function persistCreds() {
+  try {
+    localStorage.setItem('meta_token', API_TOKEN || '');
+    const accs = (ALL_ACCOUNTS && ALL_ACCOUNTS.length) ? ALL_ACCOUNTS : (API_ACCOUNT ? [API_ACCOUNT] : []);
+    localStorage.setItem('meta_accounts', JSON.stringify(accs));
+  } catch(e) {}
+}
+function persistConfig()  { try { localStorage.setItem('meta_config',  JSON.stringify(config)); } catch(e) {} }
+function persistTargets() { try { localStorage.setItem('meta_targets', JSON.stringify(targetRoas)); } catch(e) {} }
+function persistHistory() { try { localStorage.setItem('meta_history', JSON.stringify(actionHistory.slice(0, 1000))); } catch(e) {} }
+function loadState() {
+  try {
+    const cfg = localStorage.getItem('meta_config');  if (cfg) Object.assign(config, JSON.parse(cfg));
+    const tg  = localStorage.getItem('meta_targets'); if (tg)  targetRoas    = JSON.parse(tg)  || {};
+    const h   = localStorage.getItem('meta_history'); if (h)   actionHistory = JSON.parse(h)   || [];
+    // reflect saved usecase parsing rule in the selectors
+    const dEl = document.getElementById('uc-delimiter'); if (dEl && config.usecaseDelimiter) dEl.value = config.usecaseDelimiter;
+    const pEl = document.getElementById('uc-position');  if (pEl && config.usecasePosition)  pEl.value = String(config.usecasePosition);
+  } catch(e) {}
+}
+
 const DAYS = ['T2','T3','T4','T5','T6','T7','CN'];
 
 // ─── DEMO DATA ────────────────────────────────────────────────────────────
@@ -742,41 +772,68 @@ let API_ACCOUNT = '';
 const API_VER = 'v20.0';
 const BASE = 'https://graph.facebook.com/' + API_VER;
 
+// Core connect routine shared by manual connect + auto-restore on boot.
+async function connectWith(token, accounts, statusEl) {
+  API_TOKEN    = token;
+  ALL_ACCOUNTS = accounts;
+  API_ACCOUNT  = accounts[0];
+  const setStatus = (msg, color) => {
+    if (!statusEl) return;
+    statusEl.style.display = 'block';
+    statusEl.style.color = color || 'var(--blue)';
+    statusEl.textContent = msg;
+  };
+
+  setStatus('Đang xác thực token...');
+  const me = await apiFetch('/me?fields=name');
+  setStatus(`Xác thực OK (${me.name}). Đang tải ${accounts.length} account...`);
+
+  // resolve account names for the switcher
+  await Promise.all(ALL_ACCOUNTS.map(async id => {
+    try { const info = await apiFetch('/' + id + '?fields=name'); ACCOUNT_NAMES[id] = info.name || id; }
+    catch(_) { ACCOUNT_NAMES[id] = id; }
+  }));
+  buildAccountSwitcher(ALL_ACCOUNTS, ACCOUNT_NAMES);
+
+  setStatus('Đang tải chiến dịch...');
+  await fetchRealData();
+  persistCreds();              // <-- save token + accounts on this device
+  if (statusEl) statusEl.style.display = 'none';
+}
+
 async function connectAPI() {
-  const tok = qs('inp-token').value.trim();
-  const acc = qs('inp-account').value.trim();
-  const errEl = qs('setup-err');
-  if (!tok || !acc) {
+  const tok    = qs('inp-token').value.trim();
+  const accRaw = qs('inp-account').value.trim();
+  const errEl  = qs('setup-err');
+  // support 1..n accounts separated by comma / space / newline
+  const accounts = accRaw.split(/[\s,]+/).map(s => s.trim()).filter(Boolean)
+                         .map(id => id.startsWith('act_') ? id : 'act_' + id);
+  if (!tok || !accounts.length) {
     errEl.style.display = 'block'; errEl.style.color = 'var(--red)';
     errEl.textContent = 'Vui lòng nhập đủ Access Token và Ad Account ID.';
     return;
   }
-  errEl.style.display = 'block'; errEl.style.color = 'var(--blue)';
-  errEl.textContent = 'Đang xác thực token...';
-
-  // normalize account id
-  API_TOKEN   = tok;
-  API_ACCOUNT = acc.startsWith('act_') ? acc : 'act_' + acc;
-
   try {
-    // 1. verify token
-    const me = await apiFetch('/me?fields=name');
-    errEl.textContent = `Xác thực OK (${me.name}). Đang tải chiến dịch...`;
-
-    // 2. fetch campaigns + insights
-    await fetchRealData();
-
-    errEl.style.display = 'none';
-    // save to localStorage
-    localStorage.setItem('meta_token', API_TOKEN);
-    localStorage.setItem('meta_account', API_ACCOUNT);
+    await connectWith(tok, accounts, errEl);
     toast(`Đã tải ${campaigns.length} chiến dịch từ Meta Ads!`);
     switchTab('overview');
+    setTimeout(generateSuggestions, 400);
   } catch(e) {
-    errEl.style.color = 'var(--red)';
+    errEl.style.display = 'block'; errEl.style.color = 'var(--red)';
     errEl.textContent = 'Lỗi: ' + (e.message || 'Không kết nối được. Kiểm tra lại token và account ID.');
     console.error(e);
   }
+}
+
+function disconnectAPI() {
+  openModal('Xóa thông tin đã lưu', 'Xóa Access Token và Ad Account đã lưu khỏi trình duyệt này?', () => {
+    try { localStorage.removeItem('meta_token'); localStorage.removeItem('meta_accounts'); localStorage.removeItem('meta_account'); } catch(e) {}
+    API_TOKEN = ''; ALL_ACCOUNTS = []; API_ACCOUNT = ''; campaigns = [];
+    qs('inp-token').value = ''; qs('inp-account').value = '';
+    qs('account-switcher').style.display = 'none';
+    toast('Đã xóa thông tin đăng nhập.');
+    switchTab('setup');
+  });
 }
 
 function apiFetch(path) {
@@ -818,24 +875,30 @@ async function fetchRealData() {
   const allDaily = await Promise.all(dailyPromises);
 
   campaigns = results.map((r, idx) => {
-    const ins = r.insights;
-    const daily = allDaily[idx];
+    const ins    = r.insights;
+    const daily  = allDaily[idx];
     const budget = parseInt(r.camp.daily_budget || r.camp.lifetime_budget || 0) / 100;
+    // raw numbers from Meta
+    const spend       = parseFloat(ins.spend || 0);
+    const impressions = parseInt(ins.impressions || 0);
+    const clicks      = parseInt(ins.clicks || 0);
+    const purchases   = pickAction(ins.actions, PURCHASE_ACTIONS);
+    const revenue     = pickAction(ins.action_values, PURCHASE_ACTIONS);
+    const installs    = pickAction(ins.actions, INSTALL_ACTIONS);
+    // derived KPIs — same formulas as the demo getters so the whole app is consistent
     return {
       id:          r.camp.id,
       name:        r.camp.name,
       status:      r.camp.status,
-      spend:       parseFloat(ins.spend || 0),
-      impressions: parseInt(ins.impressions || 0),
-      clicks:      parseInt(ins.clicks || 0),
-      ctr:         parseFloat(ins.ctr || 0),
+      spend, impressions, clicks, purchases, revenue, installs,
       cpc:         parseFloat(ins.cpc || 0),
-      purchases:   getAction(ins.actions, 'purchase'),
-      revenue:     getActionVal(ins.action_values, 'purchase'),
-      roas:        parseFloat((ins.purchase_roas || [{ value:'0' }])[0].value || 0),
-      budget:      budget || parseFloat(ins.spend || 0) * 1.2,
-      installs:    getAction(ins.actions, 'mobile_app_install') || getAction(ins.actions, 'app_install') || 0,
-      cvr:         getCvr(getAction(ins.actions, 'mobile_app_install') || getAction(ins.actions, 'app_install') || 0, parseInt(ins.clicks || 0)),
+      ctr:         impressions > 0 ? clicks / impressions * 100 : 0,   // Click/Impression×100
+      roas:        spend > 0 ? (revenue / spend) * 0.7 : 0,            // (ConvValue/Spend)×70%
+      cvr:         clicks > 0 ? installs / clicks * 100 : 0,           // Install/Click×100
+      cpm:         impressions > 0 ? spend / impressions * 1000 : 0,   // Spend/Impression×1000
+      cpi:         installs > 0 ? spend / installs : 0,                // Spend/Install
+      payrate:     installs > 0 ? purchases / installs * 100 : 0,      // Purchase/Install×100
+      budget:      budget || spend * 1.2,
       daily_data:  daily,
     };
   });
@@ -868,23 +931,26 @@ async function fetchDailyInsights(campId) {
       const d = new Date(from); d.setDate(from.getDate() + i);
       const key = d.toISOString().slice(0,10);
       const row = rows.find(r => r.date_start === key) || {};
-      spendArr.push(parseFloat(row.spend || 0));
-      roasArr.push(parseFloat((row.purchase_roas || [{ value:'0' }])[0]?.value || 0));
+      const sp  = parseFloat(row.spend || 0);
+      const rev = pickAction(row.action_values, PURCHASE_ACTIONS);
+      spendArr.push(sp);
+      roasArr.push(sp > 0 ? (rev / sp) * 0.7 : 0);   // ×70% — consistent with summary ROAS
     }
     return { spend: spendArr, roas: roasArr };
   } catch(e) { return { spend: Array(7).fill(0), roas: Array(7).fill(0) }; }
 }
 
-function getAction(actions, type) {
-  if (!actions) return 0;
-  const a = actions.find(x => x.action_type === 'purchase' || x.action_type === 'offsite_conversion.fb_pixel_purchase');
-  return a ? parseInt(a.value) : 0;
-}
-
-function getActionVal(action_values, type) {
-  if (!action_values) return 0;
-  const a = action_values.find(x => x.action_type === 'purchase' || x.action_type === 'offsite_conversion.fb_pixel_purchase');
-  return a ? parseFloat(a.value) : 0;
+// Priority-ordered Meta action_type matching — covers app + web events, picks
+// ONE source (no double-count). First match in the list wins.
+const PURCHASE_ACTIONS = ['omni_purchase','purchase','offsite_conversion.fb_pixel_purchase','app_custom_event.fb_mobile_purchase'];
+const INSTALL_ACTIONS  = ['mobile_app_install','omni_app_install','app_install'];
+function pickAction(arr, types) {
+  if (!Array.isArray(arr)) return 0;
+  for (const t of types) {
+    const a = arr.find(x => x.action_type === t);
+    if (a) return parseFloat(a.value) || 0;
+  }
+  return 0;
 }
 
 function getCvr(installs, clicks) {
@@ -1045,7 +1111,7 @@ function renderTrendChart(list) {
     options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
       scales: {
         y:  { position:'left',  ticks:{ callback: v => fmtVnd(v), font:{size:10} } },
-        y1: { position:'right', grid:{ drawOnChartArea:false }, ticks:{ callback: v => v+'x', font:{size:10} } }
+        y1: { position:'right', grid:{ drawOnChartArea:false }, ticks:{ callback: v => (+v).toFixed(2)+'x', font:{size:10} } }
       }
     }
   });
@@ -1409,6 +1475,7 @@ function onUsecaseConfigChange() {
   // cập nhật ví dụ minh hoạ
   const d = config.usecaseDelimiter === ' ' ? '␣' : config.usecaseDelimiter;
   qs('uc-example').innerHTML = 'IIP555' + d + 'Reelme' + d + '<b style="color:var(--blue)">USECASE</b>';
+  persistConfig();
   renderUsecase();
 }
 
@@ -1776,6 +1843,7 @@ function pauseCamp(c) {
 // ─── HISTORY ──────────────────────────────────────────────────────────────
 function addHistory(camp, action, note) {
   actionHistory.unshift({ time: new Date().toLocaleString('vi-VN'), camp, action, note });
+  persistHistory();
 }
 
 function renderHistory() {
@@ -1792,6 +1860,7 @@ function renderHistory() {
 function clearHistory() {
   openModal('Xóa lịch sử', 'Xóa toàn bộ lịch sử hành động?', () => {
     actionHistory = [];
+    persistHistory();
     renderHistory();
     toast('Đã xóa lịch sử.');
   });
@@ -1814,7 +1883,7 @@ function renderConfig() {
   qs('target-roas-rows').innerHTML = campaigns.map(c => `
     <div class="roas-row">
       <label>${c.name.slice(0,32)}${c.name.length>32?'…':''}</label>
-      <input type="number" step="0.1" value="${targetRoas[c.id] || config.roasMin}" onchange="targetRoas['${c.id}']=parseFloat(this.value)||config.roasMin" />
+      <input type="number" step="0.1" value="${targetRoas[c.id] || config.roasMin}" onchange="targetRoas['${c.id}']=parseFloat(this.value)||config.roasMin;persistTargets()" />
       <span style="font-size:12px;color:var(--text-secondary)">x</span>
     </div>`).join('');
 
@@ -1876,6 +1945,7 @@ function saveConfig() {
   config.roasDrop    = parseInt(qs('cfg-roas-drop').value)     || 30;
   config.stopHours   = parseInt(qs('cfg-stop').value)          || 4;
   addHistory('Hệ thống', 'Cập nhật cấu hình ngưỡng', '');
+  persistConfig();
   updateAlertBadge();
   toast('Đã lưu cấu hình!');
 }
@@ -1978,7 +2048,7 @@ function renderDetailCharts(c) {
       { type:'line', label:'ROAS',   data: c.daily_data.roas, borderColor:'#1D9E75', borderWidth:2, pointRadius:3, fill:false, tension:0.3 },
       { type:'line', label:'Target', data: Array(7).fill(tr), borderColor:'#E24B4A', borderWidth:1.5, borderDash:[5,4], pointRadius:0, fill:false }
     ]},
-    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ ticks:{ callback: v => v+'x', font:{size:10} } }, x:{ ticks:{ font:{size:10} } } } }
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ ticks:{ callback: v => (+v).toFixed(2)+'x', font:{size:10} } }, x:{ ticks:{ font:{size:10} } } } }
   });
 }
 
@@ -2004,6 +2074,7 @@ function saveDetailTargetRoas() {
   const c = campaigns.find(x => x.id === currentCampId);
   if (!c) return;
   targetRoas[currentCampId] = val;
+  persistTargets();
   addHistory(c.name, 'Cập nhật target ROAS', `→ ${val}x`);
   openDetail(currentCampId);
   updateAlertBadge();
@@ -2060,46 +2131,52 @@ function buildAccountSwitcher(accounts, names) {
   el.style.display = '';
 }
 
+// Restore saved settings (config / targets / history) regardless of connection state.
+loadState();
+
 (async () => {
+  const errEl = qs('setup-err');
+
+  // 1) Prefer credentials the user saved on this device (entered in the tool).
+  let token = '';
+  let accounts = [];
   try {
-    const res = await fetch('/api/config');
-    if (!res.ok) return;
-    const cfg = await res.json();
-    if (!cfg.token || !cfg.accounts || !cfg.accounts.length) return;
+    token = localStorage.getItem('meta_token') || '';
+    accounts = JSON.parse(localStorage.getItem('meta_accounts') || '[]') || [];
+    if (!accounts.length) { const legacy = localStorage.getItem('meta_account'); if (legacy) accounts = [legacy]; } // migrate old key
+  } catch(_) {}
 
-    API_TOKEN    = cfg.token;
-    ALL_ACCOUNTS = cfg.accounts;
-    API_ACCOUNT  = cfg.accounts[0];
+  // pre-fill the setup form so the user can see / edit what's stored
+  if (token)           qs('inp-token').value   = token;
+  if (accounts.length) qs('inp-account').value = accounts.join(', ');
 
-    const errEl = qs('setup-err');
-    errEl.style.display = 'block';
-    errEl.style.color = 'var(--blue)';
-    errEl.textContent = 'Đang xác thực...';
+  // 2) Fall back to server env (/api/config) only if nothing is saved locally.
+  if (!token || !accounts.length) {
+    try {
+      const res = await fetch('/api/config');
+      if (res.ok) {
+        const cfg = await res.json();
+        if (cfg.token && cfg.accounts && cfg.accounts.length) {
+          token = cfg.token; accounts = cfg.accounts;
+          if (!qs('inp-token').value)   qs('inp-token').value   = token;
+          if (!qs('inp-account').value) qs('inp-account').value = accounts.join(', ');
+        }
+      }
+    } catch(_) {}
+  }
 
-    const me = await apiFetch('/me?fields=name');
-    errEl.textContent = `Xin chào ${me.name}! Đang tải ${ALL_ACCOUNTS.length} account...`;
+  // 3) Nothing to connect with → stay on the setup page.
+  if (!token || !accounts.length) return;
 
-    // fetch account names
-    await Promise.all(ALL_ACCOUNTS.map(async id => {
-      try {
-        const info = await apiFetch('/' + id + '?fields=name');
-        ACCOUNT_NAMES[id] = info.name || id;
-      } catch(_) { ACCOUNT_NAMES[id] = id; }
-    }));
-
-    buildAccountSwitcher(ALL_ACCOUNTS, ACCOUNT_NAMES);
-
-    errEl.textContent = 'Đang tải chiến dịch...';
-    await fetchRealData();
-    errEl.style.display = 'none';
+  try {
+    await connectWith(token, accounts, errEl);
     toast('Đã tải ' + campaigns.length + ' chiến dịch!');
     switchTab('overview');
     setTimeout(generateSuggestions, 500);
   } catch(e) {
-    const errEl = qs('setup-err');
     errEl.style.display = 'block';
     errEl.style.color = 'var(--red)';
-    errEl.textContent = 'Lỗi kết nối: ' + e.message;
+    errEl.textContent = 'Lỗi kết nối: ' + e.message + ' — kiểm tra lại token (có thể đã hết hạn).';
   }
 })();
 </script>

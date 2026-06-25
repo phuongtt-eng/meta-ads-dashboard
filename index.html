@@ -9,188 +9,253 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg-primary: #ffffff;
-    --bg-secondary: #f5f5f4;
-    --bg-tertiary: #f0efec;
-    --text-primary: #1a1a18;
-    --text-secondary: #6b6b67;
-    --border: rgba(0,0,0,0.1);
-    --border-md: rgba(0,0,0,0.18);
-    --radius-md: 8px;
-    --radius-lg: 12px;
-    --blue: #185FA5;
-    --blue-light: #E6F1FB;
-    --green: #0F6E56;
-    --green-light: #EAF3DE;
-    --amber: #BA7517;
-    --amber-light: #FAEEDA;
-    --red: #A32D2D;
-    --red-light: #FCEBEB;
-    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --bg: #fbfbfa;
+    --surface: #ffffff;
+    --surface-2: #f6f6f4;
+    --surface-3: #efeeeb;
+    --text: #1c1c1a;
+    --text-2: #6e6e69;
+    --text-3: #9a9a94;
+    --border: #ececea;
+    --border-2: #dededb;
+    --r-sm: 6px;
+    --r: 9px;
+    --r-lg: 13px;
+    --blue: #2563c9;
+    --blue-bg: #eaf1fc;
+    --blue-bd: #cadcf7;
+    --green: #1a7f5a;
+    --green-bg: #e7f4ed;
+    --amber: #b06f12;
+    --amber-bg: #fbf0db;
+    --red: #b3322f;
+    --red-bg: #fbe9e8;
+    --violet: #6d49c4;
+    --violet-bg: #f0eafb;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 2px 8px rgba(0,0,0,.03);
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'SF Mono', ui-monospace, 'Cascadia Code', Menlo, monospace;
   }
-  body { font-family: var(--font); background: var(--bg-tertiary); color: var(--text-primary); font-size: 14px; line-height: 1.5; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
   .app { min-height: 100vh; display: flex; flex-direction: column; }
+  a { color: inherit; }
+  ::-webkit-scrollbar { height: 8px; width: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
 
   /* NAV */
-  .nav { background: var(--bg-primary); border-bottom: 0.5px solid var(--border); padding: 0 20px; display: flex; align-items: center; height: 46px; position: sticky; top: 0; z-index: 50; }
-  .nav-brand { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-right: 28px; display: flex; align-items: center; gap: 7px; }
-  .nav-brand i { color: var(--blue); font-size: 18px; }
-  .nav-tab { font-size: 13px; color: var(--text-secondary); padding: 0 14px; height: 46px; display: flex; align-items: center; cursor: pointer; border-bottom: 2px solid transparent; gap: 5px; transition: color .15s; white-space: nowrap; }
-  .nav-tab:hover { color: var(--text-primary); }
-  .nav-tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 500; }
+  .nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 18px; display: flex; align-items: center; height: 50px; position: sticky; top: 0; z-index: 50; gap: 2px; }
+  .nav-brand { font-size: 14px; font-weight: 650; margin-right: 22px; display: flex; align-items: center; gap: 8px; letter-spacing: -.2px; }
+  .nav-brand i { color: var(--blue); font-size: 19px; }
+  .nav-tab { font-size: 13px; color: var(--text-2); padding: 0 13px; height: 50px; display: flex; align-items: center; cursor: pointer; border-bottom: 2px solid transparent; gap: 6px; transition: color .15s; white-space: nowrap; }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 550; }
   .nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-  .badge-dot { background: var(--red-light); color: var(--red); font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+  .badge-dot { background: var(--red); color: #fff; font-size: 10px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 9px; font-weight: 650; display: inline-flex; align-items: center; justify-content: center; }
 
   /* BUTTONS */
-  .btn { font-size: 12px; padding: 6px 12px; border-radius: var(--radius-md); border: 0.5px solid var(--border-md); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-family: var(--font); transition: background .12s; white-space: nowrap; }
-  .btn:hover { background: var(--bg-secondary); }
+  .btn { font-size: 12.5px; padding: 7px 12px; border-radius: var(--r-sm); border: 1px solid var(--border-2); background: var(--surface); color: var(--text); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-family: var(--font); transition: all .12s; white-space: nowrap; font-weight: 500; }
+  .btn:hover { background: var(--surface-2); border-color: var(--text-3); }
   .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
   .btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
-  .btn-primary:hover { background: #0C447C; }
-  .btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
-  .btn-sm { font-size: 11px; padding: 4px 9px; }
+  .btn-primary:hover { background: #1d54ac; border-color: #1d54ac; }
+  .btn-danger { background: var(--surface); color: var(--red); border-color: var(--border-2); }
+  .btn-danger:hover { background: var(--red-bg); border-color: var(--red); }
+  .btn-sm { font-size: 11.5px; padding: 5px 9px; }
+  .btn-ghost { border-color: transparent; background: transparent; }
+  .btn-ghost:hover { background: var(--surface-2); }
+
+  /* INPUTS */
+  input, select { font-family: var(--font); outline: none; color: var(--text); background: var(--surface); }
+  .inp { padding: 8px 11px; border: 1px solid var(--border-2); border-radius: var(--r-sm); font-size: 13px; }
+  .inp:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-bg); }
+  .search-box { position: relative; }
+  .search-box i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-3); font-size: 15px; }
+  .search-box input { padding: 7px 11px 7px 30px; border: 1px solid var(--border-2); border-radius: 20px; font-size: 12.5px; width: 220px; background: var(--surface); }
+  .search-box input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-bg); }
 
   /* PAGES */
-  .page { display: none; padding: 20px; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; }
-  .page.active { display: block; }
+  .page { display: none; padding: 20px; flex: 1; max-width: 1480px; margin: 0 auto; width: 100%; }
+  .page.active { display: block; animation: fade .2s; }
+  @keyframes fade { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
 
   /* SETUP */
-  .setup-wrap { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 46px); }
-  .setup-card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 36px; width: 460px; }
-  .setup-card h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
-  .setup-card p { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; }
-  .field { margin-bottom: 16px; }
-  .field label { font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 6px; font-weight: 500; }
-  .field input, .field select { width: 100%; padding: 9px 11px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md); font-size: 13px; background: var(--bg-primary); color: var(--text-primary); font-family: var(--font); outline: none; }
-  .field input:focus, .field select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(24,95,165,0.1); }
-  .err-msg { font-size: 12px; color: var(--red); margin-top: 8px; display: none; }
+  .setup-wrap { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 50px); padding: 20px; }
+  .setup-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 34px; width: 470px; box-shadow: var(--shadow); }
+  .setup-card h2 { font-size: 19px; font-weight: 650; margin-bottom: 6px; letter-spacing: -.3px; }
+  .setup-card .sub { font-size: 13px; color: var(--text-2); margin-bottom: 24px; }
+  .field { margin-bottom: 15px; }
+  .field label { font-size: 12px; color: var(--text-2); display: block; margin-bottom: 6px; font-weight: 550; }
+  .field input, .field select { width: 100%; padding: 9px 11px; border: 1px solid var(--border-2); border-radius: var(--r-sm); font-size: 13px; }
+  .field input:focus, .field select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-bg); }
+  .err-msg { font-size: 12px; color: var(--red); margin-top: 10px; display: none; background: var(--red-bg); padding: 8px 11px; border-radius: var(--r-sm); }
 
   /* METRICS GRID */
-  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
-  .metric-card { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 13px 15px; }
-  .metric-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 500; }
-  .metric-value { font-size: 22px; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
-  .metric-sub { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 11px; margin-bottom: 20px; }
+  .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 13px 15px; }
+  .metric-label { font-size: 11px; color: var(--text-2); margin-bottom: 5px; font-weight: 550; display: flex; align-items: center; gap: 4px; }
+  .metric-value { font-size: 22px; font-weight: 650; line-height: 1.15; letter-spacing: -.4px; }
+  .metric-sub { font-size: 11px; color: var(--text-3); margin-top: 4px; }
   .metric-value.good { color: var(--green); }
   .metric-value.warn { color: var(--amber); }
   .metric-value.bad { color: var(--red); }
 
   /* SECTION */
-  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .section-title { font-size: 14px; font-weight: 600; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 13px; gap: 10px; flex-wrap: wrap; }
+  .section-title { font-size: 15px; font-weight: 650; letter-spacing: -.2px; }
+  .section-title small { font-size: 12px; font-weight: 400; color: var(--text-2); margin-left: 8px; }
   .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
   .top-bar-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
   /* PILLS */
-  .filter-pill { font-size: 12px; padding: 4px 11px; border-radius: 20px; border: 0.5px solid var(--border-md); background: var(--bg-primary); cursor: pointer; color: var(--text-secondary); transition: all .12s; user-select: none; }
-  .filter-pill:hover { background: var(--bg-secondary); }
-  .filter-pill.active { background: var(--blue-light); color: var(--blue); border-color: #B5D4F4; font-weight: 500; }
-  input[type="date"] { font-size: 12px; padding: 5px 10px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md); background: var(--bg-primary); color: var(--text-primary); font-family: var(--font); outline: none; }
+  .filter-pill { font-size: 12px; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border-2); background: var(--surface); cursor: pointer; color: var(--text-2); transition: all .12s; user-select: none; font-weight: 500; }
+  .filter-pill:hover { background: var(--surface-2); }
+  .filter-pill.active { background: var(--blue-bg); color: var(--blue); border-color: var(--blue-bd); font-weight: 600; }
+  input[type="date"] { font-size: 12px; padding: 6px 10px; border: 1px solid var(--border-2); border-radius: var(--r-sm); }
 
   /* CARD */
-  .card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; }
-  .card h3 { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px; margin-bottom: 16px; }
+  .card-h { font-size: 13px; font-weight: 650; margin-bottom: 13px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .card-h .muted { font-size: 11px; font-weight: 400; color: var(--text-2); }
 
   /* TABLE */
-  .table-wrap { overflow-x: auto; border-radius: var(--radius-lg); border: 0.5px solid var(--border); background: var(--bg-primary); }
-  .data-table { border-collapse: collapse; width: 100%; font-size: 12px; }
-  .data-table th { font-size: 11px; font-weight: 600; color: var(--text-secondary); padding: 9px 12px; text-align: right; white-space: nowrap; background: var(--bg-secondary); border-bottom: 0.5px solid var(--border); position: sticky; top: 0; }
-  .data-table th:first-child { text-align: left; min-width: 200px; }
-  .data-table td { padding: 8px 12px; text-align: right; border-bottom: 0.5px solid var(--border); white-space: nowrap; }
+  .table-wrap { overflow-x: auto; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--surface); }
+  .data-table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  .data-table th { font-size: 11px; font-weight: 600; color: var(--text-2); padding: 10px 11px; text-align: right; white-space: nowrap; background: var(--surface-2); border-bottom: 1px solid var(--border); position: sticky; top: 0; cursor: pointer; user-select: none; }
+  .data-table th:first-child { text-align: left; min-width: 230px; }
+  .data-table th.sortable:hover { color: var(--text); }
+  .data-table th .arr { font-size: 9px; opacity: .5; }
+  .data-table td { padding: 9px 11px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
   .data-table td:first-child { text-align: left; }
   .data-table tr:last-child td { border-bottom: none; }
-  .data-table tr:hover td { background: var(--bg-secondary); }
-  .camp-link { color: var(--blue); cursor: pointer; font-weight: 500; text-decoration: none; }
-  .camp-link:hover { text-decoration: underline; }
+  .data-table tbody tr { transition: background .1s; }
+  .data-table tbody tr:hover td { background: var(--surface-2); }
+  .camp-link { color: var(--text); cursor: pointer; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 7px; }
+  .camp-link:hover { color: var(--blue); }
+  .camp-name { overflow: hidden; text-overflow: ellipsis; max-width: 280px; }
 
   /* STATUS DOT */
-  .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px; flex-shrink: 0; }
-  .dot-active { background: #1D9E75; }
-  .dot-paused { background: #EF9F27; }
-  .dot-error { background: #E24B4A; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .dot-active { background: #22a06b; box-shadow: 0 0 0 2px var(--green-bg); }
+  .dot-paused { background: #d49114; box-shadow: 0 0 0 2px var(--amber-bg); }
+  .dot-error { background: #d6433f; box-shadow: 0 0 0 2px var(--red-bg); }
 
   /* BADGE */
-  .badge { font-size: 10px; padding: 2px 7px; border-radius: var(--radius-md); font-weight: 600; }
-  .badge-ok { background: var(--green-light); color: var(--green); }
-  .badge-warn { background: var(--amber-light); color: var(--amber); }
-  .badge-danger { background: var(--red-light); color: var(--red); }
-  .badge-info { background: var(--blue-light); color: var(--blue); }
+  .badge { font-size: 10px; padding: 2px 7px; border-radius: var(--r-sm); font-weight: 650; display: inline-block; }
+  .badge-ok { background: var(--green-bg); color: var(--green); }
+  .badge-warn { background: var(--amber-bg); color: var(--amber); }
+  .badge-danger { background: var(--red-bg); color: var(--red); }
+  .badge-info { background: var(--blue-bg); color: var(--blue); }
+  .badge-violet { background: var(--violet-bg); color: var(--violet); }
+  .badge-mut { background: var(--surface-3); color: var(--text-2); }
 
-  /* HEATMAP CELL */
-  .heat-cell { display: inline-block; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
-  .heat-green { background: #C0DD97; color: #27500A; }
-  .heat-amber { background: #FAC775; color: #633806; }
-  .heat-red { background: #F7C1C1; color: #791F1F; }
+  /* SCORE */
+  .score-pill { font-weight: 700; font-size: 12px; padding: 2px 8px; border-radius: 20px; display: inline-block; min-width: 34px; text-align: center; }
+
+  /* HEATMAP */
+  .heat-cell { display: inline-block; padding: 3px 8px; border-radius: 5px; font-weight: 650; font-variant-numeric: tabular-nums; min-width: 50px; text-align: center; }
+  .heat-g3 { background: #b7dd99; color: #234d09; }
+  .heat-g2 { background: #d3e9bd; color: #355f18; }
+  .heat-y  { background: #fad98c; color: #6b4407; }
+  .heat-r2 { background: #f7c9b0; color: #7a3413; }
+  .heat-r3 { background: #f3b0ac; color: #7d1f1c; }
+  .heat-na { background: var(--surface-3); color: var(--text-3); }
+
+  /* HOUR STRIP */
+  .hour-strip { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; }
+  .hour-cell { height: 30px; border-radius: 3px; position: relative; cursor: pointer; }
+  .hour-axis { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; margin-top: 3px; }
+  .hour-axis span { font-size: 8.5px; color: var(--text-3); text-align: center; }
+  .hl-row { display: grid; grid-template-columns: 210px 1fr; gap: 14px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .hl-row:last-child { border-bottom: none; }
+  .hl-name { font-size: 12px; font-weight: 600; overflow: hidden; }
+  .hl-name a { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hl-name small { display: block; margin-top: 3px; }
 
   /* ALERTS */
   .alerts-list { display: flex; flex-direction: column; gap: 10px; }
-  .alert-item { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px; }
-  .alert-item .alert-icon { font-size: 18px; margin-top: 1px; flex-shrink: 0; }
+  .alert-item { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--text-3); border-radius: var(--r); padding: 13px 16px; display: flex; align-items: flex-start; gap: 13px; }
+  .alert-item.sev-high { border-left-color: var(--red); }
+  .alert-item.sev-mid { border-left-color: var(--amber); }
+  .alert-item.sev-low { border-left-color: var(--blue); }
+  .alert-icon { font-size: 19px; margin-top: 1px; flex-shrink: 0; }
+  .sev-high .alert-icon { color: var(--red); }
+  .sev-mid .alert-icon { color: var(--amber); }
+  .sev-low .alert-icon { color: var(--blue); }
   .alert-body { flex: 1; min-width: 0; }
-  .alert-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; display: flex; align-items: center; gap: 8px; }
-  .alert-camp { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }
-  .alert-desc { font-size: 12px; color: var(--text-secondary); }
+  .alert-title { font-size: 13.5px; font-weight: 650; margin-bottom: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .alert-camp { font-size: 11.5px; color: var(--text-2); margin-bottom: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+  .alert-camp:hover { color: var(--blue); text-decoration: underline; }
+  .alert-desc { font-size: 12.5px; color: var(--text-2); line-height: 1.55; }
   .alert-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; align-items: flex-start; }
 
   /* HISTORY */
   .history-list { display: flex; flex-direction: column; gap: 6px; }
-  .history-item { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 9px 14px; display: flex; align-items: center; gap: 12px; font-size: 12px; }
-  .history-time { color: var(--text-secondary); min-width: 150px; white-space: nowrap; }
-  .history-camp { font-weight: 600; min-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .history-action { flex: 1; color: var(--text-secondary); }
+  .history-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 10px 14px; display: flex; align-items: center; gap: 13px; font-size: 12.5px; }
+  .history-ico { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px; }
+  .history-time { color: var(--text-3); min-width: 120px; white-space: nowrap; font-size: 11.5px; }
+  .history-camp { font-weight: 600; min-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .history-action { flex: 1; color: var(--text-2); }
 
   /* CONFIG */
-  .config-section { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 14px; }
-  .config-section h3 { font-size: 13px; font-weight: 600; margin-bottom: 14px; }
-  .config-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 0.5px solid var(--border); }
+  .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+  @media (max-width: 900px) { .config-grid { grid-template-columns: 1fr; } }
+  .config-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px; margin-bottom: 14px; }
+  .config-section h3 { font-size: 13px; font-weight: 650; margin-bottom: 4px; display: flex; align-items: center; gap: 7px; }
+  .config-section h3 i { color: var(--blue); }
+  .config-section .hint { font-size: 11.5px; color: var(--text-2); margin-bottom: 12px; }
+  .config-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
   .config-row:last-child { border-bottom: none; }
-  .config-row label { font-size: 12px; color: var(--text-secondary); flex: 1; }
-  .config-row input { width: 100px; padding: 5px 9px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md); font-size: 12px; background: var(--bg-primary); color: var(--text-primary); font-family: var(--font); outline: none; }
-  .config-row input:focus { border-color: var(--blue); }
-  .config-row .unit { font-size: 11px; color: var(--text-secondary); min-width: 36px; }
+  .config-row label { font-size: 12.5px; color: var(--text); flex: 1; }
+  .config-row label small { display: block; font-size: 10.5px; color: var(--text-3); font-weight: 400; }
+  .config-row input, .config-row select { width: 96px; padding: 6px 9px; border: 1px solid var(--border-2); border-radius: var(--r-sm); font-size: 12.5px; text-align: right; }
+  .config-row input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-bg); }
+  .config-row .unit { font-size: 11px; color: var(--text-3); min-width: 42px; }
 
   /* BUDGET ROWS */
-  .budget-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--border); }
+  .budget-row { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
   .budget-row:last-child { border-bottom: none; }
-  .budget-camp { font-size: 12px; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .budget-current { font-size: 11px; color: var(--text-secondary); min-width: 100px; white-space: nowrap; }
-  .budget-input { width: 100px; padding: 5px 8px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md); font-size: 12px; background: var(--bg-primary); color: var(--text-primary); font-family: var(--font); outline: none; }
+  .budget-camp { font-size: 12px; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .budget-current { font-size: 11px; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .budget-input { width: 110px; padding: 6px 8px; border: 1px solid var(--border-2); border-radius: var(--r-sm); font-size: 12px; text-align: right; }
   .budget-input:focus { border-color: var(--blue); }
-  .budget-pct { font-size: 11px; min-width: 48px; font-weight: 600; }
+  .budget-pct { font-size: 11px; min-width: 52px; font-weight: 700; text-align: right; }
   .pct-pos { color: var(--green); }
   .pct-neg { color: var(--red); }
 
-  /* ROAS TARGET ROWS */
-  .roas-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 0.5px solid var(--border); }
-  .roas-row:last-child { border-bottom: none; }
-  .roas-row label { font-size: 12px; flex: 1; color: var(--text-secondary); }
-  .roas-row input { width: 90px; padding: 5px 8px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md); font-size: 12px; background: var(--bg-primary); color: var(--text-primary); font-family: var(--font); outline: none; }
-
   /* DETAIL */
-  .detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
-  .back-btn { color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px; padding: 5px 0; }
-  .back-btn:hover { color: var(--text-primary); }
-  .detail-name { font-size: 16px; font-weight: 600; }
-  .detail-sub { font-size: 12px; color: var(--text-secondary); margin-top: 3px; display: flex; align-items: center; gap: 8px; }
+  .detail-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+  .back-btn { color: var(--text-2); cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px; padding: 6px 10px; border-radius: var(--r-sm); }
+  .back-btn:hover { background: var(--surface-2); color: var(--text); }
+  .detail-name { font-size: 18px; font-weight: 650; letter-spacing: -.3px; }
+  .detail-sub { font-size: 12px; color: var(--text-2); margin-top: 4px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-  @media (max-width: 640px) { .detail-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 720px) { .detail-grid { grid-template-columns: 1fr; } .config-grid{grid-template-columns:1fr;} }
 
   /* MODAL */
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(20,20,18,.4); z-index: 200; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(2px); }
   .modal-overlay.open { display: flex; }
-  .modal { background: var(--bg-primary); border-radius: var(--radius-lg); padding: 28px; width: 440px; max-width: 90vw; border: 0.5px solid var(--border); }
-  .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
-  .modal p { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; white-space: pre-line; line-height: 1.6; }
+  .modal { background: var(--surface); border-radius: var(--r-lg); padding: 26px; width: 450px; max-width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.18); }
+  .modal h3 { font-size: 16px; font-weight: 650; margin-bottom: 8px; }
+  .modal p { font-size: 13px; color: var(--text-2); margin-bottom: 20px; white-space: pre-line; line-height: 1.6; }
   .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
   /* TOAST */
-  .toast { position: fixed; bottom: 24px; right: 24px; background: #1a1a18; color: #fff; font-size: 13px; padding: 10px 18px; border-radius: var(--radius-md); z-index: 300; transform: translateY(80px); opacity: 0; transition: all .25s; pointer-events: none; }
-  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--text); color: #fff; font-size: 13px; padding: 11px 20px; border-radius: var(--r); z-index: 300; opacity: 0; transition: all .25s; pointer-events: none; box-shadow: 0 6px 20px rgba(0,0,0,.2); display: flex; align-items: center; gap: 8px; }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .toast.ok i { color: #5fd99b; }
+  .toast.err i { color: #ff8a87; }
 
-  /* EMPTY STATE */
-  .empty { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
-  .empty i { font-size: 40px; display: block; margin-bottom: 12px; }
+  /* MISC */
+  .empty { text-align: center; padding: 64px 20px; color: var(--text-3); }
+  .empty i { font-size: 42px; display: block; margin-bottom: 12px; opacity: .6; }
   .empty p { font-size: 13px; }
+  .loader { display: inline-block; width: 15px; height: 15px; border: 2px solid var(--border-2); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .tnum { font-variant-numeric: tabular-nums; }
+  .legend { display: flex; gap: 16px; margin-top: 10px; font-size: 11px; color: var(--text-2); flex-wrap: wrap; }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .dot-leg { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
 </style>
 </head>
 <body>
@@ -198,403 +263,272 @@
 
 <!-- NAV -->
 <nav class="nav">
-  <div class="nav-brand">
-    <i class="ti ti-chart-bar"></i>
-    Meta Ads Manager
-  </div>
-  <div class="nav-tab active" onclick="switchTab('overview')" id="tab-overview">Tổng quan</div>
-  <div class="nav-tab" onclick="switchTab('heatmap')" id="tab-heatmap">Heatmap</div>
-  <div class="nav-tab" onclick="switchTab('usecase')" id="tab-usecase">Usecase</div>
-  <div class="nav-tab" onclick="switchTab('analytics')" id="tab-analytics">Phân tích</div>
-  <div class="nav-tab" onclick="switchTab('alerts')" id="tab-alerts">
-    Cảnh báo
-    <span class="badge-dot" id="alert-dot" style="display:none"></span>
-  </div>
-  <div class="nav-tab" onclick="switchTab('history')" id="tab-history">Lịch sử</div>
-  <div class="nav-tab" onclick="switchTab('config')" id="tab-config">Cấu hình</div>
+  <div class="nav-brand"><i class="ti ti-brand-meta"></i> Ads Manager</div>
+  <div class="nav-tab active" onclick="switchTab('overview')" id="tab-overview"><i class="ti ti-layout-dashboard"></i> Tổng quan</div>
+  <div class="nav-tab" onclick="switchTab('heatmap')" id="tab-heatmap"><i class="ti ti-layout-grid"></i> Heatmap</div>
+  <div class="nav-tab" onclick="switchTab('hourly')" id="tab-hourly"><i class="ti ti-clock-hour-4"></i> Khung giờ</div>
+  <div class="nav-tab" onclick="switchTab('alerts')" id="tab-alerts"><i class="ti ti-alert-triangle"></i> Cảnh báo <span class="badge-dot" id="alert-dot" style="display:none"></span></div>
+  <div class="nav-tab" onclick="switchTab('history')" id="tab-history"><i class="ti ti-history"></i> Lịch sử</div>
+  <div class="nav-tab" onclick="switchTab('config')" id="tab-config"><i class="ti ti-adjustments"></i> Cấu hình</div>
   <div class="nav-right">
-    <select id="account-switcher" class="btn" onchange="switchAccount(this.value)" style="display:none;min-width:160px;cursor:pointer">
-    </select>
-    <button class="btn" onclick="syncData()"><i class="ti ti-refresh"></i> Đồng bộ</button>
-    <button class="btn" onclick="switchTab('setup')"><i class="ti ti-settings"></i> API</button>
+    <select id="account-switcher" class="inp" onchange="switchAccount(this.value)" style="display:none;font-size:12px;padding:6px 8px;max-width:200px;cursor:pointer"></select>
+    <button class="btn" onclick="syncData()" id="sync-btn"><i class="ti ti-refresh"></i> Đồng bộ</button>
+    <button class="btn btn-ghost" onclick="switchTab('setup')" title="Kết nối API"><i class="ti ti-plug-connected"></i></button>
   </div>
 </nav>
 
-<!-- SETUP PAGE -->
+<!-- SETUP -->
 <div id="page-setup" class="page active">
   <div class="setup-wrap">
     <div class="setup-card">
-      <h2>Kết nối Meta Ads API</h2>
-      <p>Nhập thông tin xác thực để tải dữ liệu chiến dịch của bạn.</p>
+      <h2>Kết nối Meta Ads</h2>
+      <div class="sub">Nhập Access Token & Ad Account ID để kéo dữ liệu chiến dịch trực tiếp từ Meta.</div>
       <div class="field">
         <label>Access Token</label>
-        <input type="password" id="inp-token" placeholder="EAAxxxxxxxxxxxxxxx..." autocomplete="off" />
+        <input type="password" id="inp-token" placeholder="EAAxxxxxxxxx..." autocomplete="off" />
       </div>
       <div class="field">
-        <label>Ad Account ID <span style="font-weight:400;color:var(--text-secondary);font-size:11px">— nhiều account cách nhau dấu phẩy</span></label>
+        <label>Ad Account ID <span style="color:var(--text-3);font-weight:400">(cách nhau bởi dấu phẩy nếu nhiều)</span></label>
         <input type="text" id="inp-account" placeholder="act_123456789, act_987654321" />
       </div>
       <div class="field">
-        <label>Khoảng thời gian</label>
+        <label>Khoảng thời gian mặc định</label>
         <select id="inp-range">
-          <option value="7">7 ngày qua</option>
+          <option value="today">Hôm nay</option>
+          <option value="yesterday">Hôm qua</option>
+          <option value="7" selected>7 ngày qua</option>
           <option value="14">14 ngày qua</option>
-          <option value="30" selected>30 ngày qua</option>
+          <option value="30">30 ngày qua</option>
         </select>
       </div>
       <div id="setup-err" class="err-msg"></div>
-      <button class="btn btn-primary" onclick="connectAPI()" style="width:100%;justify-content:center;padding:9px;font-size:13px;margin-top:4px">
+      <button class="btn btn-primary" onclick="connectAPI()" id="connect-btn" style="width:100%;justify-content:center;padding:10px;font-size:13.5px;margin-top:6px">
         <i class="ti ti-plug"></i> Kết nối & tải dữ liệu
       </button>
-      <div style="margin-top:14px;font-size:11px;color:var(--text-secondary);text-align:center;line-height:1.5">
-        <i class="ti ti-device-floppy" style="vertical-align:-2px"></i> Token &amp; account được lưu ngay trên trình duyệt này — lần sau mở tool sẽ tự động kết nối.
-      </div>
-      <div style="margin-top:12px;text-align:center;border-top:0.5px solid var(--border);padding-top:14px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap">
-        <button onclick="loadDemo()" style="background:none;border:none;color:var(--blue);cursor:pointer;font-size:13px;font-family:var(--font)">
-          Dùng dữ liệu demo →
-        </button>
-        <button onclick="disconnectAPI()" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:13px;font-family:var(--font)">
-          Xóa thông tin đã lưu
-        </button>
+      <div style="margin-top:16px;text-align:center;border-top:1px solid var(--border);padding-top:16px">
+        <button onclick="loadDemo()" class="btn-ghost btn" style="color:var(--blue);margin:0 auto">Dùng dữ liệu demo để xem trước →</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- OVERVIEW PAGE -->
+<!-- OVERVIEW -->
 <div id="page-overview" class="page">
   <div class="top-bar">
     <div class="top-bar-left">
-      <input type="date" id="ov-from" />
-      <span style="color:var(--text-secondary);font-size:12px">→</span>
-      <input type="date" id="ov-to" />
-      <button class="btn" onclick="renderOverview()"><i class="ti ti-refresh"></i></button>
+      <span class="filter-pill" onclick="setRange(this,'today')">Hôm nay</span>
+      <span class="filter-pill" onclick="setRange(this,'yesterday')">Hôm qua</span>
+      <span class="filter-pill active" onclick="setRange(this,'7')">7 ngày</span>
+      <span class="filter-pill" onclick="setRange(this,'14')">14 ngày</span>
+      <span class="filter-pill" onclick="setRange(this,'30')">30 ngày</span>
+      <span style="width:1px;height:18px;background:var(--border-2);margin:0 2px"></span>
+      <input type="date" id="ov-from" onchange="customRange()" />
+      <span style="color:var(--text-3)">→</span>
+      <input type="date" id="ov-to" onchange="customRange()" />
     </div>
-    <div style="display:flex;gap:6px">
+    <div class="top-bar-left">
+      <div class="search-box"><i class="ti ti-search"></i><input id="ov-search" placeholder="Tìm chiến dịch..." oninput="renderOverview()" /></div>
       <span class="filter-pill active" onclick="setStatusFilter(this,'all')">Tất cả</span>
       <span class="filter-pill" onclick="setStatusFilter(this,'ACTIVE')">Đang chạy</span>
       <span class="filter-pill" onclick="setStatusFilter(this,'PAUSED')">Tạm dừng</span>
     </div>
   </div>
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-    <div style="position:relative;flex:1;min-width:200px">
-      <i class="ti ti-search" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text-secondary);font-size:14px"></i>
-      <input type="text" id="camp-search" placeholder="Tìm tên chiến dịch..." oninput="renderOverview()" style="width:100%;padding:6px 10px 6px 30px;border:0.5px solid var(--border-md);border-radius:var(--radius-md);font-size:12px;background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);outline:none" />
-    </div>
-    <span style="font-size:12px;color:var(--text-secondary)">Score:</span>
-    <span class="filter-pill" id="pill-score-all" onclick="setScoreFilter(this,'all')" style="background:var(--blue-light);color:var(--blue);border-color:#B5D4F4">Tất cả</span>
-    <span class="filter-pill" id="pill-score-good" onclick="setScoreFilter(this,'good')">Tốt ≥4/5</span>
-    <span class="filter-pill" id="pill-score-mid" onclick="setScoreFilter(this,'mid')">TB 2-3/5</span>
-    <span class="filter-pill" id="pill-score-bad" onclick="setScoreFilter(this,'bad')">Kém ≤1/5</span>
-    <select onchange="setSortBy(this.value)" style="font-size:12px;padding:5px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);outline:none">
-      <option value="spend_desc">Spend ↓</option>
-      <option value="roas_desc">ROAS ↓</option>
-      <option value="install_desc">Installs ↓</option>
-      <option value="cvr_desc">CVR ↓</option>
-      <option value="score_desc">Score ↓</option>
-    </select>
-  </div>
   <div class="metrics-grid" id="ov-metrics"></div>
   <div class="card">
-    <h3>Chi tiêu & ROAS 7 ngày gần nhất</h3>
-    <div style="position:relative;height:200px">
-      <canvas id="trend-chart" role="img" aria-label="Biểu đồ chi tiêu và ROAS 7 ngày"></canvas>
-    </div>
-    <div style="display:flex;gap:20px;margin-top:10px;font-size:11px;color:var(--text-secondary)">
-      <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:2px;background:rgba(24,95,165,0.25);display:inline-block"></span>Chi tiêu</span>
-      <span style="display:flex;align-items:center;gap:5px"><span style="width:20px;height:2px;background:#1D9E75;display:inline-block"></span>ROAS</span>
+    <div class="card-h">Chi tiêu & ROAS theo ngày <span class="muted" id="trend-range"></span></div>
+    <div style="position:relative;height:210px"><canvas id="trend-chart"></canvas></div>
+    <div class="legend">
+      <span><span class="dot-leg" style="background:rgba(37,99,201,.25)"></span> Chi tiêu</span>
+      <span><span class="dot-leg" style="background:#22a06b;height:2px;width:18px;border-radius:1px"></span> ROAS gross (net = ×0.7)</span>
     </div>
   </div>
   <div class="section-header">
-    <span class="section-title">Danh sách chiến dịch</span>
-    <button class="btn" onclick="switchTab('heatmap')"><i class="ti ti-layout-grid"></i> Xem heatmap</button>
+    <span class="section-title">Danh sách chiến dịch <small id="ov-count"></small></span>
+    <button class="btn" onclick="switchTab('heatmap')"><i class="ti ti-layout-grid"></i> Heatmap</button>
   </div>
   <div class="table-wrap">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th style="text-align:left">Chiến dịch</th>
-          <th>Status</th>
-          <th>Spend</th>
-          <th>Impr.</th>
-          <th>Clicks</th>
-          <th title="Click / Impression × 100">CTR</th>
-          <th title="Spend / Impression × 1000">CPM</th>
-          <th>Installs</th>
-          <th title="Install / Click × 100">CVR</th>
-          <th title="Spend / Install">CPI</th>
-          <th>Purchases</th>
-          <th title="Purchase / Install × 100">Payrate</th>
-          <th title="(Conv. Value / Spend) × 70%">ROAS</th>
-          <th>Score</th>
-          <th>Budget</th>
-          <th></th>
-        </tr>
-      </thead>
+    <table class="data-table" id="ov-table">
+      <thead><tr id="ov-head"></tr></thead>
       <tbody id="ov-body"></tbody>
     </table>
   </div>
 </div>
 
-<!-- HEATMAP PAGE -->
+<!-- HEATMAP -->
 <div id="page-heatmap" class="page">
   <div class="top-bar">
-    <span class="section-title">Heatmap chiến dịch</span>
-    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-      <span style="font-size:12px;color:var(--text-secondary)">Biểu đồ theo:</span>
+    <span class="section-title">Heatmap chỉ số</span>
+    <div class="top-bar-left">
+      <div class="search-box"><i class="ti ti-search"></i><input id="hm-search" placeholder="Tìm chiến dịch..." oninput="renderHeatmap()" /></div>
+      <span style="font-size:12px;color:var(--text-2)">Biểu đồ:</span>
       <span class="filter-pill active" onclick="setHeatMetric(this,'roas')">ROAS</span>
       <span class="filter-pill" onclick="setHeatMetric(this,'spend')">Spend</span>
-      <span class="filter-pill" onclick="setHeatMetric(this,'ctr')">CTR</span>
-      <span class="filter-pill" onclick="setHeatMetric(this,'cvr')">CVR</span>
-      <span class="filter-pill" onclick="setHeatMetric(this,'cpm')">CPM</span>
       <span class="filter-pill" onclick="setHeatMetric(this,'cpi')">CPI</span>
-      <span class="filter-pill" onclick="setHeatMetric(this,'installs')">Installs</span>
+      <span class="filter-pill" onclick="setHeatMetric(this,'cvr')">CVR</span>
+      <span class="filter-pill" onclick="setHeatMetric(this,'ctr')">CTR</span>
       <span class="filter-pill" onclick="setHeatMetric(this,'payrate')">Payrate</span>
     </div>
   </div>
   <div class="card">
-    <h3>Tất cả chỉ số — <span style="color:var(--green)">xanh = tốt</span> / <span style="color:var(--amber)">vàng = trung bình</span> / <span style="color:var(--red)">đỏ = kém</span></h3>
+    <div class="card-h">Tất cả chỉ số <span class="muted">Màu theo ngưỡng cấu hình — <b style="color:var(--green)">xanh tốt</b> · <b style="color:var(--amber)">vàng TB</b> · <b style="color:var(--red)">đỏ kém</b></span></div>
     <div id="heatmap-grid" style="overflow-x:auto"></div>
   </div>
   <div class="card">
-    <h3 id="heat-chart-title">Phân bố ROAS theo chiến dịch</h3>
-    <div style="position:relative;height:240px">
-      <canvas id="heat-chart" role="img" aria-label="Biểu đồ phân bố chỉ số theo chiến dịch"></canvas>
-    </div>
+    <div class="card-h" id="heat-chart-title">Phân bố ROAS theo chiến dịch</div>
+    <div style="position:relative;height:260px"><canvas id="heat-chart"></canvas></div>
   </div>
 </div>
 
-<!-- ANALYTICS PAGE -->
-<div id="page-analytics" class="page">
+<!-- HOURLY -->
+<div id="page-hourly" class="page">
   <div class="top-bar">
-    <span class="section-title">Phân tích theo thời gian</span>
-    <div style="display:flex;gap:6px;align-items:center">
-      <span style="font-size:12px;color:var(--text-secondary)">Xem theo:</span>
-      <span class="filter-pill active" id="gran-day" onclick="setGranularity(this,'day')">Ngày</span>
-      <span class="filter-pill" id="gran-hour" onclick="setGranularity(this,'hour')">Giờ (hôm nay)</span>
+    <span class="section-title">Phân tích theo khung giờ <small>So sánh hôm nay với trung bình 3 ngày trước — từng khung giờ</small></span>
+    <div class="top-bar-left">
+      <div class="search-box"><i class="ti ti-search"></i><input id="hr-search" placeholder="Tìm chiến dịch..." oninput="renderHourly()" /></div>
+      <span class="filter-pill active" onclick="setHourMetric(this,'spend')">Chi tiêu</span>
+      <span class="filter-pill" onclick="setHourMetric(this,'roas')">ROAS</span>
+      <button class="btn" onclick="loadHourly(true)" id="hr-reload"><i class="ti ti-refresh"></i> Tải lại</button>
     </div>
   </div>
-  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
-    <label style="font-size:12px;color:var(--text-secondary)">Chiến dịch:</label>
-    <select id="analytics-camp-select" onchange="renderAnalytics()" style="font-size:12px;padding:5px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);outline:none;min-width:200px">
-      <option value="all">Tất cả chiến dịch</option>
-    </select>
-    <label style="font-size:12px;color:var(--text-secondary)">Chỉ số:</label>
-    <select id="analytics-metric-select" onchange="renderAnalytics()" style="font-size:12px;padding:5px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);outline:none">
-      <option value="spend">Spend</option>
-      <option value="roas">ROAS</option>
-      <option value="ctr">CTR</option>
-      <option value="cvr">CVR</option>
-      <option value="installs">Installs</option>
-      <option value="cpi">CPI</option>
-      <option value="payrate">Payrate</option>
-    </select>
-  </div>
+  <div id="hourly-summary" class="metrics-grid"></div>
   <div class="card">
-    <h3 id="analytics-chart-title">Chi tiêu 7 ngày — Tất cả chiến dịch</h3>
-    <div style="position:relative;height:260px">
-      <canvas id="analytics-chart" role="img" aria-label="Biểu đồ phân tích theo thời gian"></canvas>
-    </div>
-  </div>
-  <div class="metrics-grid" id="analytics-summary"></div>
-  <div class="card">
-    <h3>So sánh các chiến dịch</h3>
-    <div style="position:relative;height:240px">
-      <canvas id="analytics-compare-chart" role="img" aria-label="So sánh chiến dịch"></canvas>
+    <div class="card-h">Nhịp tiêu theo giờ <span class="muted" id="hourly-meta"></span></div>
+    <div id="hourly-grid"></div>
+    <div class="legend">
+      <span><span class="dot-leg" style="background:#dfe9f7"></span> Trung bình 3 ngày</span>
+      <span><span class="dot-leg" style="background:var(--blue)"></span> Hôm nay (theo giờ)</span>
+      <span><span class="dot-leg" style="background:var(--red)"></span> Bất thường</span>
     </div>
   </div>
 </div>
 
-<!-- USECASE PAGE -->
-<div id="page-usecase" class="page">
-  <div class="top-bar">
-    <span class="section-title">Hiệu quả theo Usecase</span>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <span style="font-size:12px;color:var(--text-secondary)">Tách bằng:</span>
-      <select id="uc-delimiter" onchange="onUsecaseConfigChange()" style="font-size:12px;padding:5px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);outline:none">
-        <option value="_">_ (gạch dưới)</option>
-        <option value="-">- (gạch ngang)</option>
-        <option value="|">| (sổ đứng)</option>
-        <option value=" ">khoảng trắng</option>
-      </select>
-      <span style="font-size:12px;color:var(--text-secondary)">Usecase ở vị trí:</span>
-      <select id="uc-position" onchange="onUsecaseConfigChange()" style="font-size:12px;padding:5px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);outline:none">
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-        <option value="last">Cuối cùng</option>
-      </select>
-    </div>
-  </div>
-  <div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;padding:8px 12px;background:var(--blue-light);border-radius:var(--radius-md)">
-    <i class="ti ti-info-circle" style="vertical-align:-2px;margin-right:4px;color:var(--blue)"></i>
-    Cấu trúc tên: <code id="uc-example" style="background:var(--bg-primary);padding:1px 6px;border-radius:4px">IIP555_Reelme_<b style="color:var(--blue)">USECASE</b></code> — chỉ số mỗi nhóm tính gộp (weighted) từ tổng spend/install/revenue của các camp cùng usecase.
-  </div>
-
-  <div class="metrics-grid" id="uc-summary"></div>
-
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-      <h3 style="margin:0" id="uc-chart-title">So sánh Spend theo usecase</h3>
-      <div style="display:flex;gap:5px;flex-wrap:wrap">
-        <span class="filter-pill active" onclick="setUsecaseMetric(this,'spend')">Spend</span>
-        <span class="filter-pill" onclick="setUsecaseMetric(this,'roas')">ROAS</span>
-        <span class="filter-pill" onclick="setUsecaseMetric(this,'installs')">Installs</span>
-        <span class="filter-pill" onclick="setUsecaseMetric(this,'cvr')">CVR</span>
-        <span class="filter-pill" onclick="setUsecaseMetric(this,'cpi')">CPI</span>
-        <span class="filter-pill" onclick="setUsecaseMetric(this,'payrate')">Payrate</span>
-      </div>
-    </div>
-    <div style="position:relative;height:240px">
-      <canvas id="usecase-chart" role="img" aria-label="So sánh chỉ số theo usecase"></canvas>
-    </div>
-  </div>
-
-  <div class="section-header"><span class="section-title">Bảng hiệu quả từng nhóm usecase</span></div>
-  <div class="table-wrap">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th style="text-align:left">Usecase</th>
-          <th>Số camp</th>
-          <th>Spend</th>
-          <th title="Click / Impression × 100">CTR</th>
-          <th title="Install / Click × 100">CVR</th>
-          <th>Installs</th>
-          <th title="Spend / Install">CPI</th>
-          <th>Purchases</th>
-          <th title="Purchase / Install × 100">Payrate</th>
-          <th title="(Conv. Value / Spend) × 70%">ROAS</th>
-          <th>Score</th>
-          <th>Đánh giá</th>
-        </tr>
-      </thead>
-      <tbody id="uc-body"></tbody>
-    </table>
-  </div>
-
-  <div class="section-header" style="margin-top:20px"><span class="section-title">Xếp hạng usecase</span></div>
-  <div id="uc-ranking" style="display:flex;flex-direction:column;gap:8px"></div>
-</div>
-
-<!-- ALERTS PAGE -->
+<!-- ALERTS -->
 <div id="page-alerts" class="page">
-  <div class="card" style="border-left:3px solid var(--blue);margin-bottom:16px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <h3 style="color:var(--blue)"><i class="ti ti-bulb" style="font-size:15px;vertical-align:-2px;margin-right:5px"></i>Gợi ý action hôm nay</h3>
-      <button class="btn btn-primary btn-sm" onclick="generateSuggestions()"><i class="ti ti-refresh"></i> Phân tích lại</button>
-    </div>
-    <div id="suggestions-list" style="display:flex;flex-direction:column;gap:8px"></div>
-  </div>
   <div class="section-header">
-    <span class="section-title">Cảnh báo bất thường</span>
-    <button class="btn" onclick="renderAlerts()"><i class="ti ti-refresh"></i> Refresh</button>
+    <span class="section-title">Cảnh báo & đề xuất hành động <small id="alert-count"></small></span>
+    <div class="top-bar-left">
+      <span class="filter-pill active" onclick="setAlertFilter(this,'all')">Tất cả</span>
+      <span class="filter-pill" onclick="setAlertFilter(this,'high')">Khẩn cấp</span>
+      <span class="filter-pill" onclick="setAlertFilter(this,'budget')">Budget</span>
+      <button class="btn" onclick="renderAlerts()"><i class="ti ti-refresh"></i> Phân tích lại</button>
+    </div>
   </div>
   <div id="alerts-container" class="alerts-list"></div>
 </div>
 
-<!-- HISTORY PAGE -->
+<!-- HISTORY -->
 <div id="page-history" class="page">
   <div class="section-header">
-    <span class="section-title">Lịch sử hành động</span>
-    <button class="btn" onclick="clearHistory()"><i class="ti ti-trash"></i> Xóa tất cả</button>
+    <span class="section-title">Lịch sử hành động <small id="hist-count"></small></span>
+    <button class="btn btn-danger" onclick="clearHistory()"><i class="ti ti-trash"></i> Xóa tất cả</button>
   </div>
   <div id="history-container" class="history-list"></div>
 </div>
 
-<!-- CONFIG PAGE -->
+<!-- CONFIG -->
 <div id="page-config" class="page">
   <div class="section-header">
     <span class="section-title">Cấu hình</span>
     <button class="btn btn-primary" onclick="saveConfig()"><i class="ti ti-check"></i> Lưu cấu hình</button>
   </div>
-  <div class="config-section" style="margin-bottom:14px;background:var(--blue-light);border-color:#B5D4F4">
-    <h3 style="color:var(--blue)">Công thức đo lường</h3>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px;font-size:12px;color:var(--text-secondary)">
-      <span><b>ROAS</b> = (Conv. Value ÷ Spend) × 70%</span>
-      <span><b>CTR</b> = Click / Impression × 100</span>
-      <span><b>CVR</b> = Install / Click × 100</span>
-      <span><b>CPM</b> = Spend / Impression × 1,000</span>
-      <span><b>CPI</b> = Spend / Install</span>
-      <span><b>Payrate</b> = Purchase / Install × 100</span>
+  <div class="config-section" style="background:var(--blue-bg);border-color:var(--blue-bd)">
+    <h3 style="color:var(--blue)"><i class="ti ti-math-function"></i> Công thức đo lường</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:7px;font-size:12px;color:var(--text-2)">
+      <span><b>ROAS net</b> = (Conv. Value ÷ Spend) × 70%</span>
+      <span><b>CTR</b> = Click ÷ Impression × 100</span>
+      <span><b>CVR</b> = Install ÷ Click × 100</span>
+      <span><b>CPM</b> = Spend ÷ Impression × 1.000</span>
+      <span><b>CPI</b> = Spend ÷ Install</span>
+      <span><b>Payrate</b> = Purchase ÷ Install × 100</span>
     </div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+  <div class="config-grid">
     <div>
       <div class="config-section">
-        <h3>Ngưỡng KPI tốt</h3>
-        <div class="config-row"><label>ROAS tối thiểu<br><span style="font-size:10px;color:var(--text-secondary)">(Conv. Value/Spend)×70% ≥ x%</span></label><input type="number" id="cfg-roas-min" step="1" /><span class="unit">%</span></div>
-        <div class="config-row"><label>CTR tối thiểu</label><input type="number" id="cfg-ctr-min" step="0.1" /><span class="unit">%</span></div>
-        <div class="config-row"><label>CVR tối thiểu<br><span style="font-size:10px;color:var(--text-secondary)">Install/Click×100</span></label><input type="number" id="cfg-cvr-min" step="0.1" /><span class="unit">%</span></div>
-        <div class="config-row"><label>Install tối thiểu</label><input type="number" id="cfg-install-min" /><span class="unit">install</span></div>
-        <div class="config-row"><label>Payrate tối thiểu<br><span style="font-size:10px;color:var(--text-secondary)">Purchase/Install×100</span></label><input type="number" id="cfg-payrate-min" step="0.1" /><span class="unit">%</span></div>
-        <div class="config-row"><label>CPI tối đa<br><span style="font-size:10px;color:var(--text-secondary)">Spend/Install</span></label><input type="number" id="cfg-cpi-max" /><span class="unit">VNĐ</span></div>
-        <div class="config-row"><label>CPM tối đa</label><input type="number" id="cfg-cpm-max" /><span class="unit">VNĐ</span></div>
+        <h3><i class="ti ti-award"></i> Ngưỡng camp "tốt"</h3>
+        <div class="hint">Dùng để chấm điểm (Score) và tô màu heatmap.</div>
+        <div class="config-row"><label>ROAS net tốt <small>≥ giá trị này = xanh đậm</small></label><input type="number" id="cfg-roasGood" step="0.1" /><span class="unit">x</span></div>
+        <div class="config-row"><label>ROAS net tối thiểu <small>dưới mức này = cảnh báo</small></label><input type="number" id="cfg-roasMin" step="0.1" /><span class="unit">x</span></div>
+        <div class="config-row"><label>CTR tối thiểu</label><input type="number" id="cfg-ctrMin" step="0.1" /><span class="unit">%</span></div>
+        <div class="config-row"><label>CVR tối thiểu <small>Install/Click</small></label><input type="number" id="cfg-cvrMin" step="0.1" /><span class="unit">%</span></div>
+        <div class="config-row"><label>Install tối thiểu</label><input type="number" id="cfg-installMin" /><span class="unit">inst</span></div>
+        <div class="config-row"><label>Payrate tối thiểu <small>Purchase/Install</small></label><input type="number" id="cfg-payrateMin" step="0.1" /><span class="unit">%</span></div>
+        <div class="config-row"><label>CPI tối đa</label><input type="number" id="cfg-cpiMax" /><span class="unit">₫</span></div>
+        <div class="config-row"><label>CPM tối đa</label><input type="number" id="cfg-cpmMax" /><span class="unit">₫</span></div>
       </div>
       <div class="config-section">
-        <h3>Target ROAS từng chiến dịch</h3>
+        <h3><i class="ti ti-target"></i> Target ROAS từng chiến dịch</h3>
+        <div class="hint">Đặt mục tiêu riêng cho từng camp (mặc định = ROAS tối thiểu).</div>
         <div id="target-roas-rows"></div>
       </div>
     </div>
     <div>
       <div class="config-section">
-        <h3>Ngưỡng cảnh báo</h3>
-        <div class="config-row"><label>Chậm tiêu (% budget còn lại)</label><input type="number" id="cfg-slow" /><span class="unit">%</span></div>
-        <div class="config-row"><label>Tiêu vống (% vượt budget)</label><input type="number" id="cfg-over" /><span class="unit">%</span></div>
-        <div class="config-row"><label>ROAS giảm so với TB</label><input type="number" id="cfg-roas-drop" /><span class="unit">%</span></div>
-        <div class="config-row"><label>Dừng tiêu (không có spend)</label><input type="number" id="cfg-stop" /><span class="unit">giờ</span></div>
+        <h3><i class="ti ti-bell"></i> Ngưỡng cảnh báo</h3>
+        <div class="hint">Phát hiện camp tiêu bất thường so với nhịp dự kiến & so với các camp khác.</div>
+        <div class="config-row"><label>Chậm tiêu <small>tiêu &lt; % nhịp dự kiến theo giờ</small></label><input type="number" id="cfg-slowSpend" /><span class="unit">%</span></div>
+        <div class="config-row"><label>Tiêu vống <small>tiêu &gt; % budget ngày</small></label><input type="number" id="cfg-overSpend" /><span class="unit">%</span></div>
+        <div class="config-row"><label>Dừng tiêu <small>không có spend trong N giờ</small></label><input type="number" id="cfg-stopHours" /><span class="unit">giờ</span></div>
+        <div class="config-row"><label>ROAS thấp hơn mặt bằng</label><input type="number" id="cfg-roasDrop" /><span class="unit">%</span></div>
+        <div class="config-row"><label>Bất thường theo giờ <small>lệch &gt; % so với TB 3 ngày</small></label><input type="number" id="cfg-hourDev" /><span class="unit">%</span></div>
       </div>
       <div class="config-section">
-        <h3>Điều chỉnh budget</h3>
+        <h3><i class="ti ti-coin"></i> Quy tắc tự động chỉnh budget</h3>
+        <div class="hint">Đề xuất tăng/giảm budget dựa trên ROAS & Score. Bạn duyệt trước khi áp dụng.</div>
+        <div class="config-row"><label>Tăng budget khi ROAS ≥ <small>và Score tốt</small></label><input type="number" id="cfg-upRoas" step="0.1" /><span class="unit">x</span></div>
+        <div class="config-row"><label>Mức tăng</label><input type="number" id="cfg-upPct" /><span class="unit">%</span></div>
+        <div class="config-row"><label>Giảm budget khi ROAS &lt;</label><input type="number" id="cfg-downRoas" step="0.1" /><span class="unit">x</span></div>
+        <div class="config-row"><label>Mức giảm</label><input type="number" id="cfg-downPct" /><span class="unit">%</span></div>
+        <div class="config-row"><label>Trần budget/ngày <small>0 = không giới hạn</small></label><input type="number" id="cfg-maxBudget" /><span class="unit">₫</span></div>
+      </div>
+      <div class="config-section">
+        <h3><i class="ti ti-adjustments-dollar"></i> Điều chỉnh budget thủ công</h3>
+        <div class="hint">Sửa budget/ngày rồi áp dụng trực tiếp lên Meta (chỉ camp dùng CBO).</div>
         <div id="budget-rows"></div>
-        <button class="btn btn-primary" onclick="applyBudgets()" style="margin-top:12px;width:100%;justify-content:center">
-          <i class="ti ti-currency-dollar"></i> Áp dụng thay đổi budget
-        </button>
+        <button class="btn btn-primary" onclick="applyBudgets()" style="margin-top:12px;width:100%;justify-content:center"><i class="ti ti-cloud-upload"></i> Áp dụng thay đổi budget</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- DETAIL PAGE -->
+<!-- DETAIL -->
 <div id="page-detail" class="page">
   <div class="detail-header">
-    <div class="back-btn" onclick="backToOverview()"><i class="ti ti-arrow-left"></i> Quay lại</div>
+    <div class="back-btn" onclick="switchTab('overview')"><i class="ti ti-arrow-left"></i> Quay lại</div>
     <div style="flex:1">
       <div class="detail-name" id="detail-name"></div>
       <div class="detail-sub" id="detail-sub"></div>
     </div>
     <button class="btn" onclick="togglePauseCamp()" id="btn-pause"><i class="ti ti-player-pause"></i> Tạm dừng</button>
-    <button class="btn btn-primary" onclick="boostBudget()"><i class="ti ti-trending-up"></i> Tăng budget 20%</button>
+    <button class="btn btn-primary" onclick="quickBudget(1.2)"><i class="ti ti-trending-up"></i> Tăng budget 20%</button>
   </div>
   <div class="metrics-grid" id="detail-metrics"></div>
+  <div class="card">
+    <div class="card-h">Target ROAS</div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <label style="font-size:12.5px;color:var(--text-2)">Mục tiêu ROAS net:</label>
+      <input type="number" id="detail-target-roas" step="0.1" class="inp" style="width:100px" />
+      <span style="font-size:13px;color:var(--text-3)">x</span>
+      <button class="btn btn-primary btn-sm" onclick="saveDetailTargetRoas()"><i class="ti ti-check"></i> Lưu</button>
+      <span id="detail-roas-status" style="font-size:12px"></span>
+    </div>
+  </div>
   <div class="detail-grid">
     <div class="card" style="margin-bottom:0">
-      <h3>Chi tiêu 7 ngày</h3>
-      <div style="position:relative;height:170px">
-        <canvas id="detail-spend-chart" role="img" aria-label="Chi tiêu 7 ngày của chiến dịch"></canvas>
-      </div>
+      <div class="card-h">Chi tiêu theo ngày</div>
+      <div style="position:relative;height:180px"><canvas id="detail-spend-chart"></canvas></div>
     </div>
     <div class="card" style="margin-bottom:0">
-      <h3>ROAS 7 ngày vs target</h3>
-      <div style="position:relative;height:170px">
-        <canvas id="detail-roas-chart" role="img" aria-label="ROAS 7 ngày của chiến dịch"></canvas>
-      </div>
-    </div>
-  </div>
-  <div style="height:14px"></div>
-  <div class="card">
-    <h3>Target ROAS</h3>
-    <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
-      <label style="font-size:12px;color:var(--text-secondary)">Target ROAS hiện tại:</label>
-      <input type="number" id="detail-target-roas" step="0.1" style="width:100px;padding:6px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius-md);font-size:13px;background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);outline:none" />
-      <span style="font-size:13px;color:var(--text-secondary)">x</span>
-      <button class="btn btn-primary btn-sm" onclick="saveDetailTargetRoas()"><i class="ti ti-check"></i> Lưu</button>
+      <div class="card-h">ROAS theo ngày vs target</div>
+      <div style="position:relative;height:180px"><canvas id="detail-roas-chart"></canvas></div>
     </div>
   </div>
   <div class="card">
-    <h3>Lịch sử action của chiến dịch này</h3>
+    <div class="card-h">Nhịp tiêu theo giờ — hôm nay vs TB 3 ngày</div>
+    <div id="detail-hourly"></div>
+  </div>
+  <div class="card">
+    <div class="card-h">Lịch sử action của chiến dịch này</div>
     <div id="detail-history"></div>
   </div>
 </div>
@@ -610,1575 +544,834 @@
     </div>
   </div>
 </div>
-
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
-// ─── STATE ───────────────────────────────────────────────────────────────
-let campaigns = [];
+// ════════════════════════ STATE ════════════════════════
+let token = '';
+let accounts = [];           // [{id, name, currency, offset, tz}]
+let currentAccount = '';
+let campaigns = [];          // normalized campaign objects for current account
 let actionHistory = [];
-let currentCampId = null;
-let statusFilter = 'all';
-let scoreFilter = 'all';
-let sortBy = 'spend_desc';
-let heatMetric = 'roas';
-let granularity = 'day';
-let analyticsChart = null, analyticsCompareChart = null;
-let trendChart = null, heatChart = null, detailSpendChart = null, detailRoasChart = null;
+let config = {};
 let targetRoas = {};
 let budgetEdits = {};
-// ─── FORMULAS (UA benchmark) ──────────────────────────────────────────────
-// ROAS     = (Purchases conversion value / Amount spent) × 70%
-// CTR      = Click / Impression × 100
-// CVR      = Install / Click × 100
-// CPM      = Spend / Impression × 1,000
-// CPI      = Spend / Install
-// Payrate  = Purchase / Install × 100
-// ─────────────────────────────────────────────────────────────────────────
-let config = {
-  roasMin:     45,   // ROAS target (%)  — formula × 70%
-  ctrMin:      1,    // CTR target (%)
-  cvrMin:      25,   // CVR target (%)   — Install/Click × 100
-  installMin:  10,   // Install tối thiểu
-  cpiMax:      50000,// CPI tối đa (VNĐ)
-  payrateMin:  5,    // Payrate tối thiểu (%)
-  cpmMax:      50000,// CPM tối đa (VNĐ)
-  slowSpend:   30,
-  overSpend:   110,
-  roasDrop:    30,
-  stopHours:   4,
-  usecaseDelimiter: '_',  // ký tự tách tên camp
-  usecasePosition:  3     // usecase nằm ở vị trí thứ mấy (1-based)
+let hourly = { byCamp: {}, dates: [], loadedFor: '', loading: false };
+let charts = {};
+let isDemo = false;
+
+// view state
+let currentCampId = null;
+let statusFilter = 'all';
+let alertFilter = 'all';
+let heatMetric = 'roas';
+let hourMetric = 'spend';
+let rangeMode = '7';
+let customFrom = '', customTo = '';
+let sortKey = 'spend', sortDir = -1;
+
+const DEFAULT_CONFIG = {
+  roasGood: 1.5, roasMin: 1.0, ctrMin: 1.0, cvrMin: 25, installMin: 10,
+  payrateMin: 5, cpiMax: 50000, cpmMax: 80000,
+  slowSpend: 60, overSpend: 110, stopHours: 4, roasDrop: 30, hourDev: 60,
+  upRoas: 1.5, upPct: 20, downRoas: 0.8, downPct: 20, maxBudget: 0
 };
 
-let usecaseMetric = 'spend';
-let usecaseChart = null, usecaseCompareChart = null;
+const ZERO_DECIMAL = ['VND','JPY','KRW','CLP','ISK','HUF','TWD','UGX','VUV','XAF','XOF','KMF','GNF','PYG','RWF','DJF','BIF'];
 
-// ─── PERSISTENCE (localStorage) ───────────────────────────────────────────
-// Everything the user sets up is saved on this device and restored on reload:
-// credentials, KPI config, per-camp target ROAS, and action history.
-function persistCreds() {
-  try {
-    localStorage.setItem('meta_token', API_TOKEN || '');
-    const accs = (ALL_ACCOUNTS && ALL_ACCOUNTS.length) ? ALL_ACCOUNTS : (API_ACCOUNT ? [API_ACCOUNT] : []);
-    localStorage.setItem('meta_accounts', JSON.stringify(accs));
-  } catch(e) {}
+// ════════════════════════ HELPERS ════════════════════════
+const qs = (id) => document.getElementById(id);
+function curOffset() { const a = accounts.find(x => x.id === currentAccount); return a ? a.offset : 0; }
+
+function fmtMoney(v) {
+  v = Number(v) || 0;
+  if (v >= 1e9) return (v/1e9).toFixed(2).replace(/\.?0+$/,'') + 'B';
+  if (v >= 1e6) return (v/1e6).toFixed(2).replace(/\.?0+$/,'') + 'M';
+  if (v >= 1e3) return (v/1e3).toFixed(0) + 'K';
+  return Math.round(v).toLocaleString('vi-VN');
 }
-function persistConfig()  { try { localStorage.setItem('meta_config',  JSON.stringify(config)); } catch(e) {} }
-function persistTargets() { try { localStorage.setItem('meta_targets', JSON.stringify(targetRoas)); } catch(e) {} }
-function persistHistory() { try { localStorage.setItem('meta_history', JSON.stringify(actionHistory.slice(0, 1000))); } catch(e) {} }
-function loadState() {
-  try {
-    const cfg = localStorage.getItem('meta_config');  if (cfg) Object.assign(config, JSON.parse(cfg));
-    const tg  = localStorage.getItem('meta_targets'); if (tg)  targetRoas    = JSON.parse(tg)  || {};
-    const h   = localStorage.getItem('meta_history'); if (h)   actionHistory = JSON.parse(h)   || [];
-    // reflect saved usecase parsing rule in the selectors
-    const dEl = document.getElementById('uc-delimiter'); if (dEl && config.usecaseDelimiter) dEl.value = config.usecaseDelimiter;
-    const pEl = document.getElementById('uc-position');  if (pEl && config.usecasePosition)  pEl.value = String(config.usecasePosition);
-  } catch(e) {}
+function fmtFull(v) { return Math.round(Number(v)||0).toLocaleString('vi-VN'); }
+function fmtNum(v) { v = Number(v)||0; return v >= 1000 ? (v/1000).toFixed(1)+'K' : String(Math.round(v)); }
+function fmtPct(v) { return (Number(v)||0).toFixed(1) + '%'; }
+function fmtRoas(v) { return (Number(v)||0).toFixed(2); }
+
+function dateStr(offsetDays = 0) {
+  const d = new Date(); d.setDate(d.getDate() + offsetDays);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
-
-const DAYS = ['T2','T3','T4','T5','T6','T7','CN'];
-
-// ─── DEMO DATA ────────────────────────────────────────────────────────────
-const DEMO = [
-  { id:'c1', name:'IIP555_Reelme_PUZZLE_01', status:'ACTIVE',
-    spend:4200000, impressions:182000, clicks:3640, purchases:87, revenue:14700000, budget:5000000, installs:45,
-    get ctr()     { return this.clicks/this.impressions*100; },
-    get roas()    { return (this.revenue/this.spend)*0.7; },
-    get cvr()     { return this.installs/this.clicks*100; },
-    get cpm()     { return this.spend/this.impressions*1000; },
-    get cpi()     { return this.installs>0?this.spend/this.installs:0; },
-    get payrate() { return this.installs>0?this.purchases/this.installs*100:0; },
-    daily_data:{ spend:[380000,420000,390000,450000,400000,370000,410000], roas:[2.24,2.66,2.38,2.87,2.52,2.1,2.73] }},
-  { id:'c2', name:'IIP555_Reelme_MERGE_01', status:'ACTIVE',
-    spend:8900000, impressions:310000, clicks:4030, purchases:124, revenue:11600000, budget:9000000, installs:8,
-    get ctr()     { return this.clicks/this.impressions*100; },
-    get roas()    { return (this.revenue/this.spend)*0.7; },
-    get cvr()     { return this.installs/this.clicks*100; },
-    get cpm()     { return this.spend/this.impressions*1000; },
-    get cpi()     { return this.installs>0?this.spend/this.installs:0; },
-    get payrate() { return this.installs>0?this.purchases/this.installs*100:0; },
-    daily_data:{ spend:[1300000,1280000,1320000,1250000,1350000,1300000,1100000], roas:[0.91,0.98,0.91,0.84,0.77,0.91,0.84] }},
-  { id:'c3', name:'IIP555_Reelme_PUZZLE_02', status:'ACTIVE',
-    spend:1200000, impressions:45000, clicks:1800, purchases:56, revenue:8400000, budget:3000000, installs:98,
-    get ctr()     { return this.clicks/this.impressions*100; },
-    get roas()    { return (this.revenue/this.spend)*0.7; },
-    get cvr()     { return this.installs/this.clicks*100; },
-    get cpm()     { return this.spend/this.impressions*1000; },
-    get cpi()     { return this.installs>0?this.spend/this.installs:0; },
-    get payrate() { return this.installs>0?this.purchases/this.installs*100:0; },
-    daily_data:{ spend:[150000,180000,160000,175000,190000,170000,175000], roas:[4.55,5.04,4.76,5.25,4.97,4.83,4.9] }},
-  { id:'c4', name:'IIP555_Reelme_IDLE_01', status:'PAUSED',
-    spend:2100000, impressions:250000, clicks:1250, purchases:12, revenue:1800000, budget:2500000, installs:3,
-    get ctr()     { return this.clicks/this.impressions*100; },
-    get roas()    { return (this.revenue/this.spend)*0.7; },
-    get cvr()     { return this.installs/this.clicks*100; },
-    get cpm()     { return this.spend/this.impressions*1000; },
-    get cpi()     { return this.installs>0?this.spend/this.installs:0; },
-    get payrate() { return this.installs>0?this.purchases/this.installs*100:0; },
-    daily_data:{ spend:[350000,380000,400000,370000,300000,200000,100000], roas:[0.63,0.56,0.7,0.49,0.56,0.63,0.6] }},
-  { id:'c5', name:'IIP555_Reelme_MERGE_02', status:'ACTIVE',
-    spend:5500000, impressions:198000, clicks:3168, purchases:98, revenue:14700000, budget:6000000, installs:62,
-    get ctr()     { return this.clicks/this.impressions*100; },
-    get roas()    { return (this.revenue/this.spend)*0.7; },
-    get cvr()     { return this.installs/this.clicks*100; },
-    get cpm()     { return this.spend/this.impressions*1000; },
-    get cpi()     { return this.installs>0?this.spend/this.installs:0; },
-    get payrate() { return this.installs>0?this.purchases/this.installs*100:0; },
-    daily_data:{ spend:[780000,800000,790000,810000,785000,780000,755000], roas:[1.75,1.96,1.82,2.03,1.89,1.82,1.87] }},
-  { id:'c6', name:'IIP555_Reelme_MATCH3_01', status:'ACTIVE',
-    spend:550000, impressions:28000, clicks:560, purchases:8, revenue:960000, budget:2000000, installs:15,
-    get ctr()     { return this.clicks/this.impressions*100; },
-    get roas()    { return (this.revenue/this.spend)*0.7; },
-    get cvr()     { return this.installs/this.clicks*100; },
-    get cpm()     { return this.spend/this.impressions*1000; },
-    get cpi()     { return this.installs>0?this.spend/this.installs:0; },
-    get payrate() { return this.installs>0?this.purchases/this.installs*100:0; },
-    daily_data:{ spend:[40000,60000,80000,120000,90000,80000,80000], roas:[1.22,1.11,1.05,0.94,0.99,0.99,1.02] }},
-  { id:'c7', name:'IIP555_Reelme_PUZZLE_03', status:'ACTIVE',
-    spend:900000, impressions:95000, clicks:950, purchases:15, revenue:2250000, budget:1000000, installs:28,
-    get ctr()     { return this.clicks/this.impressions*100; },
-    get roas()    { return (this.revenue/this.spend)*0.7; },
-    get cvr()     { return this.installs/this.clicks*100; },
-    get cpm()     { return this.spend/this.impressions*1000; },
-    get cpi()     { return this.installs>0?this.spend/this.installs:0; },
-    get payrate() { return this.installs>0?this.purchases/this.installs*100:0; },
-    daily_data:{ spend:[100000,120000,130000,150000,140000,130000,130000], roas:[1.61,1.68,1.75,1.82,1.75,1.75,1.75] }},
-];
-
-// ─── FORMAT HELPERS ───────────────────────────────────────────────────────
-function fmtVnd(v) {
-  if (v >= 1000000000) return (v/1000000000).toFixed(1).replace(/\.0$/,'') + 'B';
-  if (v >= 1000000)    return (v/1000000).toFixed(1).replace(/\.0$/,'') + 'M';
-  if (v >= 1000)       return Math.round(v/1000) + 'K';
-  return Math.round(v) + '';
+function rangeDates() {
+  if (rangeMode === 'custom' && customFrom && customTo) return { since: customFrom, until: customTo };
+  if (rangeMode === 'today') return { since: dateStr(0), until: dateStr(0) };
+  if (rangeMode === 'yesterday') return { since: dateStr(-1), until: dateStr(-1) };
+  const n = parseInt(rangeMode) || 7;
+  return { since: dateStr(-(n-1)), until: dateStr(0) };
 }
-function fmtNum(v) { return v >= 1000 ? (v/1000).toFixed(1) + 'K' : String(v); }
-function qs(id) { return document.getElementById(id); }
-
-// ─── DATE HELPERS ─────────────────────────────────────────────────────────
-function setDefaultDates() {
-  const to = new Date(), from = new Date();
-  from.setDate(to.getDate() - 6);
-  qs('ov-from').value = from.toISOString().slice(0,10);
-  qs('ov-to').value   = to.toISOString().slice(0,10);
+function toast(msg, type = 'ok') {
+  const t = qs('toast');
+  t.className = 'toast show ' + type;
+  t.innerHTML = `<i class="ti ti-${type==='ok'?'circle-check':'alert-circle'}"></i> ${msg}`;
+  clearTimeout(t._t); t._t = setTimeout(() => t.className = 'toast', 2800);
 }
 
-// ─── CONNECT / LOAD ───────────────────────────────────────────────────────
-let API_TOKEN = '';
-let API_ACCOUNT = '';
-const API_VER = 'v20.0';
-const BASE = 'https://graph.facebook.com/' + API_VER;
+// ════════════════════════ PERSISTENCE ════════════════════════
+function save(k, v) { try { localStorage.setItem('mam_'+k, JSON.stringify(v)); } catch {} }
+function load(k, def) { try { const v = localStorage.getItem('mam_'+k); return v ? JSON.parse(v) : def; } catch { return def; } }
+function loadAll() {
+  config = Object.assign({}, DEFAULT_CONFIG, load('config', {}));
+  actionHistory = load('history', []);
+}
+function loadAcctState() { targetRoas = load('targetRoas_'+currentAccount, {}) || {}; }
+function persistAcct() { if (currentAccount) save('targetRoas_'+currentAccount, targetRoas); }
 
-// Core connect routine shared by manual connect + auto-restore on boot.
-async function connectWith(token, accounts, statusEl) {
-  API_TOKEN    = token;
-  ALL_ACCOUNTS = accounts;
-  API_ACCOUNT  = accounts[0];
-  const setStatus = (msg, color) => {
-    if (!statusEl) return;
-    statusEl.style.display = 'block';
-    statusEl.style.color = color || 'var(--blue)';
-    statusEl.textContent = msg;
-  };
-
-  setStatus('Đang xác thực token...');
-  const me = await apiFetch('/me?fields=name');
-  setStatus(`Xác thực OK (${me.name}). Đang tải ${accounts.length} account...`);
-
-  // resolve account names for the switcher
-  await Promise.all(ALL_ACCOUNTS.map(async id => {
-    try { const info = await apiFetch('/' + id + '?fields=name'); ACCOUNT_NAMES[id] = info.name || id; }
-    catch(_) { ACCOUNT_NAMES[id] = id; }
-  }));
-  buildAccountSwitcher(ALL_ACCOUNTS, ACCOUNT_NAMES);
-
-  setStatus('Đang tải chiến dịch...');
-  await fetchRealData();
-  persistCreds();              // <-- save token + accounts on this device
-  if (statusEl) statusEl.style.display = 'none';
+// ════════════════════════ API LAYER ════════════════════════
+async function callMeta(path, params = {}, method = 'GET', body = null) {
+  const usp = new URLSearchParams({ path });
+  for (const [k, v] of Object.entries(params)) usp.append(k, typeof v === 'object' ? JSON.stringify(v) : v);
+  const opts = { method, headers: {} };
+  if (token) opts.headers['x-meta-token'] = token;
+  if (method === 'POST') { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body || {}); }
+  const r = await fetch('/api/meta?' + usp.toString(), opts);
+  const json = await r.json().catch(() => ({ error: { message: 'Phản hồi không hợp lệ' } }));
+  if (!r.ok || json.error) throw new Error(json.error?.message || ('HTTP ' + r.status));
+  return json;
 }
 
-async function connectAPI() {
-  const tok    = qs('inp-token').value.trim();
-  const accRaw = qs('inp-account').value.trim();
-  const errEl  = qs('setup-err');
-  // support 1..n accounts separated by comma / space / newline
-  const accounts = accRaw.split(/[\s,]+/).map(s => s.trim()).filter(Boolean)
-                         .map(id => id.startsWith('act_') ? id : 'act_' + id);
-  if (!tok || !accounts.length) {
-    errEl.style.display = 'block'; errEl.style.color = 'var(--red)';
-    errEl.textContent = 'Vui lòng nhập đủ Access Token và Ad Account ID.';
-    return;
-  }
-  try {
-    await connectWith(tok, accounts, errEl);
-    toast(`Đã tải ${campaigns.length} chiến dịch từ Meta Ads!`);
-    switchTab('overview');
-    setTimeout(generateSuggestions, 400);
-  } catch(e) {
-    errEl.style.display = 'block'; errEl.style.color = 'var(--red)';
-    errEl.textContent = 'Lỗi: ' + (e.message || 'Không kết nối được. Kiểm tra lại token và account ID.');
-    console.error(e);
-  }
-}
-
-function disconnectAPI() {
-  openModal('Xóa thông tin đã lưu', 'Xóa Access Token và Ad Account đã lưu khỏi trình duyệt này?', () => {
-    try { localStorage.removeItem('meta_token'); localStorage.removeItem('meta_accounts'); localStorage.removeItem('meta_account'); } catch(e) {}
-    API_TOKEN = ''; ALL_ACCOUNTS = []; API_ACCOUNT = ''; campaigns = [];
-    qs('inp-token').value = ''; qs('inp-account').value = '';
-    qs('account-switcher').style.display = 'none';
-    toast('Đã xóa thông tin đăng nhập.');
-    switchTab('setup');
-  });
-}
-
-function apiFetch(path) {
-  const sep = path.includes('?') ? '&' : '?';
-  return fetch(BASE + path + sep + 'access_token=' + encodeURIComponent(API_TOKEN))
-    .then(r => r.json())
-    .then(data => {
-      if (data.error) throw new Error(data.error.message);
-      return data;
-    });
-}
-
-async function fetchRealData() {
-  const dateRange = qs('inp-range').value || '30';
-  const preset = { '7':'last_7d', '14':'last_14d', '30':'last_30d' }[dateRange] || 'last_30d';
-
-  // fetch all campaigns
-  const campRes = await apiFetch(
-    `/${API_ACCOUNT}/campaigns?fields=name,status,daily_budget,lifetime_budget,objective&limit=100`
-  );
-  const rawCamps = campRes.data || [];
-  if (!rawCamps.length) throw new Error('Tài khoản không có chiến dịch nào.');
-
-  const errEl = qs('setup-err');
-
-  // fetch insights for each campaign in parallel (batches of 10)
-  const results = [];
-  for (let i = 0; i < rawCamps.length; i += 10) {
-    const batch = rawCamps.slice(i, i + 10);
-    errEl.textContent = `Đang tải insights (${i+1}–${Math.min(i+10, rawCamps.length)} / ${rawCamps.length})...`;
-    const insightPromises = batch.map(c => fetchCampaignInsights(c.id, preset));
-    const batchInsights = await Promise.all(insightPromises);
-    batch.forEach((c, idx) => results.push({ camp: c, insights: batchInsights[idx] }));
-  }
-
-  // fetch 7-day daily breakdown for each
-  errEl.textContent = 'Đang tải dữ liệu 7 ngày...';
-  const dailyPromises = rawCamps.map(c => fetchDailyInsights(c.id));
-  const allDaily = await Promise.all(dailyPromises);
-
-  campaigns = results.map((r, idx) => {
-    const ins    = r.insights;
-    const daily  = allDaily[idx];
-    const budget = parseInt(r.camp.daily_budget || r.camp.lifetime_budget || 0) / 100;
-    // raw numbers from Meta
-    const spend       = parseFloat(ins.spend || 0);
-    const impressions = parseInt(ins.impressions || 0);
-    const clicks      = parseInt(ins.clicks || 0);
-    const purchases   = pickAction(ins.actions, PURCHASE_ACTIONS);
-    const revenue     = pickAction(ins.action_values, PURCHASE_ACTIONS);
-    const installs    = pickAction(ins.actions, INSTALL_ACTIONS);
-    // derived KPIs — same formulas as the demo getters so the whole app is consistent
-    return {
-      id:          r.camp.id,
-      name:        r.camp.name,
-      status:      r.camp.status,
-      spend, impressions, clicks, purchases, revenue, installs,
-      cpc:         parseFloat(ins.cpc || 0),
-      ctr:         impressions > 0 ? clicks / impressions * 100 : 0,   // Click/Impression×100
-      roas:        spend > 0 ? (revenue / spend) * 0.7 : 0,            // (ConvValue/Spend)×70%
-      cvr:         clicks > 0 ? installs / clicks * 100 : 0,           // Install/Click×100
-      cpm:         impressions > 0 ? spend / impressions * 1000 : 0,   // Spend/Impression×1000
-      cpi:         installs > 0 ? spend / installs : 0,                // Spend/Install
-      payrate:     installs > 0 ? purchases / installs * 100 : 0,      // Purchase/Install×100
-      budget:      budget || spend * 1.2,
-      daily_data:  daily,
-    };
-  });
-
-  updateAlertBadge();
-}
-
-async function fetchCampaignInsights(campId, preset) {
-  try {
-    const fields = 'spend,impressions,clicks,ctr,cpc,actions,action_values,purchase_roas,cost_per_action_type';
-    const res = await apiFetch(`/${campId}/insights?fields=${fields}&date_preset=${preset}&level=campaign`);
-    return (res.data && res.data[0]) || {};
-  } catch(e) { return {}; }
-}
-
-async function fetchDailyInsights(campId) {
-  try {
-    const today = new Date();
-    const from  = new Date(); from.setDate(today.getDate() - 6);
-    const since = from.toISOString().slice(0,10);
-    const until = today.toISOString().slice(0,10);
-    const fields = 'spend,purchase_roas,actions,action_values';
-    const res = await apiFetch(
-      `/${campId}/insights?fields=${fields}&time_range={"since":"${since}","until":"${until}"}&time_increment=1&level=campaign`
-    );
-    const rows = res.data || [];
-    // build 7-slot arrays (fill missing days with 0)
-    const spendArr = [], roasArr = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(from); d.setDate(from.getDate() + i);
-      const key = d.toISOString().slice(0,10);
-      const row = rows.find(r => r.date_start === key) || {};
-      const sp  = parseFloat(row.spend || 0);
-      const rev = pickAction(row.action_values, PURCHASE_ACTIONS);
-      spendArr.push(sp);
-      roasArr.push(sp > 0 ? (rev / sp) * 0.7 : 0);   // ×70% — consistent with summary ROAS
-    }
-    return { spend: spendArr, roas: roasArr };
-  } catch(e) { return { spend: Array(7).fill(0), roas: Array(7).fill(0) }; }
-}
-
-// Priority-ordered Meta action_type matching — covers app + web events, picks
-// ONE source (no double-count). First match in the list wins.
-const PURCHASE_ACTIONS = ['omni_purchase','purchase','offsite_conversion.fb_pixel_purchase','app_custom_event.fb_mobile_purchase'];
-const INSTALL_ACTIONS  = ['mobile_app_install','omni_app_install','app_install'];
-function pickAction(arr, types) {
+// extract a numeric metric from actions[] / action_values[] by priority list
+const PURCHASE_TYPES = ['omni_purchase','purchase','offsite_conversion.fb_pixel_purchase','app_custom_event.fb_mobile_purchase','onsite_web_purchase'];
+const INSTALL_TYPES  = ['omni_app_install','mobile_app_install','app_install'];
+function pick(arr, types) {
   if (!Array.isArray(arr)) return 0;
-  for (const t of types) {
-    const a = arr.find(x => x.action_type === t);
-    if (a) return parseFloat(a.value) || 0;
-  }
+  for (const t of types) { const h = arr.find(a => a.action_type === t); if (h) return parseFloat(h.value) || 0; }
   return 0;
 }
 
-function getCvr(installs, clicks) {
-  if (!clicks) return 0;
-  return parseFloat(((installs / clicks) * 100).toFixed(2));
-}
-
-async function syncData() {
-  if (!campaigns.length) { toast('Chưa kết nối API.'); return; }
-  if (!API_TOKEN) { toast('Dùng dữ liệu demo — không có token thật.'); return; }
-  openModal('Đồng bộ dữ liệu', 'Tải lại toàn bộ dữ liệu từ Meta Ads API?', async () => {
-    try {
-      toast('Đang đồng bộ...');
-      await fetchRealData();
-      addHistory('Hệ thống', 'Đồng bộ Meta Ads API', '');
-      renderOverview();
-      updateAlertBadge();
-      toast('Đồng bộ thành công!');
-    } catch(e) {
-      toast('Lỗi đồng bộ: ' + e.message);
-    }
-  });
-}
-
-function loadDemo() {
-  campaigns = JSON.parse(JSON.stringify(DEMO));
-  targetRoas = { c1:3.0, c2:2.5, c3:5.0, c4:1.5, c5:2.5, c6:2.0, c7:2.0 };
-  budgetEdits = {};
-  updateAlertBadge();
-  switchTab('overview');
-}
-
-// ─── TAB SWITCHING ────────────────────────────────────────────────────────
-function switchTab(tab) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  qs('page-' + tab).classList.add('active');
-  const tabEl = qs('tab-' + tab);
-  if (tabEl) tabEl.classList.add('active');
-  if (tab === 'overview')   { setDefaultDates(); renderOverview(); }
-  if (tab === 'heatmap')    renderHeatmap();
-  if (tab === 'usecase')    renderUsecase();
-  if (tab === 'analytics')  renderAnalytics();
-  if (tab === 'alerts')     renderAlerts();
-  if (tab === 'history')    renderHistory();
-  if (tab === 'config')     renderConfig();
-}
-
-// ─── OVERVIEW ─────────────────────────────────────────────────────────────
-function setStatusFilter(el, f) {
-  document.querySelectorAll('#page-overview .top-bar .filter-pill').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  statusFilter = f;
-  renderOverview();
-}
-
-function setScoreFilter(el, f) {
-  document.querySelectorAll('[id^="pill-score"]').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  scoreFilter = f;
-  renderOverview();
-}
-function setSortBy(v) { sortBy = v; renderOverview(); }
-
-function renderOverview() {
-  if (!campaigns.length) return;
-  let list = statusFilter === 'all' ? campaigns : campaigns.filter(c => c.status === statusFilter);
-
-  const q = (qs('camp-search')?.value || '').toLowerCase();
-  if (q) list = list.filter(c => c.name.toLowerCase().includes(q));
-  if (scoreFilter !== 'all') {
-    list = list.filter(c => {
-      const checks = [c.roas*100 >= config.roasMin, c.ctr >= config.ctrMin, (c.cvr||0) >= config.cvrMin, (c.installs||0) >= config.installMin, (c.payrate||0) >= config.payrateMin];
-      const s = checks.filter(Boolean).length;
-      if (scoreFilter === 'good') return s >= 4;
-      if (scoreFilter === 'mid')  return s >= 2 && s <= 3;
-      if (scoreFilter === 'bad')  return s <= 1;
-      return true;
-    });
-  }
-  list = [...list].sort((a, b) => {
-    if (sortBy === 'roas_desc')    return b.roas - a.roas;
-    if (sortBy === 'install_desc') return (b.installs||0) - (a.installs||0);
-    if (sortBy === 'cvr_desc')     return (b.cvr||0) - (a.cvr||0);
-    if (sortBy === 'score_desc') {
-      const sc = c => [c.roas*100>=config.roasMin,c.ctr>=config.ctrMin,(c.cvr||0)>=config.cvrMin,(c.installs||0)>=config.installMin,(c.payrate||0)>=config.payrateMin].filter(Boolean).length;
-      return sc(b) - sc(a);
-    }
-    return b.spend - a.spend;
-  });
-
-  const totSpend   = list.reduce((s,c) => s + c.spend, 0);
-  const totRev     = list.reduce((s,c) => s + c.revenue, 0);
-  const totPurch   = list.reduce((s,c) => s + c.purchases, 0);
-  const totImpr    = list.reduce((s,c) => s + c.impressions, 0);
-  const totClicks  = list.reduce((s,c) => s + c.clicks, 0);
-  const avgRoas    = totSpend > 0 ? totRev / totSpend : 0;
-  const avgCtr     = totImpr  > 0 ? totClicks / totImpr * 100 : 0;
-  const totInstalls = list.reduce((s,c) => s + (c.installs||0), 0);
-  const avgCvr      = totClicks > 0 ? (totInstalls / totClicks * 100) : 0;
-
-  qs('ov-metrics').innerHTML = `
-    <div class="metric-card">
-      <div class="metric-label">Tổng chi tiêu</div>
-      <div class="metric-value">${fmtVnd(totSpend)}</div>
-      <div class="metric-sub">${list.length} chiến dịch</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Doanh thu</div>
-      <div class="metric-value good">${fmtVnd(totRev)}</div>
-      <div class="metric-sub">từ ads</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">ROAS trung bình</div>
-      <div class="metric-value ${(avgRoas*100) >= config.roasMin ? 'good' : 'bad'}">${avgRoas.toFixed(2)}x</div>
-      <div class="metric-sub">target ≥ ${config.roasMin}%</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Purchases</div>
-      <div class="metric-value">${totPurch}</div>
-      <div class="metric-sub">tổng đơn hàng</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">CTR TB</div>
-      <div class="metric-value ${avgCtr >= config.ctrMin ? 'good' : 'warn'}">${avgCtr.toFixed(2)}%</div>
-      <div class="metric-sub">target ≥ ${config.ctrMin}%</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Installs</div>
-      <div class="metric-value ${totInstalls >= config.installMin ? 'good' : 'bad'}">${totInstalls}</div>
-      <div class="metric-sub">target ≥ ${config.installMin}</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">CVR</div>
-      <div class="metric-value ${avgCvr >= config.cvrMin ? 'good' : 'warn'}">${avgCvr.toFixed(1)}%</div>
-      <div class="metric-sub">target ≥ ${config.cvrMin}%</div>
-    </div>
-  `;
-
-  renderTrendChart(list);
-  renderOvTable(list);
-}
-
-function renderTrendChart(list) {
-  const ctx = qs('trend-chart');
-  const spend7 = DAYS.map((_,i) => list.reduce((s,c) => s + (c.daily_data.spend[i]||0), 0));
-  const roas7  = DAYS.map((_,i) => {
-    const sp  = list.reduce((s,c) => s + (c.daily_data.spend[i]||0), 0);
-    const rev = list.reduce((s,c) => s + (c.daily_data.spend[i]||0) * (c.daily_data.roas[i]||0), 0);
-    return sp > 0 ? parseFloat((rev/sp).toFixed(2)) : 0;
-  });
-  if (trendChart) trendChart.destroy();
-  trendChart = new Chart(ctx, {
-    data: { labels: DAYS, datasets: [
-      { type:'bar',  label:'Chi tiêu', data: spend7, backgroundColor:'rgba(24,95,165,0.2)', borderColor:'#185FA5', borderWidth:1, borderRadius:3, yAxisID:'y' },
-      { type:'line', label:'ROAS',     data: roas7,  borderColor:'#1D9E75', borderWidth:2, pointRadius:3, fill:false, yAxisID:'y1', tension:0.3 }
-    ]},
-    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
-      scales: {
-        y:  { position:'left',  ticks:{ callback: v => fmtVnd(v), font:{size:10} } },
-        y1: { position:'right', grid:{ drawOnChartArea:false }, ticks:{ callback: v => (+v).toFixed(2)+'x', font:{size:10} } }
-      }
-    }
-  });
-}
-
-function kpiColor(ok) { return ok ? '#0F6E56' : '#A32D2D'; }
-function kpiBg(ok)    { return ok ? '#EAF3DE' : '#FCEBEB'; }
-
-function renderOvTable(list) {
-  qs('ov-body').innerHTML = list.map(c => {
-    const spendPct   = Math.round(c.spend / c.budget * 100);
-    const spColor    = spendPct > 100 ? '#A32D2D' : spendPct < 50 ? '#BA7517' : '#0F6E56';
-    const dotClass   = c.status === 'ACTIVE' ? 'dot-active' : c.status === 'PAUSED' ? 'dot-paused' : 'dot-error';
-    const badgeCls   = c.status === 'ACTIVE' ? 'badge-ok' : 'badge-warn';
-    const badgeTxt   = c.status === 'ACTIVE' ? 'Chạy' : 'Dừng';
-
-    // KPI checks theo đúng công thức
-    const roas       = c.roas;                        // (conv_value/spend)×70%
-    const ctr        = c.ctr;                         // click/impression×100
-    const cvr        = c.cvr || 0;                    // install/click×100
-    const cpm        = c.cpm || 0;                    // spend/impression×1000
-    const cpi        = c.cpi || 0;                    // spend/install
-    const payrate    = c.payrate || 0;                // purchase/install×100
-    const installs   = c.installs || 0;
-
-    const roasOk     = roas*100 >= config.roasMin;
-    const ctrOk      = ctr  >= config.ctrMin;
-    const cvrOk      = cvr  >= config.cvrMin;
-    const installOk  = installs >= config.installMin;
-    const payrateOk  = payrate >= config.payrateMin;
-    const cpiOk      = config.cpiMax > 0 ? cpi <= config.cpiMax : true;
-
-    const checks     = [roasOk, ctrOk, cvrOk, installOk, payrateOk];
-    const score      = checks.filter(Boolean).length;
-    const total      = checks.length;
-    const scoreColor = score === total ? '#0F6E56' : score >= 3 ? '#BA7517' : '#A32D2D';
-    const scoreBg    = score === total ? '#EAF3DE' : score >= 3 ? '#FAEEDA' : '#FCEBEB';
-
-    return `<tr>
-      <td><span class="status-dot ${dotClass}"></span><a class="camp-link" onclick="openDetail('${c.id}')">${c.name}</a></td>
-      <td style="text-align:center"><span class="badge ${badgeCls}">${badgeTxt}</span></td>
-      <td>${fmtVnd(c.spend)}</td>
-      <td>${fmtNum(c.impressions)}</td>
-      <td>${fmtNum(c.clicks)}</td>
-      <td style="color:${kpiColor(ctrOk)};font-weight:500">${ctr.toFixed(2)}%</td>
-      <td style="color:${kpiColor(cpm<=config.cpmMax)}">${fmtVnd(cpm)}</td>
-      <td style="color:${kpiColor(installOk)};font-weight:500">${installs}</td>
-      <td style="color:${kpiColor(cvrOk)}">${cvr.toFixed(1)}%</td>
-      <td style="color:${kpiColor(cpiOk)}">${cpi>0?fmtVnd(cpi):'—'}</td>
-      <td>${c.purchases}</td>
-      <td style="color:${kpiColor(payrateOk)}">${payrate.toFixed(1)}%</td>
-      <td style="color:${kpiColor(roasOk)};font-weight:600">${roas.toFixed(2)}x</td>
-      <td><span style="background:${scoreBg};color:${scoreColor};font-weight:600;padding:2px 8px;border-radius:4px;font-size:11px">${score}/${total}</span></td>
-      <td><span style="color:${spColor}">${fmtVnd(c.budget)}</span><br><span style="font-size:10px;color:var(--text-secondary)">${spendPct}% used</span></td>
-      <td><button class="btn btn-sm" onclick="openDetail('${c.id}')"><i class="ti ti-eye"></i></button></td>
-    </tr>`;
-  }).join('');
-}
-
-// ─── HEATMAP ──────────────────────────────────────────────────────────────
-const HEAT_LABELS = {
-  spend:'Spend', impressions:'Impressions', clicks:'Clicks',
-  ctr:'CTR (%)', cpm:'CPM', installs:'Installs',
-  cvr:'CVR (%)', cpi:'CPI', purchases:'Purchases',
-  payrate:'Payrate (%)', revenue:'Doanh thu', roas:'ROAS'
+const ROAS_GETTERS = {
+  get ctr()     { return this.impressions ? this.clicks/this.impressions*100 : 0; },
+  get roas()    { return this.spend ? (this.revenue/this.spend)*0.7 : 0; },
+  get grossRoas(){ return this.spend ? this.revenue/this.spend : 0; },
+  get cvr()     { return this.clicks ? this.installs/this.clicks*100 : 0; },
+  get cpm()     { return this.impressions ? this.spend/this.impressions*1000 : 0; },
+  get cpi()     { return this.installs ? this.spend/this.installs : 0; },
+  get payrate() { return this.installs ? this.purchases/this.installs*100 : 0; }
 };
-const HEAT_METRICS = ['spend','impressions','clicks','ctr','cpm','installs','cvr','cpi','purchases','payrate','revenue','roas'];
-const LOW_IS_BETTER = ['cpm','cpi'];
+function withGetters(o) { return Object.defineProperties(o, Object.getOwnPropertyDescriptors(ROAS_GETTERS)); }
 
-function setHeatMetric(el, m) {
-  document.querySelectorAll('#page-heatmap .filter-pill').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  heatMetric = m;
-  qs('heat-chart-title').textContent = 'Phân bố ' + (HEAT_LABELS[m]||m) + ' theo chiến dịch';
-  renderHeatChart();
-}
-
-function renderHeatmap() {
-  if (!campaigns.length) return;
-  const ranges = {};
-  HEAT_METRICS.forEach(m => {
-    const vals = campaigns.map(c => c[m] || 0);
-    ranges[m] = { min: Math.min(...vals), max: Math.max(...vals) };
-  });
-
-  function heatClass(m, v) {
-    const { min, max } = ranges[m];
-    let pct = (max - min) === 0 ? 0.5 : ((v||0) - min) / (max - min);
-    if (LOW_IS_BETTER.includes(m)) pct = 1 - pct;
-    return pct > 0.65 ? 'heat-green' : pct > 0.35 ? 'heat-amber' : 'heat-red';
-  }
-
-  function fmtCell(m, v) {
-    v = v || 0;
-    if (['spend','revenue','cpm','cpi'].includes(m)) return fmtVnd(v);
-    if (m === 'roas')    return v.toFixed(2) + 'x';
-    if (['ctr','cvr','payrate'].includes(m)) return v.toFixed(1) + '%';
-    if (m === 'installs' || m === 'purchases') return String(Math.round(v));
-    return fmtNum(v);
-  }
-
-  // threshold check per metric for border highlight
-  function isGood(m, v) {
-    v = v || 0;
-    if (m==='roas')    return v*100 >= config.roasMin;
-    if (m==='ctr')     return v >= config.ctrMin;
-    if (m==='cvr')     return v >= config.cvrMin;
-    if (m==='installs')return v >= config.installMin;
-    if (m==='payrate') return v >= config.payrateMin;
-    if (m==='cpi')     return config.cpiMax > 0 ? v <= config.cpiMax : true;
-    if (m==='cpm')     return v <= config.cpmMax;
-    return true;
-  }
-
-  const header = `<tr>
-    <th style="text-align:left;min-width:180px;position:sticky;left:0;background:var(--bg-secondary)">Chiến dịch</th>
-    ${HEAT_METRICS.map(m => `<th title="${HEAT_LABELS[m]}">${HEAT_LABELS[m]}</th>`).join('')}
-  </tr>`;
-
-  const rows = campaigns.map(c => `<tr>
-    <td style="text-align:left;font-weight:500;cursor:pointer;position:sticky;left:0;background:var(--bg-primary)" onclick="openDetail('${c.id}')">
-      <span class="status-dot ${c.status==='ACTIVE'?'dot-active':'dot-paused'}"></span>${c.name.slice(0,26)}${c.name.length>26?'…':''}
-    </td>
-    ${HEAT_METRICS.map(m => {
-      const v = c[m] || 0;
-      const cls = heatClass(m, v);
-      const good = isGood(m, v);
-      const border = good ? '' : 'outline:1.5px solid #E24B4A;';
-      return `<td><span class="heat-cell ${cls}" style="${border}">${fmtCell(m, v)}</span></td>`;
-    }).join('')}
-  </tr>`).join('');
-
-  qs('heatmap-grid').innerHTML = `
-    <table class="data-table" style="min-width:1100px">
-      <thead>${header}</thead>
-      <tbody>${rows}</tbody>
-    </table>`;
-
-  renderHeatChart();
-}
-
-function renderHeatChart() {
-  if (!campaigns.length) return;
-  const ctx = qs('heat-chart');
-  const data = campaigns.map(c => c[heatMetric] || 0);
-  const colors = ['#378ADD','#1D9E75','#EF9F27','#E24B4A','#7F77DD','#D85A30','#639922'];
-  if (heatChart) heatChart.destroy();
-  heatChart = new Chart(ctx, {
-    type:'bar',
-    data: {
-      labels: campaigns.map(c => c.name.slice(0,22) + (c.name.length>22?'…':'')),
-      datasets:[{ label: HEAT_LABELS[heatMetric]||heatMetric, data, backgroundColor: campaigns.map((_,i) => colors[i%colors.length]), borderRadius:4 }]
-    },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
-      scales:{
-        x:{ ticks:{ font:{size:10}, maxRotation:30 } },
-        y:{ ticks:{ font:{size:10}, callback: v => {
-          if (heatMetric==='roas') return v.toFixed(2)+'x';
-          if (['ctr','cvr','payrate'].includes(heatMetric)) return v.toFixed(1)+'%';
-          if (['spend','revenue','cpm','cpi'].includes(heatMetric)) return fmtVnd(v);
-          return v;
-        }}}
-      }
-    }
+// build a normalized campaign object from config row + insight row
+function normalize(cfg, ins) {
+  const off = curOffset();
+  const db = cfg.daily_budget ? parseFloat(cfg.daily_budget)/Math.pow(10,off) : 0;
+  const lb = cfg.lifetime_budget ? parseFloat(cfg.lifetime_budget)/Math.pow(10,off) : 0;
+  return withGetters({
+    id: cfg.id, name: cfg.name || cfg.id,
+    status: cfg.effective_status || cfg.status || 'UNKNOWN',
+    configStatus: cfg.status,
+    budget: db, lifetimeBudget: lb, budgetType: db ? 'daily' : (lb ? 'lifetime' : 'adset'),
+    spend: parseFloat(ins?.spend) || 0,
+    impressions: parseFloat(ins?.impressions) || 0,
+    clicks: parseFloat(ins?.clicks) || 0,
+    installs: pick(ins?.actions, INSTALL_TYPES),
+    purchases: pick(ins?.actions, PURCHASE_TYPES),
+    revenue: pick(ins?.action_values, PURCHASE_TYPES),
+    daily: { labels: [], spend: [], roas: [] }
   });
 }
 
-// ─── ANALYTICS ────────────────────────────────────────────────────────────
-function setGranularity(el, g) {
-  document.querySelectorAll('#page-analytics .filter-pill').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  granularity = g;
-  renderAnalytics();
-}
+async function loadAccount(showLoading = true) {
+  if (isDemo) return;
+  const { since, until } = rangeDates();
+  if (showLoading) setSyncing(true);
+  try {
+    const cfgRes = await callMeta(`${currentAccount}/campaigns`, {
+      fields: 'id,name,status,effective_status,daily_budget,lifetime_budget,objective', limit: 500
+    });
+    const cfgs = cfgRes.data || [];
+    const insRes = await callMeta(`${currentAccount}/insights`, {
+      level: 'campaign', time_range: { since, until },
+      fields: 'campaign_id,campaign_name,spend,impressions,clicks,actions,action_values', limit: 500
+    });
+    const insByCamp = {}; (insRes.data || []).forEach(r => insByCamp[r.campaign_id] = r);
+    campaigns = cfgs.map(c => normalize(c, insByCamp[c.id]));
 
-function renderAnalytics() {
-  if (!campaigns.length) return;
-  // populate camp select
-  const sel = qs('analytics-camp-select');
-  if (sel.options.length === 1) {
+    // daily breakdown for charts
+    const dailyRes = await callMeta(`${currentAccount}/insights`, {
+      level: 'campaign', time_range: { since, until }, time_increment: 1,
+      fields: 'campaign_id,spend,action_values', limit: 1000
+    });
+    const dmap = {};
+    (dailyRes.data || []).forEach(r => {
+      (dmap[r.campaign_id] = dmap[r.campaign_id] || []).push({
+        d: r.date_start, spend: parseFloat(r.spend)||0,
+        roas: (parseFloat(r.spend)>0 ? pick(r.action_values, PURCHASE_TYPES)/parseFloat(r.spend) : 0)
+      });
+    });
     campaigns.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.id; opt.textContent = c.name.slice(0,40);
-      sel.appendChild(opt);
+      const arr = (dmap[c.id]||[]).sort((a,b)=>a.d.localeCompare(b.d));
+      c.daily = { labels: arr.map(x => x.d.slice(5)), spend: arr.map(x => x.spend), roas: arr.map(x => +x.roas.toFixed(2)) };
     });
-  }
-  const campId = sel.value;
-  const metric = qs('analytics-metric-select').value;
-  const metricLabel = {spend:'Spend',roas:'ROAS',ctr:'CTR',cvr:'CVR',installs:'Installs',cpi:'CPI',payrate:'Payrate'};
+    renderAll();
+    toast(`Đã tải ${campaigns.length} chiến dịch`);
+  } catch (e) {
+    toast('Lỗi tải dữ liệu: ' + e.message, 'err'); console.error(e);
+    if (!campaigns.length) qs('ov-body').innerHTML = `<tr><td colspan="16"><div class="empty"><i class="ti ti-alert-circle"></i><p>${e.message}</p></div></td></tr>`;
+  } finally { setSyncing(false); }
+}
 
-  let labels, datasets;
-  const colors = ['#378ADD','#1D9E75','#EF9F27','#E24B4A','#7F77DD','#D85A30','#639922'];
-
-  if (granularity === 'hour') {
-    labels = Array.from({length:24}, (_,i) => i+'h');
-    const list = campId === 'all' ? campaigns : campaigns.filter(c => c.id === campId);
-    datasets = list.slice(0,5).map((c,i) => {
-      const hourlyWeights = [0.5,0.3,0.2,0.2,0.3,0.5,0.8,1.2,1.5,1.8,2.0,2.2,2.5,2.3,2.1,2.0,1.9,1.8,1.6,1.4,1.2,1.0,0.8,0.6];
-      const totalW = hourlyWeights.reduce((a,b)=>a+b,0);
-      const dailyVal = c.daily_data[metric] ? c.daily_data[metric][6] : c[metric]||0;
-      return {
-        label: c.name.slice(0,20),
-        data: hourlyWeights.map(w => parseFloat(((w/totalW)*dailyVal).toFixed(2))),
-        borderColor: colors[i%colors.length],
-        backgroundColor: colors[i%colors.length]+'33',
-        borderWidth: 2, pointRadius: 2, fill: metric==='spend', tension: 0.4,
-        type: metric==='spend'?'bar':'line'
-      };
+// ────── HOURLY ──────
+async function loadHourly(force = false) {
+  if (isDemo) { buildDemoHourly(); renderHourly(); return; }
+  const key = currentAccount + '|' + dateStr(0) + '|' + new Date().getHours();
+  if (hourly.loadedFor === key && !force) { renderHourly(); return; }
+  if (hourly.loading) return;
+  hourly.loading = true;
+  qs('hourly-grid').innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-3)"><span class="loader"></span> Đang tải dữ liệu khung giờ...</div>';
+  try {
+    const since = dateStr(-3), until = dateStr(0);
+    const res = await callMeta(`${currentAccount}/insights`, {
+      level: 'campaign', time_range: { since, until }, time_increment: 1,
+      breakdowns: 'hourly_stats_aggregated_by_advertiser_time_zone',
+      fields: 'campaign_id,campaign_name,spend,action_values', limit: 2000
     });
-    qs('analytics-chart-title').textContent = metricLabel[metric] + ' theo giờ hôm nay';
-  } else {
-    labels = ['T2','T3','T4','T5','T6','T7','CN'];
-    const list = campId === 'all' ? campaigns : campaigns.filter(c => c.id === campId);
-    datasets = list.slice(0,5).map((c,i) => {
-      const data = c.daily_data[metric] || c.daily_data.spend.map(() => c[metric]||0);
-      return {
-        label: c.name.slice(0,20),
-        data: data.map(v => parseFloat((v||0).toFixed(2))),
-        borderColor: colors[i%colors.length],
-        backgroundColor: colors[i%colors.length]+'33',
-        borderWidth: 2, pointRadius: 3, fill: metric==='spend', tension: 0.3,
-        type: metric==='spend'?'bar':'line'
-      };
+    const dates = [dateStr(-3), dateStr(-2), dateStr(-1), dateStr(0)];
+    const byCamp = {};
+    (res.data || []).forEach(r => {
+      const cid = r.campaign_id;
+      const hh = parseInt((r.hourly_stats_aggregated_by_advertiser_time_zone||'0').slice(0,2));
+      const d = r.date_start;
+      byCamp[cid] = byCamp[cid] || { name: r.campaign_name, spend: {}, roas: {} };
+      byCamp[cid].spend[d] = byCamp[cid].spend[d] || new Array(24).fill(0);
+      byCamp[cid].roas[d] = byCamp[cid].roas[d] || new Array(24).fill(0);
+      const sp = parseFloat(r.spend)||0;
+      byCamp[cid].spend[d][hh] = sp;
+      byCamp[cid].roas[d][hh] = sp>0 ? +(pick(r.action_values, PURCHASE_TYPES)/sp*0.7).toFixed(2) : 0;
     });
-    qs('analytics-chart-title').textContent = metricLabel[metric] + ' 7 ngày — ' + (campId==='all'?'Tất cả':'1 chiến dịch');
+    hourly = { byCamp, dates, loadedFor: key, loading: false };
+    renderHourly();
+    if (currentCampId && qs('page-detail').classList.contains('active')) renderDetailHourly(currentCampId);
+  } catch (e) {
+    hourly.loading = false;
+    qs('hourly-grid').innerHTML = `<div class="empty"><i class="ti ti-alert-circle"></i><p>Lỗi tải khung giờ: ${e.message}</p></div>`;
   }
-
-  const ctx = qs('analytics-chart');
-  if (analyticsChart) analyticsChart.destroy();
-  analyticsChart = new Chart(ctx, {
-    data: { labels, datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: datasets.length > 1, labels: { font:{size:10}, boxWidth:10 } } },
-      scales: {
-        y: { ticks: { font:{size:10}, callback: v => {
-          if (metric==='spend'||metric==='cpi') return fmtVnd(v);
-          if (['roas','ctr','cvr','payrate'].includes(metric)) return v.toFixed(1)+(metric==='roas'?'x':'%');
-          return v;
-        }}},
-        x: { ticks: { font:{size:10} } }
-      }
-    }
-  });
-
-  // Summary stats
-  const allList = campId==='all' ? campaigns : campaigns.filter(c=>c.id===campId);
-  const vals = allList.map(c=>c[metric]||0);
-  const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
-  const max = Math.max(...vals); const min = Math.min(...vals);
-  const best = allList[vals.indexOf(max)];
-  const worst = allList[vals.indexOf(min)];
-  const fmtV = v => metric==='spend'||metric==='cpi' ? fmtVnd(v) : ['roas','ctr','cvr','payrate'].includes(metric) ? v.toFixed(2)+(metric==='roas'?'x':'%') : Math.round(v);
-  qs('analytics-summary').innerHTML = `
-    <div class="metric-card"><div class="metric-label">TB ${metricLabel[metric]}</div><div class="metric-value">${fmtV(avg)}</div></div>
-    <div class="metric-card"><div class="metric-label">Tốt nhất</div><div class="metric-value good">${fmtV(max)}</div><div class="metric-sub">${best?.name.slice(0,20)}</div></div>
-    <div class="metric-card"><div class="metric-label">Kém nhất</div><div class="metric-value bad">${fmtV(min)}</div><div class="metric-sub">${worst?.name.slice(0,20)}</div></div>
-    <div class="metric-card"><div class="metric-label">Tổng camp</div><div class="metric-value">${allList.length}</div></div>
-  `;
-
-  // Compare chart
-  const ctx2 = qs('analytics-compare-chart');
-  if (analyticsCompareChart) analyticsCompareChart.destroy();
-  const threshold = {roas:config.roasMin/100,ctr:config.ctrMin,cvr:config.cvrMin,installs:config.installMin,payrate:config.payrateMin}[metric];
-  analyticsCompareChart = new Chart(ctx2, {
-    type:'bar',
-    data: {
-      labels: campaigns.map(c=>c.name.slice(0,18)+(c.name.length>18?'…':'')),
-      datasets:[
-        { label:metricLabel[metric], data:campaigns.map(c=>parseFloat((c[metric]||0).toFixed(2))),
-          backgroundColor: campaigns.map(c=>(c[metric]||0)>=(threshold||0)?'#1D9E7566':'#E24B4A44'),
-          borderColor:     campaigns.map(c=>(c[metric]||0)>=(threshold||0)?'#1D9E75':'#E24B4A'),
-          borderWidth:1, borderRadius:4 },
-        ...(threshold ? [{
-          label:'Target', type:'line',
-          data:Array(campaigns.length).fill(threshold),
-          borderColor:'#EF9F27', borderWidth:1.5, borderDash:[5,4], pointRadius:0
-        }] : [])
-      ]
-    },
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},
-      scales:{x:{ticks:{font:{size:10},maxRotation:30}},y:{ticks:{font:{size:10}}}}}
-  });
 }
 
-// ─── USECASE GROUPING ─────────────────────────────────────────────────────
-function parseUsecase(name) {
-  const delim = config.usecaseDelimiter || '_';
-  const parts = String(name).split(delim).map(s => s.trim()).filter(Boolean);
-  if (!parts.length) return 'Khác';
-  let idx;
-  if (config.usecasePosition === 'last') idx = parts.length - 1;
-  else idx = (parseInt(config.usecasePosition) || 3) - 1;
-  return (idx >= 0 && idx < parts.length) ? parts[idx] : 'Khác';
+// today (cumulative-per-hour) vs prev-3-day average per hour
+function hourlyStats(cid) {
+  const h = hourly.byCamp[cid]; if (!h) return null;
+  const dates = hourly.dates; const today = dates[dates.length-1]; const prev = dates.slice(0,-1);
+  const m = hourMetric;
+  const todayArr = (h[m] && h[m][today]) ? h[m][today].slice() : new Array(24).fill(0);
+  const avg = new Array(24).fill(0); let cnt = 0;
+  prev.forEach(d => { const a = h[m] && h[m][d]; if (a) { cnt++; for (let i=0;i<24;i++) avg[i]+=(a[i]||0); } });
+  for (let i=0;i<24;i++) avg[i] = cnt ? avg[i]/cnt : 0;
+  return { today: todayArr, avg, name: h.name, nowHour: new Date().getHours() };
 }
 
-function groupByUsecase() {
-  const groups = {};
-  campaigns.forEach(c => {
-    const uc = parseUsecase(c.name);
-    if (!groups[uc]) groups[uc] = { usecase: uc, camps: [], spend:0, impressions:0, clicks:0, installs:0, purchases:0, revenue:0, budget:0 };
-    const g = groups[uc];
-    g.camps.push(c);
-    g.spend       += c.spend       || 0;
-    g.impressions += c.impressions || 0;
-    g.clicks      += c.clicks      || 0;
-    g.installs    += c.installs    || 0;
-    g.purchases   += c.purchases   || 0;
-    g.revenue     += c.revenue     || 0;
-    g.budget      += c.budget      || 0;
-  });
-  // weighted KPIs tính lại từ tổng raw (không average tỷ lệ)
-  return Object.values(groups).map(g => {
-    g.nCamps  = g.camps.length;
-    g.ctr     = g.impressions > 0 ? g.clicks/g.impressions*100 : 0;
-    g.roas    = g.spend > 0 ? (g.revenue/g.spend)*0.7 : 0;
-    g.cvr     = g.clicks > 0 ? g.installs/g.clicks*100 : 0;
-    g.cpm     = g.impressions > 0 ? g.spend/g.impressions*1000 : 0;
-    g.cpi     = g.installs > 0 ? g.spend/g.installs : 0;
-    g.payrate = g.installs > 0 ? g.purchases/g.installs*100 : 0;
-    const checks = [
-      g.roas*100 >= config.roasMin,
-      g.ctr     >= config.ctrMin,
-      g.cvr     >= config.cvrMin,
-      g.installs>= config.installMin,
-      g.payrate >= config.payrateMin
-    ];
-    g.score      = checks.filter(Boolean).length;
-    g.scoreTotal = checks.length;
-    return g;
-  });
+// ════════════════════════ SCORING & ANALYSIS ════════════════════════
+function scoreOf(c) {
+  let s = 0, w = 0; const add = (ok, weight, partial=0) => { w += weight; s += ok ? weight : weight*partial; };
+  const tgt = targetRoas[c.id] || config.roasMin;
+  add(c.roas >= config.roasGood, 30, c.roas >= tgt ? 0.6 : (c.roas>=config.roasMin?0.35:0));
+  add(c.roas >= config.roasMin, 16, c.roas/Math.max(config.roasMin,0.01)>=0.7?0.5:0);
+  add(c.ctr >= config.ctrMin, 11, 0.4);
+  add(c.cvr >= config.cvrMin, 11, 0.4);
+  add(c.installs >= config.installMin, 8, 0.3);
+  add(c.payrate >= config.payrateMin, 9, 0.3);
+  add(c.installs===0 || c.cpi <= config.cpiMax, 8, 0.3);
+  add(c.cpm <= config.cpmMax, 7, 0.4);
+  return Math.round(s/w*100);
 }
+function scoreBg(s) { return s>=70?{bg:'var(--green-bg)',c:'var(--green)'}:s>=45?{bg:'var(--amber-bg)',c:'var(--amber)'}:{bg:'var(--red-bg)',c:'var(--red)'}; }
+function dayFraction() { const n = new Date(); return (n.getHours()*3600 + n.getMinutes()*60 + n.getSeconds())/86400; }
 
-function ucVerdict(g) {
-  if (g.score >= 4) return { label:'Tốt — nên scale',        cls:'badge-ok',     color:'#0F6E56', action:'Tăng budget cho nhóm này để mở rộng.' };
-  if (g.score >= 2) return { label:'Trung bình — tối ưu',    cls:'badge-warn',   color:'#BA7517', action:'Test creative/audience mới, giữ budget ổn định.' };
-  return                   { label:'Kém — cân nhắc dừng',    cls:'badge-danger', color:'#A32D2D', action:'Giảm budget hoặc tạm dừng các camp yếu nhất.' };
-}
-
-function fmtMetric(m, v) {
-  v = v || 0;
-  if (m === 'spend' || m === 'cpi' || m === 'cpm') return fmtVnd(v);
-  if (m === 'roas')    return v.toFixed(2) + 'x';
-  if (['ctr','cvr','payrate'].includes(m)) return v.toFixed(1) + '%';
-  return Math.round(v).toString();
-}
-
-function setUsecaseMetric(el, m) {
-  document.querySelectorAll('#page-usecase .filter-pill').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  usecaseMetric = m;
-  const lbl = { spend:'Spend', roas:'ROAS', installs:'Installs', cvr:'CVR', cpi:'CPI', payrate:'Payrate' }[m] || m;
-  qs('uc-chart-title').textContent = 'So sánh ' + lbl + ' theo usecase';
-  renderUsecaseChart(groupByUsecase());
-}
-
-function onUsecaseConfigChange() {
-  config.usecaseDelimiter = qs('uc-delimiter').value;
-  const pos = qs('uc-position').value;
-  config.usecasePosition = pos === 'last' ? 'last' : parseInt(pos);
-  // cập nhật ví dụ minh hoạ
-  const d = config.usecaseDelimiter === ' ' ? '␣' : config.usecaseDelimiter;
-  qs('uc-example').innerHTML = 'IIP555' + d + 'Reelme' + d + '<b style="color:var(--blue)">USECASE</b>';
-  persistConfig();
-  renderUsecase();
-}
-
-function renderUsecase() {
-  if (!campaigns.length) return;
-  // đồng bộ selects với config
-  qs('uc-delimiter').value = config.usecaseDelimiter;
-  qs('uc-position').value  = String(config.usecasePosition);
-
-  const groups = groupByUsecase().sort((a,b) => b.spend - a.spend);
-
-  // SUMMARY cards
-  const totSpend = groups.reduce((s,g) => s + g.spend, 0);
-  const totRev   = groups.reduce((s,g) => s + g.revenue, 0);
-  const blendRoas = totSpend > 0 ? (totRev/totSpend)*0.7 : 0;
-  const ranked   = [...groups].sort((a,b) => b.score - a.score || b.roas - a.roas);
-  const best  = ranked[0];
-  const worst = ranked[ranked.length - 1];
-  qs('uc-summary').innerHTML = `
-    <div class="metric-card"><div class="metric-label">Số nhóm usecase</div><div class="metric-value">${groups.length}</div><div class="metric-sub">${campaigns.length} camp</div></div>
-    <div class="metric-card"><div class="metric-label">ROAS tổng</div><div class="metric-value ${blendRoas*100>=config.roasMin?'good':'bad'}">${blendRoas.toFixed(2)}x</div><div class="metric-sub">target ≥ ${config.roasMin}%</div></div>
-    <div class="metric-card"><div class="metric-label">Usecase tốt nhất</div><div class="metric-value good">${best?best.usecase:'—'}</div><div class="metric-sub">${best?best.score+'/'+best.scoreTotal+' KPI · ROAS '+best.roas.toFixed(2)+'x':''}</div></div>
-    <div class="metric-card"><div class="metric-label">Usecase kém nhất</div><div class="metric-value bad">${worst?worst.usecase:'—'}</div><div class="metric-sub">${worst?worst.score+'/'+worst.scoreTotal+' KPI · ROAS '+worst.roas.toFixed(2)+'x':''}</div></div>
-  `;
-
-  // TABLE
-  qs('uc-body').innerHTML = groups.map(g => {
-    const v = ucVerdict(g);
-    const scoreBg = g.score >= 4 ? '#EAF3DE' : g.score >= 2 ? '#FAEEDA' : '#FCEBEB';
-    const cpiOk = g.cpi > 0 ? g.cpi <= config.cpiMax : true;
-    return `<tr>
-      <td style="text-align:left"><span class="camp-link" onclick="filterByUsecase('${g.usecase}')" style="font-weight:600">${g.usecase}</span></td>
-      <td>${g.nCamps}</td>
-      <td>${fmtVnd(g.spend)}</td>
-      <td style="color:${kpiColor(g.ctr>=config.ctrMin)}">${g.ctr.toFixed(2)}%</td>
-      <td style="color:${kpiColor(g.cvr>=config.cvrMin)}">${g.cvr.toFixed(1)}%</td>
-      <td style="color:${kpiColor(g.installs>=config.installMin)};font-weight:500">${g.installs}</td>
-      <td style="color:${kpiColor(cpiOk)}">${g.cpi>0?fmtVnd(g.cpi):'—'}</td>
-      <td>${g.purchases}</td>
-      <td style="color:${kpiColor(g.payrate>=config.payrateMin)}">${g.payrate.toFixed(1)}%</td>
-      <td style="color:${kpiColor(g.roas*100>=config.roasMin)};font-weight:600">${g.roas.toFixed(2)}x</td>
-      <td><span style="background:${scoreBg};color:${v.color};font-weight:600;padding:2px 8px;border-radius:4px;font-size:11px">${g.score}/${g.scoreTotal}</span></td>
-      <td style="text-align:center"><span class="badge ${v.cls}">${v.label.split(' — ')[0]}</span></td>
-    </tr>`;
-  }).join('');
-
-  // RANKING list
-  qs('uc-ranking').innerHTML = ranked.map((g,i) => {
-    const v = ucVerdict(g);
-    return `<div style="background:var(--bg-primary);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:11px 14px;display:flex;align-items:center;gap:12px;border-left:3px solid ${v.color}">
-      <div style="font-size:18px;font-weight:600;color:var(--text-secondary);min-width:28px">#${i+1}</div>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
-          <span style="font-size:14px;font-weight:600">${g.usecase}</span>
-          <span class="badge ${v.cls}">${v.label}</span>
-          <span style="font-size:11px;color:var(--text-secondary)">${g.nCamps} camp · ${fmtVnd(g.spend)}</span>
-        </div>
-        <div style="font-size:12px;color:var(--text-secondary)">
-          ROAS <b style="color:${kpiColor(g.roas*100>=config.roasMin)}">${g.roas.toFixed(2)}x</b> ·
-          CVR <b style="color:${kpiColor(g.cvr>=config.cvrMin)}">${g.cvr.toFixed(1)}%</b> ·
-          Install <b style="color:${kpiColor(g.installs>=config.installMin)}">${g.installs}</b> ·
-          Payrate <b style="color:${kpiColor(g.payrate>=config.payrateMin)}">${g.payrate.toFixed(1)}%</b>
-          — ${v.action}
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-
-  renderUsecaseChart(groups);
-}
-
-function renderUsecaseChart(groups) {
-  const ctx = qs('usecase-chart');
-  if (!ctx) return;
-  const m = usecaseMetric;
-  const data = groups.map(g => parseFloat((g[m]||0).toFixed(2)));
-  const threshold = { roas:config.roasMin/100, cvr:config.cvrMin, installs:config.installMin, payrate:config.payrateMin }[m];
-  const lowBetter = m === 'cpi';
-  const barColor = groups.map(g => {
-    if (m === 'spend') return '#378ADD';
-    if (lowBetter) return (g.cpi>0 && g.cpi<=config.cpiMax) ? '#1D9E75' : '#E24B4A';
-    if (threshold != null) return (g[m]||0) >= threshold ? '#1D9E75' : '#E24B4A';
-    return '#378ADD';
-  });
-  if (usecaseChart) usecaseChart.destroy();
-  usecaseChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: groups.map(g => g.usecase),
-      datasets: [
-        { label: m, data, backgroundColor: barColor.map(c=>c+'55'), borderColor: barColor, borderWidth: 1.5, borderRadius: 4 },
-        ...(threshold != null ? [{ label:'Target', type:'line', data: Array(groups.length).fill(threshold), borderColor:'#EF9F27', borderWidth:1.5, borderDash:[5,4], pointRadius:0 }] : [])
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: threshold != null, labels:{font:{size:10},boxWidth:10} } },
-      scales: {
-        x: { ticks:{ font:{size:11} } },
-        y: { ticks:{ font:{size:10}, callback: v => {
-          if (m==='spend'||m==='cpi') return fmtVnd(v);
-          if (m==='roas') return v.toFixed(1)+'x';
-          if (['ctr','cvr','payrate'].includes(m)) return v.toFixed(0)+'%';
-          return v;
-        }}}
-      }
-    }
-  });
-}
-
-// click usecase trong bảng → mở overview lọc theo usecase
-function filterByUsecase(uc) {
-  switchTab('overview');
-  const search = qs('camp-search');
-  if (search) { search.value = uc; renderOverview(); }
-}
-
-// ─── ALERTS ───────────────────────────────────────────────────────────────
-function generateSuggestions() {
-  if (!campaigns.length) return;
-  const now = new Date();
-  const hour = now.getHours();
-  const suggestions = [];
-
-  const active = campaigns.filter(c => c.status === 'ACTIVE');
-  const paused = campaigns.filter(c => c.status === 'PAUSED');
-
-  const avgRoas    = active.reduce((s,c)=>s+c.roas,0)/(active.length||1);
-  const avgSpendPct= active.reduce((s,c)=>s+c.spend/c.budget,0)/(active.length||1)*100;
-  const avgCvr     = active.reduce((s,c)=>s+(c.cvr||0),0)/(active.length||1);
-  const avgCpi     = active.reduce((s,c)=>s+(c.cpi||0),0)/(active.length||1);
-
-  if (hour < 8) {
-    suggestions.push({ priority:'info', icon:'ti-clock', title:'Buổi sáng sớm — chuẩn bị ngày mới',
-      desc:'Kiểm tra budget các camp đang chạy, đảm bảo không camp nào bị dừng qua đêm.',
-      actions:[] });
-  } else if (hour >= 12 && hour <= 14) {
-    suggestions.push({ priority:'warn', icon:'ti-clock', title:'Giờ cao điểm trưa (12h–14h)',
-      desc:'Đây là khung giờ chuyển đổi tốt. Kiểm tra camp nào đang chậm tiêu để điều chỉnh giá thầu.',
-      actions:[] });
-  } else if (hour >= 18 && hour <= 22) {
-    suggestions.push({ priority:'warn', icon:'ti-clock', title:'Giờ vàng buổi tối (18h–22h)',
-      desc:'Khung giờ cao điểm nhất ngày. Ưu tiên scale camp ROAS tốt, tạm dừng camp kém để tiết kiệm budget.',
-      actions:[] });
+function suggestBudget(c) {
+  if (c.status !== 'ACTIVE' || c.budgetType === 'adset' || !c.budget) return null;
+  const score = scoreOf(c);
+  if (c.roas >= config.upRoas && score >= 70) {
+    let nb = Math.round(c.budget * (1 + config.upPct/100));
+    if (config.maxBudget>0) nb = Math.min(nb, config.maxBudget);
+    if (nb > c.budget) return { dir:'up', newBudget:nb, reason:`ROAS ${fmtRoas(c.roas)}x ≥ ${config.upRoas}x & Score ${score}. Tăng ${config.upPct}% để scale.` };
   }
-
-  const scaleCamps = active.filter(c => c.roas*100 >= config.roasMin && c.roas >= avgRoas * 1.3 && c.spend < c.budget * 0.8);
-  if (scaleCamps.length) {
-    suggestions.push({ priority:'success', icon:'ti-trending-up',
-      title:`Scale ${scaleCamps.length} camp ROAS vượt target`,
-      desc:'Camp: ' + scaleCamps.map(c=>c.name.slice(0,25)).join(', ') + `. ROAS trung bình ${(scaleCamps.reduce((s,c)=>s+c.roas,0)/scaleCamps.length).toFixed(2)}x — còn dư budget, nên tăng để tối đa doanh thu.`,
-      camps: scaleCamps,
-      actions: scaleCamps.map(c=>({lbl:'Tăng 20% '+c.name.slice(0,15), fn:()=>changeBudget(c,0.2)}))
-    });
+  if (c.roas < config.downRoas && c.spend > 0) {
+    const nb = Math.max(1, Math.round(c.budget * (1 - config.downPct/100)));
+    return { dir:'down', newBudget:nb, reason:`ROAS ${fmtRoas(c.roas)}x < ${config.downRoas}x. Giảm ${config.downPct}% để cắt lỗ.` };
   }
-
-  const killCamps = active.filter(c => c.roas*100 < config.roasMin * 0.5 && c.spend > c.budget * 0.5 && c.installs < config.installMin * 0.5);
-  if (killCamps.length) {
-    suggestions.push({ priority:'danger', icon:'ti-skull',
-      title:`Dừng khẩn ${killCamps.length} camp không hiệu quả`,
-      desc:'Camp: ' + killCamps.map(c=>c.name.slice(0,25)).join(', ') + '. ROAS và Install đều thấp hơn 50% target — đang đốt budget không có kết quả.',
-      camps: killCamps,
-      actions: killCamps.map(c=>({lbl:'Dừng '+c.name.slice(0,15), fn:()=>pauseCamp(c)}))
-    });
-  }
-
-  const optimizeCamps = active.filter(c => (c.cvr||0) >= config.cvrMin && (c.cpi||0) > config.cpiMax * 0.8 && (c.installs||0) >= config.installMin);
-  if (optimizeCamps.length) {
-    suggestions.push({ priority:'warn', icon:'ti-adjustments',
-      title:`Tối ưu audience ${optimizeCamps.length} camp — CVR tốt nhưng CPI cao`,
-      desc:'Camp: ' + optimizeCamps.map(c=>c.name.slice(0,20)).join(', ') + '. CVR đang đạt target nhưng CPI cao. Hãy narrow audience hoặc exclude cold traffic để giảm chi phí mỗi install.',
-      actions:[]
-    });
-  }
-
-  const payrateIssue = active.filter(c => (c.installs||0) >= config.installMin && (c.payrate||0) < config.payrateMin && c.purchases < 5);
-  if (payrateIssue.length) {
-    suggestions.push({ priority:'warn', icon:'ti-shopping-cart',
-      title:`Payrate thấp — có install nhưng ít purchase`,
-      desc:'Camp: ' + payrateIssue.map(c=>c.name.slice(0,20)).join(', ') + `. Có ${payrateIssue.reduce((s,c)=>s+(c.installs||0),0)} install nhưng purchase yếu. Kiểm tra onboarding flow, giá sản phẩm, hoặc creative mismatch.`,
-      actions:[]
-    });
-  }
-
-  const creativeCamps = active.filter(c => c.ctr < config.ctrMin * 0.5 && c.spend > 500000);
-  if (creativeCamps.length) {
-    suggestions.push({ priority:'warn', icon:'ti-photo',
-      title:`Đổi creative ${creativeCamps.length} camp — CTR quá thấp`,
-      desc:'Camp: ' + creativeCamps.map(c=>c.name.slice(0,20)).join(', ') + `. CTR dưới ${(config.ctrMin*0.5).toFixed(2)}%. Creative đang không thu hút, cần test creative mới hoặc thay thumbnail.`,
-      actions:[]
-    });
-  }
-
-  const reactivate = paused.filter(c => c.roas*100 >= config.roasMin * 0.8);
-  if (reactivate.length) {
-    suggestions.push({ priority:'info', icon:'ti-player-play',
-      title:`Xem xét bật lại ${reactivate.length} camp đang dừng`,
-      desc:'Camp: ' + reactivate.map(c=>c.name.slice(0,20)).join(', ') + '. ROAS lần chạy cuối gần đạt target — có thể bật lại với budget nhỏ để test.',
-      actions: reactivate.map(c=>({lbl:'Bật '+c.name.slice(0,12), fn:()=>pauseCamp(c)}))
-    });
-  }
-
-  const nearBudget = active.filter(c => c.spend/c.budget > 0.85);
-  if (nearBudget.length && hour >= 15) {
-    suggestions.push({ priority:'warn', icon:'ti-currency-dollar',
-      title:`${nearBudget.length} camp sắp hết budget hôm nay`,
-      desc:'Camp: ' + nearBudget.map(c=>c.name.slice(0,20)+'('+(Math.round(c.spend/c.budget*100))+'%)').join(', ') + '. Nếu muốn chạy tiếp đến 24h, cần tăng budget ngay.',
-      actions: nearBudget.map(c=>({lbl:'Tăng budget '+c.name.slice(0,12), fn:()=>changeBudget(c,0.3)}))
-    });
-  }
-
-  if (!suggestions.length) {
-    suggestions.push({ priority:'success', icon:'ti-circle-check', title:'Tất cả ổn định',
-      desc:'Không có action khẩn nào cần thực hiện ngay. Tiếp tục theo dõi và re-check sau 2–3 giờ.', actions:[] });
-  }
-
-  const priorityColor = { danger:'#E24B4A', warn:'#EF9F27', success:'#1D9E75', info:'#185FA5' };
-  const priorityBadge = { danger:'badge-danger', warn:'badge-warn', success:'badge-ok', info:'badge-info' };
-  const priorityLabel = { danger:'Khẩn', warn:'Cần làm', success:'OK', info:'Thông tin' };
-
-  qs('suggestions-list').innerHTML = suggestions.map((s,i) => `
-    <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:11px 14px;display:flex;align-items:flex-start;gap:10px;border-left:3px solid ${priorityColor[s.priority]}">
-      <i class="ti ${s.icon}" style="font-size:18px;color:${priorityColor[s.priority]};margin-top:1px;flex-shrink:0"></i>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">
-          <span style="font-size:13px;font-weight:600">${s.title}</span>
-          <span class="badge ${priorityBadge[s.priority]}">${priorityLabel[s.priority]}</span>
-        </div>
-        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:${s.actions.length?'8px':'0'}">${s.desc}</div>
-        ${s.actions.length ? '<div style="display:flex;gap:6px;flex-wrap:wrap">'+s.actions.map((a,j)=>`<button class="btn btn-sm ${j===0?'btn-primary':''}" onclick="suggAction(${i},${j})">${a.lbl}</button>`).join('')+'</div>' : ''}
-      </div>
-    </div>`).join('');
-
-  window._suggestions = suggestions;
+  return null;
 }
 
-function suggAction(si, ai) {
-  const s = window._suggestions[si];
-  if (s && s.actions[ai]) s.actions[ai].fn();
-}
-
-function getAlerts() {
+function buildAlerts() {
   const alerts = [];
   const active = campaigns.filter(c => c.status === 'ACTIVE');
-  const avgSpendPct = active.length
-    ? active.reduce((s,c) => s + c.spend/c.budget, 0) / active.length * 100
-    : 50;
+  const avgRoas = active.length ? active.reduce((s,c)=>s+c.roas,0)/active.length : 0;
+  const frac = dayFraction();
+  const todayMode = (rangeMode === 'today');
 
   campaigns.forEach(c => {
-    const tr = targetRoas[c.id] || config.roasMin;
-    const spendPct = c.spend / c.budget * 100;
-
-    if (c.status === 'ACTIVE' && spendPct < (100 - config.slowSpend) && spendPct < avgSpendPct - 15)
-      alerts.push({ type:'warn', icon:'ti-clock', id:c.id, name:c.name,
-        title:'Chậm tiêu ngân sách',
-        desc:`Mới tiêu ${Math.round(spendPct)}% budget (${fmtVnd(c.spend)} / ${fmtVnd(c.budget)}). Kiểm tra audience hoặc giá thầu.`,
-        actions:[{lbl:'Xem chi tiết', fn:()=>openDetail(c.id)}, {lbl:'Tắt giới hạn ngân sách', fn:()=>logAction(c,'Tắt giới hạn ngân sách')}] });
-
-    if (c.status === 'ACTIVE' && spendPct > config.overSpend)
-      alerts.push({ type:'danger', icon:'ti-alert-triangle', id:c.id, name:c.name,
-        title:'Tiêu vống ngân sách',
-        desc:`Đã tiêu ${Math.round(spendPct)}% ngân sách (${fmtVnd(c.spend)} / ${fmtVnd(c.budget)}). Rủi ro vượt budget ngày.`,
-        actions:[{lbl:'Giảm budget 20%', fn:()=>changeBudget(c,-0.2)}, {lbl:'Tạm dừng camp', fn:()=>pauseCamp(c)}] });
-
-    if (c.status === 'ACTIVE' && c.roas < tr * 0.7)
-      alerts.push({ type:'danger', icon:'ti-trending-down', id:c.id, name:c.name,
-        title:'ROAS thấp hơn target ' + Math.round((1 - c.roas/tr)*100) + '%',
-        desc:`ROAS hiện tại ${c.roas.toFixed(2)}x — target ${tr}x. Cân nhắc tối ưu creative, audience, hoặc giảm giá thầu.`,
-        actions:[{lbl:'Tối ưu camp', fn:()=>logAction(c,'Ghi nhận cần tối ưu camp')}, {lbl:'Giảm budget 20%', fn:()=>changeBudget(c,-0.2)}] });
-
-    if (c.status === 'ACTIVE' && c.roas >= tr * 1.5)
-      alerts.push({ type:'info', icon:'ti-rocket', id:c.id, name:c.name,
-        title:'Camp hiệu suất cao — cơ hội scale',
-        desc:`ROAS ${c.roas.toFixed(2)}x vượt target ${Math.round((c.roas/tr-1)*100)}%. Scale budget để tối đa doanh thu.`,
-        actions:[{lbl:'Tăng budget 20%', fn:()=>changeBudget(c,0.2)}, {lbl:'Tăng budget 50%', fn:()=>changeBudget(c,0.5)}] });
-
-    if (c.status === 'PAUSED')
-      alerts.push({ type:'warn', icon:'ti-player-pause', id:c.id, name:c.name,
-        title:'Camp đang tạm dừng',
-        desc:`ROAS lần cuối ${c.roas.toFixed(2)}x. Bật lại nếu muốn tiếp tục chạy.`,
-        actions:[{lbl:'Bật lại camp', fn:()=>pauseCamp(c)}] });
-
-    if (c.status === 'ACTIVE' && (c.installs||0) < config.installMin && c.spend > 100000)
-      alerts.push({ type:'warn', icon:'ti-device-mobile', id:c.id, name:c.name,
-        title:'Install thấp',
-        desc:`Chỉ có ${c.installs||0} install — dưới ngưỡng ${config.installMin}. Kiểm tra creative hoặc audience targeting.`,
-        actions:[{lbl:'Xem chi tiết', fn:()=>openDetail(c.id)}] });
-
-    if (c.status === 'ACTIVE' && (c.cvr||0) < config.cvrMin && (c.installs||0) > 0)
-      alerts.push({ type:'warn', icon:'ti-percentage', id:c.id, name:c.name,
-        title:'CVR thấp',
-        desc:`CVR ${(c.cvr||0).toFixed(1)}% thấp hơn target ${config.cvrMin}%. Kiểm tra landing page hoặc store listing.`,
-        actions:[{lbl:'Xem chi tiết', fn:()=>openDetail(c.id)}] });
+    const tgt = targetRoas[c.id] || config.roasMin;
+    // 1) ROAS dưới mục tiêu
+    if (c.status==='ACTIVE' && c.spend>0 && c.roas < tgt) {
+      const sev = c.roas < config.downRoas ? 'high' : (c.roas < config.roasMin ? 'mid' : 'low');
+      alerts.push({ cid:c.id, sev, icon:'trending-down', kind:'perf', title:'ROAS dưới mục tiêu',
+        desc:`ROAS net <b>${fmtRoas(c.roas)}x</b> &lt; mục tiêu <b>${fmtRoas(tgt)}x</b>. Đã tiêu ${fmtMoney(c.spend)}₫, doanh thu ${fmtMoney(c.revenue)}₫.`,
+        actions: c.roas<config.downRoas ? ['pause','down'] : ['down'] });
+    }
+    // 2) Tiêu vống / 3) Chậm tiêu (theo nhịp ngày — chỉ khi xem "Hôm nay")
+    if (c.status==='ACTIVE' && c.budget>0 && todayMode) {
+      const expected = c.budget*frac;
+      if (c.spend > c.budget * (config.overSpend/100)) {
+        alerts.push({ cid:c.id, sev:'high', icon:'flame', kind:'budget', title:'Tiêu vống budget',
+          desc:`Đã tiêu <b>${fmtMoney(c.spend)}₫</b> = ${(c.spend/c.budget*100).toFixed(0)}% budget/ngày (${fmtMoney(c.budget)}₫), vượt ngưỡng ${config.overSpend}%.`, actions:['detail'] });
+      } else if (frac>0.25 && c.spend < expected*(config.slowSpend/100)) {
+        alerts.push({ cid:c.id, sev:'mid', icon:'player-pause', kind:'budget', title:'Chậm tiêu',
+          desc:`Mới tiêu <b>${fmtMoney(c.spend)}₫</b>, dự kiến ~${fmtMoney(expected)}₫ tại thời điểm này (${(c.spend/expected*100||0).toFixed(0)}% nhịp). Đang under-delivery.`, actions:['up','detail'] });
+      }
+    }
+    // 4) ROAS thấp hơn mặt bằng tài khoản
+    if (c.status==='ACTIVE' && c.spend>0 && avgRoas>0 && c.roas < avgRoas*(1-config.roasDrop/100) && c.roas>=tgt) {
+      alerts.push({ cid:c.id, sev:'low', icon:'arrows-down', kind:'perf', title:'ROAS thấp hơn mặt bằng',
+        desc:`ROAS <b>${fmtRoas(c.roas)}x</b> thấp hơn ${config.roasDrop}% so với TB tài khoản (${fmtRoas(avgRoas)}x).`, actions:['detail'] });
+    }
+    // 5) Cơ hội scale
+    const sug = suggestBudget(c);
+    if (sug && sug.dir==='up') {
+      alerts.push({ cid:c.id, sev:'low', icon:'rocket', kind:'budget', title:'Cơ hội scale',
+        desc:sug.reason + ` Budget ${fmtMoney(c.budget)}₫ → <b>${fmtMoney(sug.newBudget)}₫</b>.`, actions:['applyup'], sug });
+    }
   });
+
+  // 6) Bất thường theo giờ (cần dữ liệu hourly)
+  if (hourly.dates.length) {
+    Object.keys(hourly.byCamp).forEach(cid => {
+      const c = campaigns.find(x => x.id===cid); if (!c || c.status!=='ACTIVE') return;
+      const st = hourlyStats(cid); if (!st) return;
+      const lastClosed = Math.max(0, st.nowHour-1);
+      const tc = st.today.slice(0, lastClosed+1).reduce((a,b)=>a+b,0);
+      const ac = st.avg.slice(0, lastClosed+1).reduce((a,b)=>a+b,0);
+      if (ac > 1000) {
+        const dev = (tc-ac)/ac*100;
+        if (dev <= -config.hourDev) alerts.push({ cid, sev:'mid', icon:'clock-pause', kind:'perf', title:'Tiêu chậm bất thường theo giờ',
+          desc:`Đến ${lastClosed}h, hôm nay tiêu <b>${fmtMoney(tc)}₫</b> — thấp hơn <b>${Math.abs(dev).toFixed(0)}%</b> so với TB 3 ngày (${fmtMoney(ac)}₫).`, actions:['detail','up'] });
+        else if (dev >= config.hourDev) alerts.push({ cid, sev:'mid', icon:'clock-bolt', kind:'perf', title:'Tiêu nhanh bất thường theo giờ',
+          desc:`Đến ${lastClosed}h, hôm nay tiêu <b>${fmtMoney(tc)}₫</b> — cao hơn <b>${dev.toFixed(0)}%</b> so với TB 3 ngày. Kiểm tra ROAS để chắc chắn hiệu quả.`, actions:['detail'] });
+      }
+      let silent = 0;
+      for (let h=lastClosed; h>=0 && st.today[h]===0; h--) silent++;
+      if (silent >= config.stopHours && st.avg.slice(Math.max(0,lastClosed-silent+1), lastClosed+1).some(v=>v>0)) {
+        alerts.push({ cid, sev:'high', icon:'plug-off', kind:'perf', title:'Dừng tiêu',
+          desc:`Không có chi tiêu trong <b>${silent} giờ</b> gần nhất dù camp ACTIVE và thường có spend khung giờ này. Kiểm tra delivery/limit.`, actions:['detail'] });
+      }
+    });
+  }
+  const order = { high:0, mid:1, low:2 };
+  alerts.sort((a,b) => order[a.sev]-order[b.sev]);
   return alerts;
 }
 
-function updateAlertBadge() {
-  const n = getAlerts().filter(a => a.type === 'danger').length;
-  const el = qs('alert-dot');
-  el.textContent = n;
-  el.style.display = n ? 'inline' : 'none';
+// ════════════════════════ RENDERING ════════════════════════
+let alertCache = [];
+function renderAll() {
+  if (!campaigns.length) return;
+  renderOverview(); renderHeatmap(); renderAlerts(); renderConfig();
+  if (qs('page-hourly').classList.contains('active')) renderHourly();
+}
+
+const COLS = [
+  { k:'name', l:'Chiến dịch', left:true }, { k:'status', l:'Status' }, { k:'spend', l:'Spend' },
+  { k:'impressions', l:'Impr' }, { k:'clicks', l:'Clicks' }, { k:'ctr', l:'CTR' }, { k:'cpm', l:'CPM' },
+  { k:'installs', l:'Inst' }, { k:'cvr', l:'CVR' }, { k:'cpi', l:'CPI' }, { k:'purchases', l:'Purch' },
+  { k:'payrate', l:'Payrate' }, { k:'roas', l:'ROAS' }, { k:'score', l:'Score' }, { k:'budget', l:'Budget' }, { k:'act', l:'' }
+];
+
+function filteredCampaigns(searchId) {
+  let arr = campaigns.slice();
+  if (statusFilter !== 'all') arr = arr.filter(c => c.status === statusFilter || c.configStatus === statusFilter);
+  const q = (qs(searchId)?.value || '').trim().toLowerCase();
+  if (q) arr = arr.filter(c => c.name.toLowerCase().includes(q) || c.id.includes(q));
+  return arr;
+}
+
+function renderOverview() {
+  if (!campaigns.length) return;
+  const tot = campaigns.reduce((a,c)=>({spend:a.spend+c.spend,rev:a.rev+c.revenue,inst:a.inst+c.installs,pur:a.pur+c.purchases,clicks:a.clicks+c.clicks,impr:a.impr+c.impressions}),{spend:0,rev:0,inst:0,pur:0,clicks:0,impr:0});
+  const netRoas = tot.spend ? tot.rev/tot.spend*0.7 : 0;
+  const cpi = tot.inst ? tot.spend/tot.inst : 0;
+  const activeN = campaigns.filter(c=>c.status==='ACTIVE').length;
+  const roasCls = netRoas>=config.roasGood?'good':netRoas>=config.roasMin?'warn':'bad';
+  qs('ov-metrics').innerHTML = [
+    ['Tổng chi tiêu', fmtMoney(tot.spend)+'₫', `${campaigns.length} camp · ${activeN} đang chạy`, ''],
+    ['Doanh thu', fmtMoney(tot.rev)+'₫', `Gross ROAS ${fmtRoas(tot.spend?tot.rev/tot.spend:0)}x`, ''],
+    ['ROAS net', fmtRoas(netRoas)+'x', `mục tiêu ${config.roasMin}x`, roasCls],
+    ['Installs', fmtNum(tot.inst), `CPI ${fmtMoney(cpi)}₫`, ''],
+    ['Purchases', fmtNum(tot.pur), `Payrate ${tot.inst?(tot.pur/tot.inst*100).toFixed(1):0}%`, ''],
+    ['Clicks', fmtNum(tot.clicks), `CTR ${tot.impr?(tot.clicks/tot.impr*100).toFixed(2):0}%`, ''],
+  ].map(([l,v,s,cls])=>`<div class="metric-card"><div class="metric-label">${l}</div><div class="metric-value ${cls}">${v}</div><div class="metric-sub">${s}</div></div>`).join('');
+
+  qs('ov-head').innerHTML = COLS.map(c=>`<th class="${c.left||c.k==='act'?'':'sortable'}" ${c.k!=='act'&&c.k!=='name'?`onclick="setSort('${c.k}')"`:''} style="${c.left?'text-align:left':''}">${c.l}${sortKey===c.k?` <span class="arr">${sortDir<0?'▼':'▲'}</span>`:''}</th>`).join('');
+
+  let arr = filteredCampaigns('ov-search');
+  arr.sort((a,b)=>{ let va=a[sortKey], vb=b[sortKey]; if(sortKey==='score'){va=scoreOf(a);vb=scoreOf(b);} if(sortKey==='name'){return sortDir*a.name.localeCompare(b.name);} return sortDir*((va||0)-(vb||0)); });
+  qs('ov-count').textContent = `(${arr.length})`;
+  qs('ov-body').innerHTML = arr.map(c => {
+    const sc = scoreOf(c); const scb = scoreBg(sc); const tgt = targetRoas[c.id]||config.roasMin;
+    return `<tr>
+      <td><a class="camp-link" onclick="openDetail('${c.id}')"><span class="status-dot dot-${c.status==='ACTIVE'?'active':c.status==='PAUSED'?'paused':'error'}"></span><span class="camp-name" title="${c.name}">${c.name}</span></a></td>
+      <td>${statusBadge(c.status)}</td>
+      <td class="tnum">${fmtMoney(c.spend)}</td>
+      <td class="tnum">${fmtNum(c.impressions)}</td>
+      <td class="tnum">${fmtNum(c.clicks)}</td>
+      <td class="tnum">${heat(c.ctr,'ctr')}</td>
+      <td class="tnum">${fmtMoney(c.cpm)}</td>
+      <td class="tnum">${fmtNum(c.installs)}</td>
+      <td class="tnum">${heat(c.cvr,'cvr')}</td>
+      <td class="tnum">${c.installs?fmtMoney(c.cpi):'—'}</td>
+      <td class="tnum">${fmtNum(c.purchases)}</td>
+      <td class="tnum">${c.installs?heat(c.payrate,'payrate'):'—'}</td>
+      <td class="tnum">${heat(c.roas,'roas',tgt)}</td>
+      <td><span class="score-pill" style="background:${scb.bg};color:${scb.c}">${sc}</span></td>
+      <td class="tnum">${c.budget?fmtMoney(c.budget):(c.budgetType==='adset'?'<span style="color:var(--text-3)">adset</span>':'—')}</td>
+      <td><button class="btn btn-sm btn-ghost" onclick="openDetail('${c.id}')"><i class="ti ti-chevron-right"></i></button></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="16"><div class="empty"><i class="ti ti-search-off"></i><p>Không có chiến dịch phù hợp</p></div></td></tr>`;
+  drawTrend();
+}
+
+function statusBadge(s) {
+  if (s==='ACTIVE') return '<span class="badge badge-ok">Active</span>';
+  if (s==='PAUSED') return '<span class="badge badge-warn">Paused</span>';
+  if (/DISAPPROVED|ERROR|WITH_ISSUES/.test(s)) return '<span class="badge badge-danger">Issue</span>';
+  return `<span class="badge badge-mut">${(s||'').slice(0,10)}</span>`;
+}
+
+function heat(v, metric, tgt) {
+  if (v==null || isNaN(v)) return '<span class="heat-cell heat-na">—</span>';
+  let cls, txt; const C = config;
+  switch(metric) {
+    case 'roas': { const t = tgt||C.roasMin; cls = v>=C.roasGood?'heat-g3': v>=t?'heat-g2': v>=t*0.7?'heat-y': v>=t*0.5?'heat-r2':'heat-r3'; txt = fmtRoas(v)+'x'; break; }
+    case 'ctr': cls = v>=C.ctrMin*1.5?'heat-g3': v>=C.ctrMin?'heat-g2': v>=C.ctrMin*0.6?'heat-y':'heat-r3'; txt=fmtPct(v); break;
+    case 'cvr': cls = v>=C.cvrMin*1.3?'heat-g3': v>=C.cvrMin?'heat-g2': v>=C.cvrMin*0.6?'heat-y':'heat-r3'; txt=fmtPct(v); break;
+    case 'payrate': cls = v>=C.payrateMin*1.5?'heat-g3': v>=C.payrateMin?'heat-g2': v>=C.payrateMin*0.5?'heat-y':'heat-r3'; txt=fmtPct(v); break;
+    case 'cpi': cls = v<=C.cpiMax*0.6?'heat-g3': v<=C.cpiMax?'heat-g2': v<=C.cpiMax*1.4?'heat-y':'heat-r3'; txt=fmtMoney(v); break;
+    case 'cpm': cls = v<=C.cpmMax*0.6?'heat-g3': v<=C.cpmMax?'heat-g2': v<=C.cpmMax*1.4?'heat-y':'heat-r3'; txt=fmtMoney(v); break;
+    case 'spend': { const max=Math.max(...campaigns.map(c=>c.spend),1); cls = v>=max*0.66?'heat-g3':v>=max*0.33?'heat-g2':'heat-y'; txt=fmtMoney(v); break; }
+    case 'installs': { const max=Math.max(...campaigns.map(c=>c.installs),1); cls = v>=max*0.5?'heat-g3':v>=max*0.2?'heat-g2':'heat-y'; txt=fmtNum(v); break; }
+    default: cls='heat-na'; txt=v;
+  }
+  return `<span class="heat-cell ${cls}">${txt}</span>`;
+}
+
+const HM_METRICS = [['roas','ROAS'],['spend','Spend'],['ctr','CTR'],['cpm','CPM'],['installs','Inst'],['cvr','CVR'],['cpi','CPI'],['payrate','Payrate']];
+function renderHeatmap() {
+  if (!campaigns.length) return;
+  let arr = campaigns.slice();
+  const q = (qs('hm-search')?.value||'').trim().toLowerCase();
+  if (q) arr = arr.filter(c=>c.name.toLowerCase().includes(q));
+  arr.sort((a,b)=>b.roas-a.roas);
+  const head = `<tr><th style="text-align:left;position:sticky;left:0;background:var(--surface-2);z-index:2">Chiến dịch</th>${HM_METRICS.map(m=>`<th style="text-align:center">${m[1]}</th>`).join('')}<th style="text-align:center">Score</th></tr>`;
+  const rows = arr.map(c=>{
+    const sc=scoreOf(c), scb=scoreBg(sc); const tgt=targetRoas[c.id]||config.roasMin;
+    return `<tr><td style="text-align:left;position:sticky;left:0;background:var(--surface)"><a class="camp-link" onclick="openDetail('${c.id}')"><span class="status-dot dot-${c.status==='ACTIVE'?'active':'paused'}"></span><span class="camp-name" style="max-width:210px" title="${c.name}">${c.name}</span></a></td>
+      ${HM_METRICS.map(m=>`<td style="text-align:center">${m[0]==='roas'?heat(c.roas,'roas',tgt):heat(c[m[0]],m[0])}</td>`).join('')}
+      <td style="text-align:center"><span class="score-pill" style="background:${scb.bg};color:${scb.c}">${sc}</span></td></tr>`;
+  }).join('');
+  qs('heatmap-grid').innerHTML = `<table class="data-table" style="min-width:780px"><thead>${head}</thead><tbody>${rows}</tbody></table>`;
+  drawHeatChart(arr);
+}
+
+function renderHourly() {
+  if (isDemo && !hourly.dates.length) buildDemoHourly();
+  if (!hourly.dates.length) {
+    qs('hourly-grid').innerHTML = `<div class="empty"><i class="ti ti-clock"></i><p>Chưa có dữ liệu khung giờ.</p><button class="btn btn-primary" style="margin-top:12px" onclick="loadHourly(true)">Tải dữ liệu khung giờ</button></div>`;
+    qs('hourly-summary').innerHTML=''; qs('hourly-meta').textContent=''; return;
+  }
+  qs('hourly-meta').textContent = `Hôm nay ${hourly.dates[hourly.dates.length-1]} vs TB ${hourly.dates.slice(0,-1).join(', ')}`;
+  let ids = Object.keys(hourly.byCamp);
+  const q = (qs('hr-search')?.value||'').trim().toLowerCase();
+  if (q) ids = ids.filter(id => (hourly.byCamp[id].name||'').toLowerCase().includes(q));
+  const lastD = hourly.dates[hourly.dates.length-1];
+  ids.sort((a,b)=>{ const sa=(hourly.byCamp[a].spend[lastD]||[]).reduce((x,y)=>x+y,0); const sb=(hourly.byCamp[b].spend[lastD]||[]).reduce((x,y)=>x+y,0); return sb-sa; });
+
+  let onPace=0, fast=0, slow=0, stopped=0;
+  ids.forEach(id=>{ const v=hourlyVerdict(id); if(v==='fast')fast++; else if(v==='slow')slow++; else if(v==='stopped')stopped++; else if(v==='pace')onPace++; });
+  qs('hourly-summary').innerHTML = [
+    ['Đúng nhịp', onPace, 'good'], ['Tiêu nhanh', fast, fast?'warn':''],
+    ['Tiêu chậm', slow, slow?'warn':''], ['Dừng tiêu', stopped, stopped?'bad':'']
+  ].map(([l,v,cls])=>`<div class="metric-card"><div class="metric-label">${l}</div><div class="metric-value ${cls}">${v}</div></div>`).join('');
+
+  qs('hourly-grid').innerHTML = ids.map(id => hourlyRow(id)).join('') || '<div class="empty"><p>Không có camp phù hợp</p></div>';
+}
+
+function hourlyVerdict(cid) {
+  const st = hourlyStats(cid); if(!st) return 'na';
+  const lastClosed = Math.max(0, st.nowHour-1);
+  const tc = st.today.slice(0,lastClosed+1).reduce((a,b)=>a+b,0);
+  const ac = st.avg.slice(0,lastClosed+1).reduce((a,b)=>a+b,0);
+  let silent=0; for(let h=lastClosed;h>=0&&st.today[h]===0;h--) silent++;
+  if (silent>=config.stopHours && st.avg.slice(Math.max(0,lastClosed-silent+1),lastClosed+1).some(v=>v>0)) return 'stopped';
+  if (ac<500 && hourMetric==='spend') return 'na';
+  const dev=ac>0?(tc-ac)/ac*100:0;
+  if (dev>=config.hourDev) return 'fast';
+  if (dev<=-config.hourDev) return 'slow';
+  return 'pace';
+}
+
+function hourlyRow(cid) {
+  const st = hourlyStats(cid); if(!st) return '';
+  const max = Math.max(...st.today, ...st.avg, hourMetric==='roas'?0.1:1);
+  const nowH = st.nowHour;
+  const verdict = hourlyVerdict(cid);
+  const badge = {fast:'<span class="badge badge-warn">Tiêu nhanh</span>',slow:'<span class="badge badge-warn">Tiêu chậm</span>',stopped:'<span class="badge badge-danger">Dừng tiêu</span>',pace:'<span class="badge badge-ok">Đúng nhịp</span>',na:'<span class="badge badge-mut">Ít data</span>'}[verdict];
+  const cells = st.today.map((tv,h)=>{
+    const av = st.avg[h]; const future = h > nowH;
+    const hAvg = Math.min(1,av/max), hTod = Math.min(1,tv/max);
+    const bg = future ? 'var(--surface-2)' : `linear-gradient(to top, #dfe9f7 ${hAvg*100}%, var(--surface-2) ${hAvg*100}%)`;
+    const dev = av>0 ? (tv-av)/av*100 : (tv>0?100:0);
+    const anom = !future && av>0 && Math.abs(dev)>=config.hourDev;
+    const todColor = anom ? 'var(--red)' : 'var(--blue)';
+    const barH = Math.round(hTod*26);
+    const unit = hourMetric==='roas'?'x':'₫';
+    const title = `${h}h — Hôm nay: ${hourMetric==='roas'?fmtRoas(tv):fmtMoney(tv)}${unit} · TB: ${hourMetric==='roas'?fmtRoas(av):fmtMoney(av)}${unit}${av>0?` (${dev>=0?'+':''}${dev.toFixed(0)}%)`:''}`;
+    return `<div class="hour-cell" title="${title}" style="background:${bg};${h===nowH?'outline:1.5px solid var(--blue);outline-offset:-1px;':''}">
+      ${!future && tv>0 ? `<span style="position:absolute;bottom:0;left:2px;right:2px;height:${barH}px;background:${todColor};border-radius:2px;opacity:.88"></span>`:''}
+    </div>`;
+  }).join('');
+  return `<div class="hl-row">
+    <div class="hl-name"><a class="camp-link" onclick="openDetail('${cid}')" title="${st.name||cid}">${st.name||cid}</a><small>${badge}</small></div>
+    <div><div class="hour-strip">${cells}</div></div>
+  </div>`;
 }
 
 function renderAlerts() {
-  generateSuggestions();
-  const alerts = getAlerts();
-  updateAlertBadge();
-  if (!alerts.length) {
-    qs('alerts-container').innerHTML = `<div class="empty"><i class="ti ti-circle-check" style="color:#1D9E75"></i><p>Không có cảnh báo nào. Tất cả chiến dịch đang hoạt động tốt!</p></div>`;
-    return;
-  }
-  const borderColor = { warn:'#EF9F27', danger:'#E24B4A', info:'#378ADD' };
-  const iconColor   = { warn:'#BA7517', danger:'#A32D2D', info:'#185FA5' };
-  const badgeLbl    = { warn:'Cảnh báo', danger:'Khẩn', info:'Cơ hội' };
-  const badgeCls    = { warn:'badge-warn', danger:'badge-danger', info:'badge-info' };
+  if (!campaigns.length) { qs('alerts-container').innerHTML=`<div class="empty"><i class="ti ti-shield-check"></i><p>Chưa có dữ liệu</p></div>`; return; }
+  alertCache = buildAlerts();
+  let arr = alertCache;
+  if (alertFilter==='high') arr = arr.filter(a=>a.sev==='high');
+  else if (alertFilter==='budget') arr = arr.filter(a=>a.kind==='budget');
+  const high = alertCache.filter(a=>a.sev==='high').length;
+  qs('alert-count').textContent = `(${alertCache.length}${high?` · ${high} khẩn cấp`:''})`;
+  const dot = qs('alert-dot');
+  if (alertCache.length) { dot.style.display='inline-flex'; dot.textContent = alertCache.length; } else dot.style.display='none';
 
-  qs('alerts-container').innerHTML = alerts.map((a,i) => `
-    <div class="alert-item" style="border-left:3px solid ${borderColor[a.type]}">
-      <i class="ti ${a.icon} alert-icon" style="color:${iconColor[a.type]}"></i>
+  if (!arr.length) { qs('alerts-container').innerHTML=`<div class="empty"><i class="ti ti-shield-check" style="color:var(--green)"></i><p>Không có cảnh báo. Mọi camp đang ổn ✓</p></div>`; return; }
+  qs('alerts-container').innerHTML = arr.map(a => {
+    const c = campaigns.find(x=>x.id===a.cid);
+    return `<div class="alert-item sev-${a.sev}">
+      <i class="ti ti-${a.icon} alert-icon"></i>
       <div class="alert-body">
-        <div class="alert-title">${a.title} <span class="badge ${badgeCls[a.type]}">${badgeLbl[a.type]}</span></div>
-        <div class="alert-camp">${a.name}</div>
+        <div class="alert-title">${a.title} ${a.sev==='high'?'<span class="badge badge-danger">Khẩn</span>':a.kind==='budget'?'<span class="badge badge-info">Budget</span>':''}</div>
+        <div class="alert-camp" onclick="openDetail('${a.cid}')">${c?c.name:a.cid} <i class="ti ti-external-link"></i></div>
         <div class="alert-desc">${a.desc}</div>
       </div>
-      <div class="alert-actions">
-        ${a.actions.map((ac,j) => `<button class="btn btn-sm ${j===0?'btn-primary':''}" onclick="alertAction(${i},${j})">${ac.lbl}</button>`).join('')}
-      </div>
-    </div>`).join('');
-
-  // store alerts for onclick
-  window._alerts = alerts;
-}
-
-function alertAction(alertIdx, actionIdx) {
-  const a = window._alerts[alertIdx];
-  if (a) a.actions[actionIdx].fn();
-}
-
-function logAction(c, action) { addHistory(c.name, action, ''); toast('Đã ghi nhận: ' + action); }
-
-function changeBudget(c, pct) {
-  const newBudget = Math.round(c.budget * (1 + pct));
-  const label = pct > 0 ? `Tăng budget ${Math.round(pct*100)}%` : `Giảm budget ${Math.round(-pct*100)}%`;
-  openModal(label, `${label} "${c.name}"\n${fmtVnd(c.budget)} → ${fmtVnd(newBudget)}`, () => {
-    addHistory(c.name, label, `${fmtVnd(c.budget)} → ${fmtVnd(newBudget)}`);
-    c.budget = newBudget;
-    updateAlertBadge();
-    renderAlerts();
-    toast(label + ' thành công!');
-  });
-}
-
-function pauseCamp(c) {
-  const action = c.status === 'ACTIVE' ? 'Tạm dừng camp' : 'Bật lại camp';
-  openModal(action, `${action}: "${c.name}"?`, () => {
-    c.status = c.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
-    addHistory(c.name, action, '');
-    updateAlertBadge();
-    renderAlerts();
-    toast(action + ' thành công!');
-  });
-}
-
-// ─── HISTORY ──────────────────────────────────────────────────────────────
-function addHistory(camp, action, note) {
-  actionHistory.unshift({ time: new Date().toLocaleString('vi-VN'), camp, action, note });
-  persistHistory();
-}
-
-function renderHistory() {
-  qs('history-container').innerHTML = actionHistory.length
-    ? actionHistory.map(h => `
-      <div class="history-item">
-        <span class="history-time"><i class="ti ti-clock" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>${h.time}</span>
-        <span class="history-camp">${h.camp}</span>
-        <span class="history-action">${h.action}${h.note ? ' — ' + h.note : ''}</span>
-      </div>`).join('')
-    : '<div class="empty"><i class="ti ti-notes"></i><p>Chưa có hành động nào được ghi lại.</p></div>';
-}
-
-function clearHistory() {
-  openModal('Xóa lịch sử', 'Xóa toàn bộ lịch sử hành động?', () => {
-    actionHistory = [];
-    persistHistory();
-    renderHistory();
-    toast('Đã xóa lịch sử.');
-  });
-}
-
-// ─── CONFIG ───────────────────────────────────────────────────────────────
-function renderConfig() {
-  qs('cfg-roas-min').value     = config.roasMin;
-  qs('cfg-ctr-min').value      = config.ctrMin;
-  qs('cfg-cvr-min').value      = config.cvrMin;
-  qs('cfg-install-min').value  = config.installMin;
-  qs('cfg-payrate-min').value  = config.payrateMin;
-  qs('cfg-cpi-max').value      = config.cpiMax;
-  qs('cfg-cpm-max').value      = config.cpmMax;
-  qs('cfg-slow').value         = config.slowSpend;
-  qs('cfg-over').value         = config.overSpend;
-  qs('cfg-roas-drop').value    = config.roasDrop;
-  qs('cfg-stop').value         = config.stopHours;
-
-  qs('target-roas-rows').innerHTML = campaigns.map(c => `
-    <div class="roas-row">
-      <label>${c.name.slice(0,32)}${c.name.length>32?'…':''}</label>
-      <input type="number" step="0.1" value="${targetRoas[c.id] || config.roasMin}" onchange="targetRoas['${c.id}']=parseFloat(this.value)||config.roasMin;persistTargets()" />
-      <span style="font-size:12px;color:var(--text-secondary)">x</span>
-    </div>`).join('');
-
-  qs('budget-rows').innerHTML = campaigns.map(c => {
-    const cur = budgetEdits[c.id] !== undefined ? budgetEdits[c.id] : c.budget;
-    const pct = cur === c.budget ? 0 : Math.round((cur - c.budget) / c.budget * 100);
-    return `<div class="budget-row">
-      <span class="budget-camp">${c.name.slice(0,26)}${c.name.length>26?'…':''}</span>
-      <span class="budget-current">Hiện: ${fmtVnd(c.budget)}</span>
-      <input type="number" class="budget-input" step="100000" value="${cur}" id="bud-${c.id}" onchange="onBudgetEdit('${c.id}',this)" />
-      <span class="budget-pct ${pct>0?'pct-pos':pct<0?'pct-neg':''}" id="budpct-${c.id}">${pct===0?'—':(pct>0?'+':'')+pct+'%'}</span>
+      <div class="alert-actions">${alertButtons(a)}</div>
     </div>`;
   }).join('');
 }
-
-function onBudgetEdit(id, el) {
-  budgetEdits[id] = parseInt(el.value) || 0;
-  const orig = campaigns.find(c => c.id === id)?.budget || 0;
-  const pct  = orig === 0 ? 0 : Math.round((budgetEdits[id] - orig) / orig * 100);
-  const span = qs('budpct-' + id);
-  if (span) {
-    span.textContent = pct === 0 ? '—' : (pct > 0 ? '+' : '') + pct + '%';
-    span.className = 'budget-pct ' + (pct > 0 ? 'pct-pos' : pct < 0 ? 'pct-neg' : '');
-  }
-}
-
-function applyBudgets() {
-  const changes = Object.entries(budgetEdits).filter(([id, v]) => {
-    const c = campaigns.find(x => x.id === id);
-    return c && v !== c.budget && v > 0;
+function alertButtons(a) {
+  const b=[];
+  a.actions?.forEach(act=>{
+    if(act==='pause') b.push(`<button class="btn btn-sm btn-danger" onclick="actPause('${a.cid}')"><i class="ti ti-player-pause"></i> Tạm dừng</button>`);
+    if(act==='down') b.push(`<button class="btn btn-sm" onclick="actBudget('${a.cid}',${1-config.downPct/100})"><i class="ti ti-trending-down"></i> Giảm ${config.downPct}%</button>`);
+    if(act==='up') b.push(`<button class="btn btn-sm" onclick="actBudget('${a.cid}',${1+config.upPct/100})"><i class="ti ti-trending-up"></i> Tăng ${config.upPct}%</button>`);
+    if(act==='applyup'&&a.sug) b.push(`<button class="btn btn-sm btn-primary" onclick="actBudgetTo('${a.cid}',${a.sug.newBudget})"><i class="ti ti-check"></i> Scale ${fmtMoney(a.sug.newBudget)}₫</button>`);
+    if(act==='detail') b.push(`<button class="btn btn-sm" onclick="openDetail('${a.cid}')">Chi tiết</button>`);
   });
-  if (!changes.length) { toast('Không có thay đổi nào.'); return; }
-  const desc = changes.map(([id, v]) => {
-    const c = campaigns.find(x => x.id === id);
-    return `• ${c.name.slice(0,30)}: ${fmtVnd(c.budget)} → ${fmtVnd(v)}`;
-  }).join('\n');
-  openModal('Áp dụng thay đổi budget', desc + '\n\nXác nhận cập nhật ' + changes.length + ' chiến dịch?', () => {
-    changes.forEach(([id, v]) => {
-      const c = campaigns.find(x => x.id === id);
-      if (c) { addHistory(c.name, 'Cập nhật budget', `${fmtVnd(c.budget)} → ${fmtVnd(v)}`); c.budget = v; }
-    });
-    budgetEdits = {};
-    renderConfig();
-    updateAlertBadge();
-    toast('Đã cập nhật budget thành công!');
-  });
+  return b.join('');
 }
 
-function saveConfig() {
-  config.roasMin     = parseFloat(qs('cfg-roas-min').value)    || 45;
-  config.ctrMin      = parseFloat(qs('cfg-ctr-min').value)     || 1;
-  config.cvrMin      = parseFloat(qs('cfg-cvr-min').value)     || 25;
-  config.installMin  = parseInt(qs('cfg-install-min').value)   || 10;
-  config.payrateMin  = parseFloat(qs('cfg-payrate-min').value) || 5;
-  config.cpiMax      = parseInt(qs('cfg-cpi-max').value)       || 50000;
-  config.cpmMax      = parseInt(qs('cfg-cpm-max').value)       || 50000;
-  config.slowSpend   = parseInt(qs('cfg-slow').value)          || 30;
-  config.overSpend   = parseInt(qs('cfg-over').value)          || 110;
-  config.roasDrop    = parseInt(qs('cfg-roas-drop').value)     || 30;
-  config.stopHours   = parseInt(qs('cfg-stop').value)          || 4;
-  addHistory('Hệ thống', 'Cập nhật cấu hình ngưỡng', '');
-  persistConfig();
-  updateAlertBadge();
-  toast('Đã lưu cấu hình!');
+function renderHistory() {
+  const c = qs('history-container');
+  qs('hist-count').textContent = `(${actionHistory.length})`;
+  if (!actionHistory.length) { c.innerHTML=`<div class="empty"><i class="ti ti-history"></i><p>Chưa có hành động nào được ghi lại</p></div>`; return; }
+  const ic = { pause:['player-pause','var(--amber-bg)','var(--amber)'], resume:['player-play','var(--green-bg)','var(--green)'], budget:['coin','var(--blue-bg)','var(--blue)'], target:['target','var(--violet-bg)','var(--violet)'], sync:['refresh','var(--surface-3)','var(--text-2)'] };
+  c.innerHTML = actionHistory.map(h=>{
+    const i = ic[h.kind]||ic.sync;
+    return `<div class="history-item"><div class="history-ico" style="background:${i[1]};color:${i[2]}"><i class="ti ti-${i[0]}"></i></div>
+      <span class="history-time">${h.time}</span><span class="history-camp" title="${h.camp}">${h.camp}</span><span class="history-action">${h.action}</span></div>`;
+  }).join('');
 }
 
-// ─── DETAIL ───────────────────────────────────────────────────────────────
+function renderConfig() {
+  Object.keys(DEFAULT_CONFIG).forEach(k=>{ const el=qs('cfg-'+k); if(el) el.value=config[k]; });
+  qs('target-roas-rows').innerHTML = campaigns.length ? campaigns.map(c=>`<div class="config-row"><label title="${c.name}">${c.name}</label><input type="number" step="0.1" value="${targetRoas[c.id]||''}" placeholder="${config.roasMin}" onchange="setTargetRoas('${c.id}',this.value)" /><span class="unit">x</span></div>`).join('') : '<div class="hint">Kết nối dữ liệu để hiện danh sách camp.</div>';
+  const cbo = campaigns.filter(c=>c.budgetType!=='adset');
+  qs('budget-rows').innerHTML = cbo.length ? cbo.map(c=>{
+    const ed = budgetEdits[c.id]; const pct = ed && c.budget ? ((ed-c.budget)/c.budget*100) : 0;
+    return `<div class="budget-row"><span class="budget-camp" title="${c.name}">${c.name}</span>
+      <span class="budget-current">${fmtMoney(c.budget)}₫/ngày</span>
+      <input type="number" class="budget-input" value="${ed||''}" placeholder="${Math.round(c.budget)}" oninput="setBudgetEdit('${c.id}',this.value)" />
+      <span class="budget-pct ${pct>0?'pct-pos':pct<0?'pct-neg':''}">${pct?((pct>0?'+':'')+pct.toFixed(0)+'%'):''}</span></div>`;
+  }).join('') : '<div class="hint">Không có camp dùng Campaign Budget (CBO). Camp ABO cần chỉnh ở cấp ad set.</div>';
+}
+
+// ════════════════════════ CHARTS ════════════════════════
+function chartBase() { return { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, animation:{duration:300} }; }
+function drawTrend() {
+  const map = {};
+  campaigns.forEach(c => c.daily.labels.forEach((lb,i)=>{ map[lb]=map[lb]||{spend:0,rev:0}; map[lb].spend+=c.daily.spend[i]||0; map[lb].rev+=(c.daily.spend[i]||0)*((c.daily.roas[i]||0)); }));
+  const labels = Object.keys(map).sort();
+  const spend = labels.map(l=>map[l].spend);
+  const roas = labels.map(l=>map[l].spend? +(map[l].rev/map[l].spend).toFixed(2):0);
+  qs('trend-range').textContent = labels.length?`${labels[0]} → ${labels.at(-1)}`:'';
+  const ctx = qs('trend-chart'); if(!ctx) return;
+  charts.trend?.destroy();
+  charts.trend = new Chart(ctx, { data:{ labels, datasets:[
+    { type:'bar', data:spend, backgroundColor:'rgba(37,99,201,.22)', borderRadius:4, yAxisID:'y' },
+    { type:'line', data:roas, borderColor:'#22a06b', tension:.35, pointRadius:2, yAxisID:'y1', borderWidth:2 }
+  ]}, options:{ ...chartBase(), scales:{ y:{ position:'left', grid:{color:'#ececea'}, ticks:{callback:v=>fmtMoney(v),font:{size:10}} }, y1:{ position:'right', grid:{display:false}, ticks:{callback:v=>v+'x',font:{size:10}} }, x:{grid:{display:false},ticks:{font:{size:10}}} } } });
+}
+function drawHeatChart(arr) {
+  const m = heatMetric;
+  qs('heat-chart-title').textContent = 'Phân bố '+ (HM_METRICS.find(x=>x[0]===m)?.[1]||m) +' theo chiến dịch';
+  const data = arr.map(c=>+(c[m]||0).toFixed(2));
+  const colors = arr.map(c=>heatColor(c[m],m,targetRoas[c.id]||config.roasMin));
+  const ctx = qs('heat-chart'); if(!ctx) return;
+  charts.heat?.destroy();
+  charts.heat = new Chart(ctx,{ type:'bar', data:{ labels:arr.map(c=>c.name.length>24?c.name.slice(0,24)+'…':c.name), datasets:[{ data, backgroundColor:colors, borderRadius:4 }] }, options:{ ...chartBase(), indexAxis:'y', scales:{ x:{grid:{color:'#ececea'},ticks:{font:{size:10},callback:v=>m==='roas'?v+'x':(['spend','cpi','cpm'].includes(m)?fmtMoney(v):v)}}, y:{grid:{display:false},ticks:{font:{size:10}}} } } });
+}
+function heatColor(v,m,tgt){ const map={'heat-g3':'#9ccb6e','heat-g2':'#c2dfa3','heat-y':'#f5cd6f','heat-r2':'#f0a98a','heat-r3':'#e88f8a','heat-na':'#ddd'}; const cl=(heat(v,m,tgt).match(/heat-[\w]+/)||['heat-na'])[0]; return map[cl]||'#ccc'; }
+
+function drawDetailCharts(c) {
+  charts.dspend?.destroy(); charts.droas?.destroy();
+  charts.dspend = new Chart(qs('detail-spend-chart'),{ type:'bar', data:{ labels:c.daily.labels, datasets:[{data:c.daily.spend,backgroundColor:'rgba(37,99,201,.5)',borderRadius:3}] }, options:{ ...chartBase(), scales:{ y:{grid:{color:'#ececea'},ticks:{font:{size:10},callback:v=>fmtMoney(v)}}, x:{grid:{display:false},ticks:{font:{size:9}}} } } });
+  const tgt = targetRoas[c.id]||config.roasMin;
+  charts.droas = new Chart(qs('detail-roas-chart'),{ data:{ labels:c.daily.labels, datasets:[
+    {type:'line',data:c.daily.roas,borderColor:'#22a06b',backgroundColor:'rgba(34,160,107,.1)',fill:true,tension:.35,pointRadius:2,borderWidth:2},
+    {type:'line',data:c.daily.labels.map(()=>tgt),borderColor:'#9a9a94',borderDash:[5,4],pointRadius:0,borderWidth:1.5}
+  ]}, options:{...chartBase(), scales:{y:{grid:{color:'#ececea'},ticks:{font:{size:10},callback:v=>v+'x'}},x:{grid:{display:false},ticks:{font:{size:9}}}}} });
+}
+
+// ════════════════════════ DETAIL ════════════════════════
 function openDetail(id) {
+  const c = campaigns.find(x=>x.id===id); if(!c) return;
   currentCampId = id;
-  const c = campaigns.find(x => x.id === id);
-  if (!c) return;
-
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  qs('page-detail').classList.add('active');
-
+  switchTab('detail', true);
   qs('detail-name').textContent = c.name;
-  const spendPct = Math.round(c.spend / c.budget * 100);
-  qs('detail-sub').innerHTML = `
-    <span class="badge ${c.status==='ACTIVE'?'badge-ok':'badge-warn'}">${c.status==='ACTIVE'?'Đang chạy':'Tạm dừng'}</span>
-    <span>Budget: ${fmtVnd(c.budget)} — đã tiêu ${spendPct}%</span>
-  `;
-  qs('btn-pause').innerHTML = `<i class="ti ${c.status==='ACTIVE'?'ti-player-pause':'ti-player-play'}"></i> ${c.status==='ACTIVE'?'Tạm dừng':'Bật lại'}`;
-
-  const tr = targetRoas[c.id] || config.roasMin;
-  qs('detail-target-roas').value = tr;
-
-  // compute all KPIs using exact formulas
-  const roas     = c.roas;                      // (conv_value/spend)×70%
-  const ctr      = c.ctr;                       // click/impression×100
-  const cvr      = c.cvr      || 0;             // install/click×100
-  const cpm      = c.cpm      || 0;             // spend/impression×1000
-  const cpi      = c.cpi      || 0;             // spend/install
-  const payrate  = c.payrate  || 0;             // purchase/install×100
-  const installs = c.installs || 0;
-
-  const roasOk    = roas*100 >= config.roasMin;
-  const ctrOk     = ctr     >= config.ctrMin;
-  const cvrOk     = cvr     >= config.cvrMin;
-  const installOk = installs >= config.installMin;
-  const payrateOk = payrate  >= config.payrateMin;
-  const cpiOk     = cpi > 0 ? cpi <= config.cpiMax : true;
-  const cpmOk     = cpm <= config.cpmMax;
-
-  function kpiBadge(label, ok, val) {
-    const bg  = ok ? '#EAF3DE' : '#FCEBEB';
-    const col = ok ? '#0F6E56' : '#A32D2D';
-    return `<span style="background:${bg};color:${col};font-weight:600;padding:4px 11px;border-radius:4px;font-size:12px;display:inline-flex;align-items:center;gap:5px">
-      ${ok?'✓':'✗'} ${label}<span style="opacity:.7;font-weight:400">${val}</span>
-    </span>`;
-  }
-
-  qs('detail-metrics').innerHTML = `
-    <div class="metric-card"><div class="metric-label">Spend</div><div class="metric-value">${fmtVnd(c.spend)}</div><div class="metric-sub">/ ${fmtVnd(c.budget)}</div></div>
-    <div class="metric-card"><div class="metric-label">ROAS <span style="font-size:10px;font-weight:400">(×70%)</span></div><div class="metric-value ${roasOk?'good':'bad'}">${roas.toFixed(2)}x</div><div class="metric-sub">target ≥ ${config.roasMin}%</div></div>
-    <div class="metric-card"><div class="metric-label">CTR</div><div class="metric-value ${ctrOk?'good':'bad'}">${ctr.toFixed(2)}%</div><div class="metric-sub">target ≥ ${config.ctrMin}%</div></div>
-    <div class="metric-card"><div class="metric-label">CVR</div><div class="metric-value ${cvrOk?'good':'bad'}">${cvr.toFixed(1)}%</div><div class="metric-sub">target ≥ ${config.cvrMin}%</div></div>
-    <div class="metric-card"><div class="metric-label">CPM</div><div class="metric-value ${cpmOk?'good':'warn'}">${fmtVnd(cpm)}</div><div class="metric-sub">max ${fmtVnd(config.cpmMax)}</div></div>
-    <div class="metric-card"><div class="metric-label">Installs</div><div class="metric-value ${installOk?'good':'bad'}">${installs}</div><div class="metric-sub">target ≥ ${config.installMin}</div></div>
-    <div class="metric-card"><div class="metric-label">CPI</div><div class="metric-value ${cpiOk?'good':'warn'}">${cpi>0?fmtVnd(cpi):'—'}</div><div class="metric-sub">max ${fmtVnd(config.cpiMax)}</div></div>
-    <div class="metric-card"><div class="metric-label">Purchases</div><div class="metric-value">${c.purchases}</div></div>
-    <div class="metric-card"><div class="metric-label">Payrate</div><div class="metric-value ${payrateOk?'good':'bad'}">${payrate.toFixed(1)}%</div><div class="metric-sub">target ≥ ${config.payrateMin}%</div></div>
-    <div class="metric-card"><div class="metric-label">Doanh thu</div><div class="metric-value good">${fmtVnd(c.revenue)}</div></div>
-  `;
-
-  // KPI scorecard row
-  const kpiRow = document.createElement('div');
-  kpiRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px';
-  kpiRow.innerHTML =
-    kpiBadge('ROAS',    roasOk,    ' '+roas.toFixed(2)+'x') +
-    kpiBadge('CTR',     ctrOk,     ' '+ctr.toFixed(2)+'%') +
-    kpiBadge('CVR',     cvrOk,     ' '+cvr.toFixed(1)+'%') +
-    kpiBadge('Install', installOk, ' '+installs) +
-    kpiBadge('Payrate', payrateOk, ' '+payrate.toFixed(1)+'%') +
-    kpiBadge('CPI',     cpiOk,     ' '+(cpi>0?fmtVnd(cpi):'—'));
-  qs('detail-metrics').after(kpiRow);
-
-  renderDetailCharts(c);
-
-  const campHist = actionHistory.filter(h => h.camp === c.name);
-  qs('detail-history').innerHTML = campHist.length
-    ? campHist.map(h => `<div class="history-item" style="border:none;padding:6px 0;border-bottom:0.5px solid var(--border)">
-        <span class="history-time">${h.time}</span>
-        <span class="history-action">${h.action}${h.note?' — '+h.note:''}</span>
-      </div>`).join('')
-    : '<div style="font-size:12px;color:var(--text-secondary);padding:8px 0">Chưa có hành động nào được ghi lại.</div>';
+  const sc = scoreOf(c); const scb=scoreBg(sc);
+  qs('detail-sub').innerHTML = `<span>${statusBadge(c.status)}</span><span style="color:var(--text-3)">${c.id}</span><span>Score: <b style="color:${scb.c}">${sc}</b></span><span>${c.budgetType==='daily'?`Budget ${fmtMoney(c.budget)}₫/ngày`:c.budgetType==='lifetime'?`Lifetime ${fmtMoney(c.lifetimeBudget)}₫`:'Budget cấp ad set'}</span>`;
+  const tgt = targetRoas[c.id]||config.roasMin;
+  qs('detail-metrics').innerHTML = [
+    ['Spend',fmtMoney(c.spend)+'₫',''],['Doanh thu',fmtMoney(c.revenue)+'₫',`Gross ${fmtRoas(c.grossRoas)}x`],
+    ['ROAS net',fmtRoas(c.roas)+'x',`mục tiêu ${fmtRoas(tgt)}x`, c.roas>=tgt?'good':c.roas>=config.roasMin?'warn':'bad'],
+    ['Installs',fmtNum(c.installs),`CPI ${c.installs?fmtMoney(c.cpi):'—'}₫`],
+    ['Purchases',fmtNum(c.purchases),`Payrate ${c.installs?c.payrate.toFixed(1):0}%`],
+    ['CTR',fmtPct(c.ctr),`CPM ${fmtMoney(c.cpm)}₫`],
+    ['CVR',fmtPct(c.cvr),''],['Clicks',fmtNum(c.clicks),`${fmtNum(c.impressions)} impr`]
+  ].map(([l,v,s,cls])=>`<div class="metric-card"><div class="metric-label">${l}</div><div class="metric-value ${cls||''}">${v}</div><div class="metric-sub">${s||''}</div></div>`).join('');
+  qs('detail-target-roas').value = targetRoas[c.id]||'';
+  qs('detail-target-roas').placeholder = config.roasMin;
+  qs('detail-roas-status').innerHTML='';
+  qs('btn-pause').innerHTML = c.status==='ACTIVE'?'<i class="ti ti-player-pause"></i> Tạm dừng':'<i class="ti ti-player-play"></i> Bật lại';
+  drawDetailCharts(c);
+  renderDetailHistory(id);
+  renderDetailHourly(id);
+}
+function renderDetailHourly(id) {
+  const el = qs('detail-hourly');
+  if (!hourly.dates.length) { el.innerHTML = `<div style="padding:10px;text-align:center"><button class="btn btn-sm" onclick="loadHourly(true)">Tải dữ liệu khung giờ</button></div>`; return; }
+  if (!hourly.byCamp[id]) { el.innerHTML='<div class="hint" style="padding:10px">Camp này chưa có dữ liệu khung giờ trong 4 ngày qua.</div>'; return; }
+  const strip = (hourlyRow(id).match(/<div><div class="hour-strip">[\s\S]*?<\/div><\/div>/)||[''])[0];
+  el.innerHTML = `${strip}<div class="hour-axis">${Array.from({length:24},(_,i)=>`<span>${i%3===0?i+'h':''}</span>`).join('')}</div>`;
+}
+function renderDetailHistory(id) {
+  const items = actionHistory.filter(h=>h.cid===id);
+  qs('detail-history').innerHTML = items.length? `<div class="history-list">${items.map(h=>`<div class="history-item"><span class="history-time">${h.time}</span><span class="history-action">${h.action}</span></div>`).join('')}</div>` : '<div class="hint" style="padding:8px 0">Chưa có hành động nào.</div>';
 }
 
-function renderDetailCharts(c) {
-  const tr = targetRoas[c.id] || config.roasMin;
-
-  if (detailSpendChart) detailSpendChart.destroy();
-  detailSpendChart = new Chart(qs('detail-spend-chart'), {
-    type:'bar',
-    data: { labels: DAYS, datasets:[{ label:'Spend', data: c.daily_data.spend, backgroundColor:'rgba(24,95,165,0.2)', borderColor:'#185FA5', borderWidth:1, borderRadius:3 }] },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ ticks:{ callback: v => fmtVnd(v), font:{size:10} } }, x:{ ticks:{ font:{size:10} } } } }
-  });
-
-  if (detailRoasChart) detailRoasChart.destroy();
-  detailRoasChart = new Chart(qs('detail-roas-chart'), {
-    data: { labels: DAYS, datasets:[
-      { type:'line', label:'ROAS',   data: c.daily_data.roas, borderColor:'#1D9E75', borderWidth:2, pointRadius:3, fill:false, tension:0.3 },
-      { type:'line', label:'Target', data: Array(7).fill(tr), borderColor:'#E24B4A', borderWidth:1.5, borderDash:[5,4], pointRadius:0, fill:false }
-    ]},
-    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ ticks:{ callback: v => (+v).toFixed(2)+'x', font:{size:10} } }, x:{ ticks:{ font:{size:10} } } } }
+// ════════════════════════ ACTIONS ════════════════════════
+function logAction(cid, camp, kind, action) {
+  actionHistory.unshift({ cid, camp, kind, action, time: new Date().toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) });
+  if (actionHistory.length>500) actionHistory.pop();
+  save('history', actionHistory); renderHistory();
+}
+async function setCampaignStatus(c, status) {
+  if (isDemo) return true;
+  await callMeta(c.id, {}, 'POST', { status });
+  return true;
+}
+async function setCampaignBudget(c, newBudget) {
+  if (isDemo) return true;
+  const off = curOffset();
+  await callMeta(c.id, {}, 'POST', { daily_budget: Math.round(newBudget*Math.pow(10,off)) });
+  return true;
+}
+function actPause(id) {
+  const c = campaigns.find(x=>x.id===id); if(!c) return;
+  confirmModal('Tạm dừng chiến dịch', `Tạm dừng "${c.name}"?\nChiến dịch sẽ ngừng phân phối ngay.`, async ()=>{
+    try { await setCampaignStatus(c,'PAUSED'); c.status='PAUSED'; c.configStatus='PAUSED'; logAction(id,c.name,'pause','Tạm dừng chiến dịch'); toast('Đã tạm dừng'); renderAll(); }
+    catch(e){ toast('Lỗi: '+e.message,'err'); }
   });
 }
-
-function backToOverview() { switchTab('overview'); }
-
+function actBudget(id, mult) {
+  const c = campaigns.find(x=>x.id===id); if(!c||!c.budget) { toast('Camp không có budget CBO để chỉnh','err'); return; }
+  let nb = Math.round(c.budget*mult); if(config.maxBudget>0&&mult>1) nb=Math.min(nb,config.maxBudget);
+  actBudgetTo(id, nb);
+}
+function actBudgetTo(id, nb) {
+  const c = campaigns.find(x=>x.id===id); if(!c) return;
+  const dir = nb>c.budget?'Tăng':'Giảm';
+  confirmModal(`${dir} budget`, `${dir} budget "${c.name}"\n${fmtFull(c.budget)}₫ → ${fmtFull(nb)}₫ /ngày?`, async ()=>{
+    try { await setCampaignBudget(c,nb); const old=c.budget; c.budget=nb; logAction(id,c.name,'budget',`${dir} budget ${fmtMoney(old)}₫ → ${fmtMoney(nb)}₫/ngày`); toast('Đã cập nhật budget'); renderAll(); if(currentCampId===id) openDetail(id); }
+    catch(e){ toast('Lỗi: '+e.message,'err'); }
+  });
+}
 function togglePauseCamp() {
-  const c = campaigns.find(x => x.id === currentCampId);
-  if (!c) return;
-  pauseCamp(c);
-  setTimeout(() => openDetail(c.id), 300);
+  const c = campaigns.find(x=>x.id===currentCampId); if(!c) return;
+  if (c.status==='ACTIVE') actPause(c.id);
+  else confirmModal('Bật lại chiến dịch',`Bật lại "${c.name}"?`, async()=>{ try{ await setCampaignStatus(c,'ACTIVE'); c.status='ACTIVE'; c.configStatus='ACTIVE'; logAction(c.id,c.name,'resume','Bật lại chiến dịch'); toast('Đã bật lại'); renderAll(); openDetail(c.id);}catch(e){toast('Lỗi: '+e.message,'err');} });
 }
-
-function boostBudget() {
-  const c = campaigns.find(x => x.id === currentCampId);
-  if (!c) return;
-  changeBudget(c, 0.2);
-  setTimeout(() => openDetail(c.id), 300);
-}
-
+function quickBudget(mult) { if(currentCampId) actBudget(currentCampId, mult); }
+function setTargetRoas(id,v){ const n=parseFloat(v); if(n>0) targetRoas[id]=n; else delete targetRoas[id]; persistAcct(); }
 function saveDetailTargetRoas() {
-  const val = parseFloat(qs('detail-target-roas').value);
-  if (!val || val <= 0) { toast('Nhập giá trị ROAS hợp lệ.'); return; }
-  const c = campaigns.find(x => x.id === currentCampId);
-  if (!c) return;
-  targetRoas[currentCampId] = val;
-  persistTargets();
-  addHistory(c.name, 'Cập nhật target ROAS', `→ ${val}x`);
-  openDetail(currentCampId);
-  updateAlertBadge();
-  toast('Đã cập nhật target ROAS!');
+  const v = parseFloat(qs('detail-target-roas').value);
+  const c = campaigns.find(x=>x.id===currentCampId);
+  if(v>0){ targetRoas[currentCampId]=v; qs('detail-roas-status').innerHTML='<span style="color:var(--green)"><i class="ti ti-check"></i> Đã lưu</span>'; }
+  else { delete targetRoas[currentCampId]; qs('detail-roas-status').innerHTML='<span style="color:var(--text-3)">Dùng mặc định</span>'; }
+  persistAcct(); logAction(currentCampId,c.name,'target',`Đặt target ROAS = ${v>0?v+'x':'mặc định'}`);
+  renderConfig(); openDetail(currentCampId);
+}
+function setBudgetEdit(id,v){ const n=parseFloat(v); if(n>0) budgetEdits[id]=n; else delete budgetEdits[id]; renderConfig(); }
+async function applyBudgets() {
+  const changes = Object.keys(budgetEdits).map(id=>({c:campaigns.find(x=>x.id===id),nb:budgetEdits[id]})).filter(x=>x.c&&x.nb!==Math.round(x.c.budget));
+  if(!changes.length){ toast('Chưa có thay đổi nào','err'); return; }
+  confirmModal('Áp dụng budget', `Cập nhật budget cho ${changes.length} chiến dịch lên Meta?`, async ()=>{
+    let ok=0;
+    for(const {c,nb} of changes){ try{ await setCampaignBudget(c,nb); const old=c.budget; c.budget=nb; logAction(c.id,c.name,'budget',`Budget ${fmtMoney(old)}₫ → ${fmtMoney(nb)}₫/ngày`); ok++; }catch(e){ toast(`Lỗi ${c.name}: ${e.message}`,'err'); } }
+    budgetEdits={}; toast(`Đã cập nhật ${ok}/${changes.length} camp`); renderAll();
+  });
+}
+function clearHistory() { confirmModal('Xóa lịch sử','Xóa toàn bộ lịch sử hành động?', ()=>{ actionHistory=[]; save('history',[]); renderHistory(); toast('Đã xóa lịch sử'); }); }
+function saveConfig() {
+  Object.keys(DEFAULT_CONFIG).forEach(k=>{ const el=qs('cfg-'+k); if(el){ const v=parseFloat(el.value); config[k]=isNaN(v)?DEFAULT_CONFIG[k]:v; } });
+  save('config', config); toast('Đã lưu cấu hình'); renderAll();
 }
 
-// ─── MODAL ────────────────────────────────────────────────────────────────
-function openModal(title, desc, onConfirm) {
-  qs('modal-title').textContent = title;
-  qs('modal-desc').textContent  = desc;
-  qs('modal-overlay').classList.add('open');
-  qs('modal-confirm').onclick = () => { closeModal(); onConfirm(); };
+// ════════════════════════ CONFIRM MODAL ════════════════════════
+let modalCb=null;
+function confirmModal(title,desc,cb){ qs('modal-title').textContent=title; qs('modal-desc').textContent=desc; modalCb=cb; qs('modal-overlay').classList.add('open'); }
+function closeModal(){ qs('modal-overlay').classList.remove('open'); modalCb=null; }
+qs('modal-confirm').onclick=()=>{ const cb=modalCb; closeModal(); cb&&cb(); };
+qs('modal-overlay').onclick=(e)=>{ if(e.target===qs('modal-overlay')) closeModal(); };
+
+// ════════════════════════ NAV / FILTERS ════════════════════════
+function switchTab(tab, fromDetail) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  qs('page-'+tab).classList.add('active');
+  if (!fromDetail && tab!=='detail' && tab!=='setup') qs('tab-'+tab)?.classList.add('active');
+  if (tab==='hourly') loadHourly();
+  if (tab==='history') renderHistory();
+  if (tab==='config') renderConfig();
+  window.scrollTo(0,0);
 }
-function closeModal() { qs('modal-overlay').classList.remove('open'); }
+function setStatusFilter(el,f){ el.parentElement.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); statusFilter=f; renderOverview(); }
+function setRange(el,r){ el.parentElement.querySelectorAll('.filter-pill').forEach(p=>{ if(['today','yesterday','7','14','30'].some(x=>p.getAttribute('onclick')?.includes(`'${x}'`)))p.classList.remove('active'); }); el.classList.add('active'); rangeMode=r; qs('ov-from').value='';qs('ov-to').value=''; loadAccount(); }
+function customRange(){ const f=qs('ov-from').value,t=qs('ov-to').value; if(f&&t){ customFrom=f;customTo=t;rangeMode='custom'; document.querySelectorAll('#page-overview .top-bar-left .filter-pill').forEach(p=>{ if(['today','yesterday','7','14','30'].some(x=>p.getAttribute('onclick')?.includes(`'${x}'`)))p.classList.remove('active'); }); loadAccount(); } }
+function setHeatMetric(el,m){ el.parentElement.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); heatMetric=m; renderHeatmap(); }
+function setHourMetric(el,m){ el.parentElement.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); hourMetric=m; renderHourly(); }
+function setAlertFilter(el,f){ el.parentElement.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); alertFilter=f; renderAlerts(); }
+function setSort(k){ if(sortKey===k) sortDir*=-1; else { sortKey=k; sortDir=-1; } renderOverview(); }
+function setSyncing(on){ const b=qs('sync-btn'); if(!b)return; if(on){ b.disabled=true; b.innerHTML='<span class="loader"></span> Đang tải'; } else { b.disabled=false; b.innerHTML='<i class="ti ti-refresh"></i> Đồng bộ'; } }
+function syncData(){ if(isDemo){ toast('Đang ở chế độ demo'); return; } hourly.loadedFor=''; loadAccount(); }
 
-// ─── TOAST ────────────────────────────────────────────────────────────────
-let toastTimer;
-function toast(msg) {
-  const el = qs('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+// ════════════════════════ ACCOUNTS / CONNECT ════════════════════════
+async function fetchAccountMeta(id) {
+  try { const r = await callMeta(id, { fields:'name,currency,timezone_name' });
+    return { id, name:r.name||id, currency:r.currency||'VND', tz:r.timezone_name||'', offset: ZERO_DECIMAL.includes(r.currency)?0:2 };
+  } catch { return { id, name:id, currency:'VND', tz:'', offset:0 }; }
 }
+function populateAccountSwitcher() {
+  const sw=qs('account-switcher');
+  if(accounts.length>1){ sw.style.display='block'; sw.innerHTML=accounts.map(a=>`<option value="${a.id}" ${a.id===currentAccount?'selected':''}>${a.name}</option>`).join(''); }
+  else sw.style.display='none';
+}
+async function switchAccount(id){ currentAccount=id; hourly.loadedFor=''; loadAcctState(); await loadAccount(); }
 
-
-// ─── INIT ─────────────────────────────────────────────────────────────────
-qs('modal-overlay').addEventListener('click', e => { if (e.target === qs('modal-overlay')) closeModal(); });
-
-let ALL_ACCOUNTS = [];
-let ACCOUNT_NAMES = {};
-
-async function switchAccount(accountId) {
-  API_ACCOUNT = accountId;
-  campaigns = [];
-  budgetEdits = {};
-  toast('Đang chuyển sang account ' + (ACCOUNT_NAMES[accountId] || accountId) + '...');
+async function connectAPI() {
+  const tk=qs('inp-token').value.trim(), acc=qs('inp-account').value.trim();
+  rangeMode = qs('inp-range').value;
+  if(!tk||!acc){ showErr('Vui lòng nhập Access Token và Ad Account ID'); return; }
+  token=tk; isDemo=false;
+  const ids=acc.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean).map(s=>s.startsWith('act_')?s:'act_'+s);
+  const btn=qs('connect-btn'); btn.disabled=true; btn.innerHTML='<span class="loader"></span> Đang kết nối...';
   try {
-    await fetchRealData();
-    switchTab('overview');
-    toast('Đã tải ' + campaigns.length + ' chiến dịch từ ' + (ACCOUNT_NAMES[accountId] || accountId));
-  } catch(e) {
-    toast('Lỗi: ' + e.message);
-  }
+    accounts = await Promise.all(ids.map(fetchAccountMeta));
+    currentAccount = accounts[0].id;
+    save('token', tk); save('accounts', ids);
+    loadAcctState(); populateAccountSwitcher(); switchTab('overview');
+    await loadAccount();
+  } catch(e){ showErr('Lỗi: '+e.message); }
+  finally { btn.disabled=false; btn.innerHTML='<i class="ti ti-plug"></i> Kết nối & tải dữ liệu'; }
 }
+function showErr(m){ const e=qs('setup-err'); e.textContent=m; e.style.display='block'; }
 
-function buildAccountSwitcher(accounts, names) {
-  const el = qs('account-switcher');
-  if (accounts.length <= 1) { el.style.display = 'none'; return; }
-  el.innerHTML = accounts.map(id =>
-    `<option value="${id}">${names[id] || id}</option>`
-  ).join('');
-  el.value = API_ACCOUNT;
-  el.style.display = '';
+// ════════════════════════ DEMO ════════════════════════
+function loadDemo() {
+  isDemo=true; token=''; currentAccount='demo';
+  accounts=[{id:'demo',name:'Demo Account',currency:'VND',offset:0,tz:'Asia/Ho_Chi_Minh'}];
+  targetRoas={}; budgetEdits={};
+  campaigns = DEMO_RAW.map(d=>withGetters(Object.assign({},d)));
+  populateAccountSwitcher(); buildDemoHourly();
+  switchTab('overview'); renderAll();
+  toast('Đang xem dữ liệu demo');
 }
-
-// Restore saved settings (config / targets / history) regardless of connection state.
-loadState();
-
-(async () => {
-  const errEl = qs('setup-err');
-
-  // 1) Prefer credentials the user saved on this device (entered in the tool).
-  let token = '';
-  let accounts = [];
-  try {
-    token = localStorage.getItem('meta_token') || '';
-    accounts = JSON.parse(localStorage.getItem('meta_accounts') || '[]') || [];
-    if (!accounts.length) { const legacy = localStorage.getItem('meta_account'); if (legacy) accounts = [legacy]; } // migrate old key
-  } catch(_) {}
-
-  // pre-fill the setup form so the user can see / edit what's stored
-  if (token)           qs('inp-token').value   = token;
-  if (accounts.length) qs('inp-account').value = accounts.join(', ');
-
-  // 2) Fall back to server env (/api/config) only if nothing is saved locally.
-  if (!token || !accounts.length) {
-    try {
-      const res = await fetch('/api/config');
-      if (res.ok) {
-        const cfg = await res.json();
-        if (cfg.token && cfg.accounts && cfg.accounts.length) {
-          token = cfg.token; accounts = cfg.accounts;
-          if (!qs('inp-token').value)   qs('inp-token').value   = token;
-          if (!qs('inp-account').value) qs('inp-account').value = accounts.join(', ');
-        }
+function mkDemo(id,name,status,spend,impr,clicks,inst,pur,rev,budget,daily) {
+  const labels=[]; for(let i=6;i>=0;i--) labels.push(dateStr(-i).slice(5));
+  return { id,name,status,configStatus:status,budget,lifetimeBudget:0,budgetType:'daily',
+    spend,impressions:impr,clicks,installs:inst,purchases:pur,revenue:rev,
+    daily:{ labels, spend:daily.map(x=>x*1000), roas:daily.map(()=>+(rev/spend).toFixed(2)) } };
+}
+const DEMO_RAW = [
+  mkDemo('c1','IIP555_Reelme_PUZZLE_01','ACTIVE',4200000,182000,3640,45,87,14700000,5000000,[380,420,390,450,400,370,410]),
+  mkDemo('c2','IIP555_Reelme_MERGE_01','ACTIVE',8900000,310000,4030,80,124,11600000,9000000,[1300,1280,1320,1250,1350,1300,1100]),
+  mkDemo('c3','IIP555_Reelme_PUZZLE_02','ACTIVE',1200000,45000,1800,98,56,8400000,3000000,[150,180,160,175,190,170,175]),
+  mkDemo('c4','IIP555_Reelme_IDLE_01','PAUSED',2100000,250000,1250,30,12,1800000,2500000,[350,380,400,370,300,200,100]),
+  mkDemo('c5','IIP555_Reelme_MERGE_02','ACTIVE',5500000,198000,3168,162,98,14700000,6000000,[780,800,790,810,785,780,755]),
+  mkDemo('c6','IIP555_Reelme_MATCH3_01','ACTIVE',550000,28000,560,15,8,960000,2000000,[40,60,80,120,90,80,80]),
+  mkDemo('c7','IIP555_Reelme_PUZZLE_03','ACTIVE',900000,95000,950,28,15,2250000,1000000,[100,120,130,150,140,130,130]),
+];
+function buildDemoHourly() {
+  const dates=[dateStr(-3),dateStr(-2),dateStr(-1),dateStr(0)];
+  const byCamp={}; const nowH=new Date().getHours();
+  campaigns.forEach(c=>{
+    const spend={},roas={};
+    dates.forEach((d,di)=>{
+      const sArr=new Array(24).fill(0), rArr=new Array(24).fill(0);
+      const isToday=di===dates.length-1;
+      const daySpend=c.budget*(0.85+0.05*di);
+      for(let h=0;h<24;h++){
+        if(isToday&&h>nowH){ continue; }
+        const w=Math.max(0,Math.sin((h-3)/24*Math.PI))+0.12;
+        let val=daySpend*w/13;
+        if(c.id==='c2'&&isToday&&h>=12) val*=0.15;
+        if(c.id==='c6'&&isToday&&h>=Math.max(0,nowH-5)) val=0;
+        if(c.id==='c1'&&isToday&&h>=10&&h<=Math.min(14,nowH)) val*=2.3;
+        sArr[h]=Math.round(val); rArr[h]=+(c.revenue/c.spend*0.7).toFixed(2);
       }
-    } catch(_) {}
-  }
+      spend[d]=sArr; roas[d]=rArr;
+    });
+    byCamp[c.id]={name:c.name,spend,roas};
+  });
+  hourly={byCamp,dates,loadedFor:'demo',loading:false};
+}
 
-  // 3) Nothing to connect with → stay on the setup page.
-  if (!token || !accounts.length) return;
-
+// ════════════════════════ INIT ════════════════════════
+async function init() {
+  loadAll();
   try {
-    await connectWith(token, accounts, errEl);
-    toast('Đã tải ' + campaigns.length + ' chiến dịch!');
-    switchTab('overview');
-    setTimeout(generateSuggestions, 500);
-  } catch(e) {
-    errEl.style.display = 'block';
-    errEl.style.color = 'var(--red)';
-    errEl.textContent = 'Lỗi kết nối: ' + e.message + ' — kiểm tra lại token (có thể đã hết hạn).';
-  }
-})();
+    const r = await fetch('/api/config');
+    if (r.ok) {
+      const cfg = await r.json();
+      if (cfg.token && cfg.accounts?.length) {
+        token = cfg.token;
+        accounts = await Promise.all(cfg.accounts.map(fetchAccountMeta));
+        currentAccount = accounts[0].id; rangeMode = '7';
+        loadAcctState(); populateAccountSwitcher(); switchTab('overview');
+        await loadAccount();
+        return;
+      }
+    }
+  } catch {}
+  const savedTk = load('token',''), savedAcc = load('accounts',[]);
+  if (savedTk && savedAcc.length) { qs('inp-token').value = savedTk; qs('inp-account').value = savedAcc.join(', '); }
+}
+init();
 </script>
 </body>
 </html>

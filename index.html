@@ -442,6 +442,11 @@
       <span><b>Payrate</b> = Purchase ÷ Install × 100</span>
     </div>
   </div>
+  <div class="config-section">
+    <h3><i class="ti ti-filter"></i> Bộ lọc mặc định</h3>
+    <div class="hint">Khi mở tool, danh sách + tổng + biểu đồ tự lọc theo từ khóa này (vd tag <b>ptt</b> trong tên camp của bạn). Để trống = hiện tất cả. Có thể xóa từ khóa ở ô tìm kiếm bất cứ lúc nào để xem toàn bộ.</div>
+    <div class="config-row"><label>Từ khóa lọc tên camp <small>áp cho cả Tổng quan / Heatmap / Khung giờ</small></label><input type="text" id="cfg-defaultFilter" style="width:170px;text-align:left" placeholder="vd: ptt" /></div>
+  </div>
   <div class="config-grid">
     <div>
       <div class="config-section">
@@ -569,6 +574,8 @@ let hourMetric = 'spend';
 let rangeMode = '7';
 let customFrom = '', customTo = '';
 let sortKey = 'spend', sortDir = -1;
+let defaultFilter = 'ptt';        // từ khóa lọc tên camp mặc định khi mở tool (vd tag "ptt")
+let firstFilterApplied = false;   // chỉ tự áp bộ lọc 1 lần khi load đầu tiên
 
 const DEFAULT_CONFIG = {
   roasGood: 1.5, roasMin: 1.0, ctrMin: 1.0, cvrMin: 25, installMin: 10,
@@ -619,6 +626,7 @@ function load(k, def) { try { const v = localStorage.getItem('mam_'+k); return v
 function loadAll() {
   config = Object.assign({}, DEFAULT_CONFIG, load('config', {}));
   actionHistory = load('history', []);
+  defaultFilter = load('defaultFilter', 'ptt');
 }
 function loadAcctState() { targetRoas = load('targetRoas_'+currentAccount, {}) || {}; }
 function persistAcct() { if (currentAccount) save('targetRoas_'+currentAccount, targetRoas); }
@@ -867,8 +875,10 @@ function buildAlerts() {
 
 // ════════════════════════ RENDERING ════════════════════════
 let alertCache = [];
+function setSearchBoxes(val) { ['ov-search','hm-search','hr-search'].forEach(id=>{ const el=qs(id); if(el) el.value = val||''; }); }
 function renderAll() {
   if (!campaigns.length) return;
+  if (!firstFilterApplied) { firstFilterApplied = true; if (defaultFilter) setSearchBoxes(defaultFilter); }
   renderOverview(); renderHeatmap(); renderAlerts(); renderConfig();
   if (qs('page-hourly').classList.contains('active')) renderHourly();
 }
@@ -890,13 +900,17 @@ function filteredCampaigns(searchId) {
 
 function renderOverview() {
   if (!campaigns.length) return;
-  const tot = campaigns.reduce((a,c)=>({spend:a.spend+c.spend,rev:a.rev+c.revenue,inst:a.inst+c.installs,pur:a.pur+c.purchases,clicks:a.clicks+c.clicks,impr:a.impr+c.impressions}),{spend:0,rev:0,inst:0,pur:0,clicks:0,impr:0});
+  let arr = filteredCampaigns('ov-search');
+  arr.sort((a,b)=>{ let va=a[sortKey], vb=b[sortKey]; if(sortKey==='score'){va=scoreOf(a);vb=scoreOf(b);} if(sortKey==='name'){return sortDir*a.name.localeCompare(b.name);} return sortDir*((va||0)-(vb||0)); });
+  // Tổng & chart phản ánh đúng danh sách đã lọc (search + status)
+  const filterQ = (qs('ov-search')?.value||'').trim();
+  const tot = arr.reduce((a,c)=>({spend:a.spend+c.spend,rev:a.rev+c.revenue,inst:a.inst+c.installs,pur:a.pur+c.purchases,clicks:a.clicks+c.clicks,impr:a.impr+c.impressions}),{spend:0,rev:0,inst:0,pur:0,clicks:0,impr:0});
   const netRoas = tot.spend ? tot.rev/tot.spend*0.7 : 0;
   const cpi = tot.inst ? tot.spend/tot.inst : 0;
-  const activeN = campaigns.filter(c=>c.status==='ACTIVE').length;
+  const activeN = arr.filter(c=>c.status==='ACTIVE').length;
   const roasCls = netRoas>=config.roasGood?'good':netRoas>=config.roasMin?'warn':'bad';
   qs('ov-metrics').innerHTML = [
-    ['Tổng chi tiêu', fmtMoney(tot.spend)+'₫', `${campaigns.length} camp · ${activeN} đang chạy`, ''],
+    ['Tổng chi tiêu', fmtMoney(tot.spend)+'₫', `${arr.length} camp${filterQ?` · lọc "${filterQ}"`:''} · ${activeN} đang chạy`, ''],
     ['Doanh thu', fmtMoney(tot.rev)+'₫', `Gross ROAS ${fmtRoas(tot.spend?tot.rev/tot.spend:0)}x`, ''],
     ['ROAS net', fmtRoas(netRoas)+'x', `mục tiêu ${config.roasMin}x`, roasCls],
     ['Installs', fmtNum(tot.inst), `CPI ${fmtMoney(cpi)}₫`, ''],
@@ -906,8 +920,6 @@ function renderOverview() {
 
   qs('ov-head').innerHTML = COLS.map(c=>`<th class="${c.left||c.k==='act'?'':'sortable'}" ${c.k!=='act'&&c.k!=='name'?`onclick="setSort('${c.k}')"`:''} style="${c.left?'text-align:left':''}">${c.l}${sortKey===c.k?` <span class="arr">${sortDir<0?'▼':'▲'}</span>`:''}</th>`).join('');
 
-  let arr = filteredCampaigns('ov-search');
-  arr.sort((a,b)=>{ let va=a[sortKey], vb=b[sortKey]; if(sortKey==='score'){va=scoreOf(a);vb=scoreOf(b);} if(sortKey==='name'){return sortDir*a.name.localeCompare(b.name);} return sortDir*((va||0)-(vb||0)); });
   qs('ov-count').textContent = `(${arr.length})`;
   qs('ov-body').innerHTML = arr.map(c => {
     const sc = scoreOf(c); const scb = scoreBg(sc); const tgt = targetRoas[c.id]||config.roasMin;
@@ -930,7 +942,7 @@ function renderOverview() {
       <td><button class="btn btn-sm btn-ghost" onclick="openDetail('${c.id}')"><i class="ti ti-chevron-right"></i></button></td>
     </tr>`;
   }).join('') || `<tr><td colspan="16"><div class="empty"><i class="ti ti-search-off"></i><p>Không có chiến dịch phù hợp</p></div></td></tr>`;
-  drawTrend();
+  drawTrend(arr);
 }
 
 function statusBadge(s) {
@@ -1089,6 +1101,7 @@ function renderHistory() {
 
 function renderConfig() {
   Object.keys(DEFAULT_CONFIG).forEach(k=>{ const el=qs('cfg-'+k); if(el) el.value=config[k]; });
+  const dfEl = qs('cfg-defaultFilter'); if(dfEl) dfEl.value = defaultFilter;
   qs('target-roas-rows').innerHTML = campaigns.length ? campaigns.map(c=>`<div class="config-row"><label title="${c.name}">${c.name}</label><input type="number" step="0.1" value="${targetRoas[c.id]||''}" placeholder="${config.roasMin}" onchange="setTargetRoas('${c.id}',this.value)" /><span class="unit">x</span></div>`).join('') : '<div class="hint">Kết nối dữ liệu để hiện danh sách camp.</div>';
   const cbo = campaigns.filter(c=>c.budgetType!=='adset');
   qs('budget-rows').innerHTML = cbo.length ? cbo.map(c=>{
@@ -1102,9 +1115,9 @@ function renderConfig() {
 
 // ════════════════════════ CHARTS ════════════════════════
 function chartBase() { return { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, animation:{duration:300} }; }
-function drawTrend() {
+function drawTrend(list = campaigns) {
   const map = {};
-  campaigns.forEach(c => c.daily.labels.forEach((lb,i)=>{ map[lb]=map[lb]||{spend:0,rev:0}; map[lb].spend+=c.daily.spend[i]||0; map[lb].rev+=(c.daily.spend[i]||0)*((c.daily.roas[i]||0)); }));
+  list.forEach(c => c.daily.labels.forEach((lb,i)=>{ map[lb]=map[lb]||{spend:0,rev:0}; map[lb].spend+=c.daily.spend[i]||0; map[lb].rev+=(c.daily.spend[i]||0)*((c.daily.roas[i]||0)); }));
   const labels = Object.keys(map).sort();
   const spend = labels.map(l=>map[l].spend);
   const roas = labels.map(l=>map[l].spend? +(map[l].rev/map[l].spend).toFixed(2):0);
@@ -1239,7 +1252,10 @@ async function applyBudgets() {
 function clearHistory() { confirmModal('Xóa lịch sử','Xóa toàn bộ lịch sử hành động?', ()=>{ actionHistory=[]; save('history',[]); renderHistory(); toast('Đã xóa lịch sử'); }); }
 function saveConfig() {
   Object.keys(DEFAULT_CONFIG).forEach(k=>{ const el=qs('cfg-'+k); if(el){ const v=parseFloat(el.value); config[k]=isNaN(v)?DEFAULT_CONFIG[k]:v; } });
-  save('config', config); toast('Đã lưu cấu hình'); renderAll();
+  const dfEl = qs('cfg-defaultFilter'); if(dfEl){ defaultFilter = dfEl.value.trim(); save('defaultFilter', defaultFilter); }
+  save('config', config);
+  setSearchBoxes(defaultFilter);   // áp ngay từ khóa mới vào các ô tìm kiếm
+  toast('Đã lưu cấu hình'); renderAll();
 }
 
 // ════════════════════════ CONFIRM MODAL ════════════════════════
@@ -1318,13 +1334,13 @@ function mkDemo(id,name,status,spend,impr,clicks,inst,pur,rev,budget,daily) {
     daily:{ labels, spend:daily.map(x=>x*1000), roas:daily.map(()=>+(rev/spend).toFixed(2)) } };
 }
 const DEMO_RAW = [
-  mkDemo('c1','IIP555_Reelme_PUZZLE_01','ACTIVE',4200000,182000,3640,45,87,14700000,5000000,[380,420,390,450,400,370,410]),
-  mkDemo('c2','IIP555_Reelme_MERGE_01','ACTIVE',8900000,310000,4030,80,124,11600000,9000000,[1300,1280,1320,1250,1350,1300,1100]),
-  mkDemo('c3','IIP555_Reelme_PUZZLE_02','ACTIVE',1200000,45000,1800,98,56,8400000,3000000,[150,180,160,175,190,170,175]),
-  mkDemo('c4','IIP555_Reelme_IDLE_01','PAUSED',2100000,250000,1250,30,12,1800000,2500000,[350,380,400,370,300,200,100]),
-  mkDemo('c5','IIP555_Reelme_MERGE_02','ACTIVE',5500000,198000,3168,162,98,14700000,6000000,[780,800,790,810,785,780,755]),
-  mkDemo('c6','IIP555_Reelme_MATCH3_01','ACTIVE',550000,28000,560,15,8,960000,2000000,[40,60,80,120,90,80,80]),
-  mkDemo('c7','IIP555_Reelme_PUZZLE_03','ACTIVE',900000,95000,950,28,15,2250000,1000000,[100,120,130,150,140,130,130]),
+  mkDemo('c1','IIP555_Reelme_PUZZLE_01_US_Roas_2306_ptt','ACTIVE',4200000,182000,3640,45,87,14700000,5000000,[380,420,390,450,400,370,410]),
+  mkDemo('c2','IIP555_Reelme_MERGE_01_US_Purchase_1806_ptt','ACTIVE',8900000,310000,4030,80,124,11600000,9000000,[1300,1280,1320,1250,1350,1300,1100]),
+  mkDemo('c3','IIP555_Reelme_PUZZLE_02_VN_Roas_2206_ptt','ACTIVE',1200000,45000,1800,98,56,8400000,3000000,[150,180,160,175,190,170,175]),
+  mkDemo('c4','IIP555_Reelme_IDLE_01_US_Purchase_1506_longt','PAUSED',2100000,250000,1250,30,12,1800000,2500000,[350,380,400,370,300,200,100]),
+  mkDemo('c5','IIP555_Reelme_MERGE_02_US_Roas_2406_ptt','ACTIVE',5500000,198000,3168,162,98,14700000,6000000,[780,800,790,810,785,780,755]),
+  mkDemo('c6','IIP555_Reelme_MATCH3_01_VN_Roas_2306_ptt','ACTIVE',550000,28000,560,15,8,960000,2000000,[40,60,80,120,90,80,80]),
+  mkDemo('c7','IIP555_Reelme_PUZZLE_03_US_Purchase_2006_longt','ACTIVE',900000,95000,950,28,15,2250000,1000000,[100,120,130,150,140,130,130]),
 ];
 function buildDemoHourly() {
   const dates=[dateStr(-3),dateStr(-2),dateStr(-1),dateStr(0)];

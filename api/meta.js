@@ -7,12 +7,17 @@
 
 const GRAPH = 'https://graph.facebook.com';
 const VERSION = process.env.GRAPH_VERSION || 'v21.0';
-const MAX_PAGES = 25; // safety cap when auto-following paging
+const MAX_PAGES = 50; // safety cap when auto-following paging
 
-function cors(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+// CORS khóa về chính origin của deployment (chặn website khác gọi proxy trong browser nạn nhân).
+// Có thể override bằng env ALLOWED_ORIGIN.
+function cors(req, res) {
+  const host = req.headers.host;
+  const allowed = process.env.ALLOWED_ORIGIN || (host ? `https://${host}` : '*');
+  res.setHeader('Access-Control-Allow-Origin', allowed);
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,x-meta-token');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,x-meta-token,x-proxy-secret');
 }
 
 function readBody(req) {
@@ -29,7 +34,7 @@ function readBody(req) {
 }
 
 export default async function handler(req, res) {
-  cors(res);
+  cors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const q = req.query || {};
@@ -37,6 +42,14 @@ export default async function handler(req, res) {
   if (!path) return res.status(400).json({ error: { message: 'Missing ?path' } });
 
   const body = req.method === 'POST' ? await readBody(req) : {};
+
+  // Cổng bảo mật tuỳ chọn: nếu đặt env PROXY_SECRET thì mọi request phải khớp x-proxy-secret.
+  // Không đặt -> giữ nguyên hành vi cũ (tiện dùng ngay). Đặt -> chặn gọi trực tiếp ẩn danh dùng env token.
+  if (process.env.PROXY_SECRET) {
+    const sec = q.secret || req.headers['x-proxy-secret'] || body.secret;
+    if (sec !== process.env.PROXY_SECRET) return res.status(401).json({ error: { message: 'Unauthorized' } });
+  }
+
   const token =
     q.token ||
     req.headers['x-meta-token'] ||
@@ -50,7 +63,7 @@ export default async function handler(req, res) {
       // Write: forward body fields (minus token) as form params.
       const form = new URLSearchParams();
       for (const [k, v] of Object.entries(body)) {
-        if (k === 'token') continue;
+        if (k === 'token' || k === 'secret') continue;
         form.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v));
       }
       form.append('access_token', token);
@@ -66,8 +79,9 @@ export default async function handler(req, res) {
     // Read: build query from passthrough params, auto-follow paging into data[].
     const params = new URLSearchParams();
     for (const [k, v] of Object.entries(q)) {
-      if (k === 'path' || k === 'token' || k === 'nopage') continue;
-      params.append(k, v);
+      if (k === 'path' || k === 'token' || k === 'nopage' || k === 'secret') continue;
+      if (Array.isArray(v)) { for (const item of v) params.append(k, item); }
+      else params.append(k, v);
     }
     params.append('access_token', token);
 
@@ -92,7 +106,8 @@ export default async function handler(req, res) {
     }
 
     if (last && Array.isArray(last.data)) {
-      return res.status(200).json({ data: collected, pages });
+      // truncated = true nếu thoát vòng do chạm MAX_PAGES mà vẫn còn trang next chưa lấy
+      return res.status(200).json({ data: collected, pages, truncated: !!url });
     }
     return res.status(200).json(last || { data: [] });
   } catch (e) {

@@ -629,6 +629,25 @@ function dateStr(offsetDays = 0) {
   const d = new Date(); d.setDate(d.getDate() + offsetDays);
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
+// Ngày/giờ theo TIMEZONE CỦA AD ACCOUNT (vì breakdown giờ của Meta tính theo giờ account, không phải giờ máy).
+function acctTz() { const a = accounts.find(x => x.id === currentAccount); return a && a.tz ? a.tz : ''; }
+function acctNow() {
+  const tz = acctTz();
+  if (!tz) return { date: dateStr(0), hour: new Date().getHours() };
+  try {
+    const p = new Intl.DateTimeFormat('en-CA', { timeZone: tz, hour12: false, year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit' }).formatToParts(new Date());
+    const g = t => p.find(x => x.type === t).value; let h = parseInt(g('hour'), 10); if (h === 24) h = 0;
+    return { date: `${g('year')}-${g('month')}-${g('day')}`, hour: h };
+  } catch { return { date: dateStr(0), hour: new Date().getHours() }; }
+}
+function acctDateStr(offsetDays) {
+  const tz = acctTz(); const d = new Date(); d.setDate(d.getDate() + offsetDays);
+  if (!tz) return dateStr(offsetDays);
+  try {
+    const p = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(d);
+    const g = t => p.find(x => x.type === t).value; return `${g('year')}-${g('month')}-${g('day')}`;
+  } catch { return dateStr(offsetDays); }
+}
 function rangeDates() {
   if (rangeMode === 'custom' && customFrom && customTo) return { since: customFrom, until: customTo };
   if (rangeMode === 'today') return { since: dateStr(0), until: dateStr(0) };
@@ -660,6 +679,7 @@ async function callMeta(path, params = {}, method = 'GET', body = null) {
   for (const [k, v] of Object.entries(params)) usp.append(k, typeof v === 'object' ? JSON.stringify(v) : v);
   const opts = { method, headers: {} };
   if (token) opts.headers['x-meta-token'] = token;
+  const psecret = load('proxySecret',''); if (psecret) opts.headers['x-proxy-secret'] = psecret;
   if (method === 'POST') { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body || {}); }
   const r = await fetch('/api/meta?' + usp.toString(), opts);
   const json = await r.json().catch(() => ({ error: { message: 'Phản hồi không hợp lệ' } }));
@@ -740,6 +760,7 @@ async function loadAccount(showLoading = true) {
       c.daily = { labels: arr.map(x => x.d.slice(5)), spend: arr.map(x => x.spend), roas: arr.map(x => +x.roas.toFixed(2)) };
     });
     renderAll();
+    if (cfgRes.truncated || insRes.truncated || dailyRes.truncated) toast('⚠ Nhiều dữ liệu — có thể chưa tải hết, thu hẹp khoảng ngày', 'err');
     toast(`Đã tải ${campaigns.length} chiến dịch`);
   } catch (e) {
     toast('Lỗi tải dữ liệu: ' + e.message, 'err'); console.error(e);
@@ -750,19 +771,21 @@ async function loadAccount(showLoading = true) {
 // ────── HOURLY ──────
 async function loadHourly(force = false) {
   if (isDemo) { buildDemoHourly(); renderHourly(); return; }
-  const key = currentAccount + '|' + dateStr(0) + '|' + new Date().getHours();
+  const now = acctNow();
+  const key = currentAccount + '|' + now.date + '|' + now.hour;
   if (hourly.loadedFor === key && !force) { renderHourly(); return; }
   if (hourly.loading) return;
   hourly.loading = true;
   qs('hourly-grid').innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-3)"><span class="loader"></span> Đang tải dữ liệu khung giờ...</div>';
   try {
-    const since = dateStr(-3), until = dateStr(0);
+    const since = acctDateStr(-3), until = acctDateStr(0);
     const res = await callMeta(`${currentAccount}/insights`, {
       level: 'campaign', time_range: { since, until }, time_increment: 1,
       breakdowns: 'hourly_stats_aggregated_by_advertiser_time_zone',
       fields: 'campaign_id,campaign_name,spend,action_values', limit: 2000
     });
-    const dates = [dateStr(-3), dateStr(-2), dateStr(-1), dateStr(0)];
+    const dates = [acctDateStr(-3), acctDateStr(-2), acctDateStr(-1), acctDateStr(0)];
+    if (res.truncated) toast('⚠ Dữ liệu giờ rất nhiều, có thể chưa tải hết', 'err');
     const byCamp = {};
     (res.data || []).forEach(r => {
       const cid = r.campaign_id;
@@ -785,15 +808,15 @@ async function loadHourly(force = false) {
 }
 
 // today (cumulative-per-hour) vs prev-3-day average per hour
-function hourlyStats(cid) {
+function hourlyStats(cid, metric = hourMetric) {
   const h = hourly.byCamp[cid]; if (!h) return null;
   const dates = hourly.dates; const today = dates[dates.length-1]; const prev = dates.slice(0,-1);
-  const m = hourMetric;
+  const m = metric;
   const todayArr = (h[m] && h[m][today]) ? h[m][today].slice() : new Array(24).fill(0);
   const avg = new Array(24).fill(0); let cnt = 0;
   prev.forEach(d => { const a = h[m] && h[m][d]; if (a) { cnt++; for (let i=0;i<24;i++) avg[i]+=(a[i]||0); } });
   for (let i=0;i<24;i++) avg[i] = cnt ? avg[i]/cnt : 0;
-  return { today: todayArr, avg, name: h.name, nowHour: new Date().getHours() };
+  return { today: todayArr, avg, name: h.name, nowHour: acctNow().hour };
 }
 
 // ════════════════════════ SCORING & ANALYSIS ════════════════════════
@@ -819,7 +842,11 @@ function suggestBudget(c) {
   if (c.roas >= config.upRoas && score >= 70) {
     let nb = Math.round(c.budget * (1 + config.upPct/100));
     if (config.maxBudget>0) nb = Math.min(nb, config.maxBudget);
-    if (nb > c.budget) return { dir:'up', newBudget:nb, reason:`ROAS ${fmtRoas(c.roas)}x ≥ ${config.upRoas}x & Score ${score}. Tăng ${config.upPct}% để scale.` };
+    if (nb > c.budget) {
+      const appliedPct = Math.round((nb/c.budget-1)*100);
+      const capNote = (config.maxBudget>0 && nb===config.maxBudget && appliedPct<config.upPct) ? ` (chạm trần ${fmtMoney(config.maxBudget)}₫)` : '';
+      return { dir:'up', newBudget:nb, reason:`ROAS ${fmtRoas(c.roas)}x ≥ ${config.upRoas}x & Score ${score}. Tăng ${appliedPct}%${capNote} để scale.` };
+    }
   }
   if (c.roas < config.downRoas && c.spend > 0) {
     const nb = Math.max(1, Math.round(c.budget * (1 - config.downPct/100)));
@@ -837,22 +864,27 @@ function buildAlerts() {
 
   campaigns.forEach(c => {
     const tgt = targetRoas[c.id] || config.roasMin;
+    const sug = suggestBudget(c);                              // tính 1 lần, dùng chung cho scale + chậm tiêu
+    const hasBudget = c.budget>0 && c.budgetType!=='adset';    // chỉ camp CBO mới sửa budget được ở đây
     // 1) ROAS dưới mục tiêu
     if (c.status==='ACTIVE' && c.spend>0 && c.roas < tgt) {
       const sev = c.roas < config.downRoas ? 'high' : (c.roas < config.roasMin ? 'mid' : 'low');
+      // ABO (không có budget CBO) -> không gắn nút Giảm (sẽ lỗi); vẫn cho Pause vì pause chạy ở cấp campaign
+      const acts = hasBudget ? (c.roas<config.downRoas?['pause','down']:['down']) : (c.roas<config.downRoas?['pause','detail']:['detail']);
       alerts.push({ cid:c.id, sev, icon:'trending-down', kind:'perf', title:'ROAS dưới mục tiêu',
         desc:`ROAS net <b>${fmtRoas(c.roas)}x</b> &lt; mục tiêu <b>${fmtRoas(tgt)}x</b>. Đã tiêu ${fmtMoney(c.spend)}₫, doanh thu ${fmtMoney(c.revenue)}₫.`,
-        actions: c.roas<config.downRoas ? ['pause','down'] : ['down'] });
+        actions: acts });
     }
     // 2) Tiêu vống / 3) Chậm tiêu (theo nhịp ngày — chỉ khi xem "Hôm nay")
-    if (c.status==='ACTIVE' && c.budget>0 && todayMode) {
+    if (c.status==='ACTIVE' && hasBudget && todayMode) {
       const expected = c.budget*frac;
       if (c.spend > c.budget * (config.overSpend/100)) {
         alerts.push({ cid:c.id, sev:'high', icon:'flame', kind:'budget', title:'Tiêu vống budget',
           desc:`Đã tiêu <b>${fmtMoney(c.spend)}₫</b> = ${(c.spend/c.budget*100).toFixed(0)}% budget/ngày (${fmtMoney(c.budget)}₫), vượt ngưỡng ${config.overSpend}%.`, actions:['detail'] });
       } else if (frac>0.25 && c.spend < expected*(config.slowSpend/100)) {
+        // nếu camp này đã có cảnh báo scale (tăng budget) thì bỏ nút Tăng ở đây để khỏi áp 2 lần
         alerts.push({ cid:c.id, sev:'mid', icon:'player-pause', kind:'budget', title:'Chậm tiêu',
-          desc:`Mới tiêu <b>${fmtMoney(c.spend)}₫</b>, dự kiến ~${fmtMoney(expected)}₫ tại thời điểm này (${(c.spend/expected*100||0).toFixed(0)}% nhịp). Đang under-delivery.`, actions:['up','detail'] });
+          desc:`Mới tiêu <b>${fmtMoney(c.spend)}₫</b>, dự kiến ~${fmtMoney(expected)}₫ tại thời điểm này (${(c.spend/expected*100||0).toFixed(0)}% nhịp). Đang under-delivery.`, actions: (sug&&sug.dir==='up')?['detail']:['up','detail'] });
       }
     }
     // 4) ROAS thấp hơn mặt bằng tài khoản
@@ -861,7 +893,6 @@ function buildAlerts() {
         desc:`ROAS <b>${fmtRoas(c.roas)}x</b> thấp hơn ${config.roasDrop}% so với TB tài khoản (${fmtRoas(avgRoas)}x).`, actions:['detail'] });
     }
     // 5) Cơ hội scale
-    const sug = suggestBudget(c);
     if (sug && sug.dir==='up') {
       alerts.push({ cid:c.id, sev:'low', icon:'rocket', kind:'budget', title:'Cơ hội scale',
         desc:sug.reason + ` Budget ${fmtMoney(c.budget)}₫ → <b>${fmtMoney(sug.newBudget)}₫</b>.`, actions:['applyup'], sug });
@@ -872,11 +903,13 @@ function buildAlerts() {
   if (hourly.dates.length) {
     Object.keys(hourly.byCamp).forEach(cid => {
       const c = campaigns.find(x => x.id===cid); if (!c || c.status!=='ACTIVE') return;
-      const st = hourlyStats(cid); if (!st) return;
-      const lastClosed = Math.max(0, st.nowHour-1);
+      const st = hourlyStats(cid, 'spend'); if (!st) return;   // luôn theo spend, không phụ thuộc toggle
+      const lastClosed = st.nowHour - 1;
+      if (lastClosed < 0) return;                              // nửa đêm: chưa có giờ đóng
       const tc = st.today.slice(0, lastClosed+1).reduce((a,b)=>a+b,0);
       const ac = st.avg.slice(0, lastClosed+1).reduce((a,b)=>a+b,0);
-      if (ac > 1000) {
+      const floor = c.budget>0 ? c.budget*0.03 : 0;            // sàn nhiễu theo currency account
+      if (ac > floor) {
         const dev = (tc-ac)/ac*100;
         if (dev <= -config.hourDev) alerts.push({ cid, sev:'mid', icon:'clock-pause', kind:'perf', title:'Tiêu chậm bất thường theo giờ',
           desc:`Đến ${lastClosed}h, hôm nay tiêu <b>${fmtMoney(tc)}₫</b> — thấp hơn <b>${Math.abs(dev).toFixed(0)}%</b> so với TB 3 ngày (${fmtMoney(ac)}₫).`, actions:['detail','up'] });
@@ -1034,13 +1067,16 @@ function renderHourly() {
 }
 
 function hourlyVerdict(cid) {
-  const st = hourlyStats(cid); if(!st) return 'na';
-  const lastClosed = Math.max(0, st.nowHour-1);
+  const st = hourlyStats(cid, 'spend'); if(!st) return 'na';   // luôn theo spend, không phụ thuộc toggle ROAS
+  const lastClosed = st.nowHour - 1;
+  if (lastClosed < 0) return 'na';                              // nửa đêm (giờ account = 0): chưa có giờ nào đóng
   const tc = st.today.slice(0,lastClosed+1).reduce((a,b)=>a+b,0);
   const ac = st.avg.slice(0,lastClosed+1).reduce((a,b)=>a+b,0);
   let silent=0; for(let h=lastClosed;h>=0&&st.today[h]===0;h--) silent++;
   if (silent>=config.stopHours && st.avg.slice(Math.max(0,lastClosed-silent+1),lastClosed+1).some(v=>v>0)) return 'stopped';
-  if (ac<500 && hourMetric==='spend') return 'na';
+  const c = campaigns.find(x=>x.id===cid);
+  const floor = (c && c.budget>0) ? c.budget*0.03 : 0;          // sàn nhiễu theo currency account, không hardcode VND
+  if (ac<=floor) return 'na';
   const dev=ac>0?(tc-ac)/ac*100:0;
   if (dev>=config.hourDev) return 'fast';
   if (dev<=-config.hourDev) return 'slow';
@@ -1236,7 +1272,7 @@ function renderConfig() {
   Object.keys(DEFAULT_CONFIG).forEach(k=>{ const el=qs('cfg-'+k); if(el) el.value=config[k]; });
   const dfEl = qs('cfg-defaultFilter'); if(dfEl) dfEl.value = defaultFilter;
   qs('target-roas-rows').innerHTML = campaigns.length ? campaigns.map(c=>`<div class="config-row"><label title="${c.name}">${c.name}</label><input type="number" step="0.1" value="${targetRoas[c.id]||''}" placeholder="${config.roasMin}" onchange="setTargetRoas('${c.id}',this.value)" /><span class="unit">x</span></div>`).join('') : '<div class="hint">Kết nối dữ liệu để hiện danh sách camp.</div>';
-  const cbo = campaigns.filter(c=>c.budgetType!=='adset');
+  const cbo = campaigns.filter(c=>c.budgetType==='daily');  // chỉ camp CBO daily mới sửa daily_budget; lifetime/adset loại ra
   qs('budget-rows').innerHTML = cbo.length ? cbo.map(c=>{
     const ed = budgetEdits[c.id]; const pct = ed && c.budget ? ((ed-c.budget)/c.budget*100) : 0;
     return `<div class="budget-row"><span class="budget-camp" title="${c.name}">${c.name}</span>
@@ -1278,7 +1314,7 @@ function drawDetailCharts(c) {
   charts.dspend = new Chart(qs('detail-spend-chart'),{ type:'bar', data:{ labels:c.daily.labels, datasets:[{data:c.daily.spend,backgroundColor:'rgba(37,99,201,.5)',borderRadius:3}] }, options:{ ...chartBase(), scales:{ y:{grid:{color:'#ececea'},ticks:{font:{size:10},callback:v=>fmtMoney(v)}}, x:{grid:{display:false},ticks:{font:{size:9}}} } } });
   const tgt = targetRoas[c.id]||config.roasMin;
   charts.droas = new Chart(qs('detail-roas-chart'),{ data:{ labels:c.daily.labels, datasets:[
-    {type:'line',data:c.daily.roas,borderColor:'#22a06b',backgroundColor:'rgba(34,160,107,.1)',fill:true,tension:.35,pointRadius:2,borderWidth:2},
+    {type:'line',data:c.daily.roas.map(v=>+(v*0.7).toFixed(2)),borderColor:'#22a06b',backgroundColor:'rgba(34,160,107,.1)',fill:true,tension:.35,pointRadius:2,borderWidth:2},
     {type:'line',data:c.daily.labels.map(()=>tgt),borderColor:'#9a9a94',borderDash:[5,4],pointRadius:0,borderWidth:1.5}
   ]}, options:{...chartBase(), scales:{y:{grid:{color:'#ececea'},ticks:{font:{size:10},callback:v=>v+'x'}},x:{grid:{display:false},ticks:{font:{size:9}}}}} });
 }
@@ -1334,6 +1370,7 @@ async function setCampaignStatus(c, status) {
 async function setCampaignBudget(c, newBudget) {
   if (isDemo) return true;
   const off = curOffset();
+  if (!Number.isFinite(off)) throw new Error('Chưa xác định được đơn vị tiền tệ của tài khoản — đồng bộ lại trước khi chỉnh budget.');
   await callMeta(c.id, {}, 'POST', { daily_budget: Math.round(newBudget*Math.pow(10,off)) });
   return true;
 }
@@ -1421,16 +1458,22 @@ function syncData(){ if(isDemo){ toast('Đang ở chế độ demo'); return; } 
 
 // ════════════════════════ ACCOUNTS / CONNECT ════════════════════════
 async function fetchAccountMeta(id) {
-  try { const r = await callMeta(id, { fields:'name,currency,timezone_name' });
-    return { id, name:r.name||id, currency:r.currency||'VND', tz:r.timezone_name||'', offset: ZERO_DECIMAL.includes(r.currency)?0:2 };
-  } catch { return { id, name:id, currency:'VND', tz:'', offset:0 }; }
+  // KHÔNG fabricate currency/offset khi lỗi — đoán sai (USD vs VND) làm sai budget 100×.
+  // Retry vài lần; nếu vẫn fail thì ném lỗi để account không load với đơn vị tiền sai.
+  let lastErr;
+  for (let i = 0; i < 3; i++) {
+    try { const r = await callMeta(id, { fields:'name,currency,timezone_name' });
+      return { id, name:r.name||id, currency:r.currency||'VND', tz:r.timezone_name||'', offset: ZERO_DECIMAL.includes(r.currency)?0:2 };
+    } catch(e) { lastErr = e; }
+  }
+  throw new Error(`Không lấy được thông tin tài khoản ${id} (tiền tệ/timezone): ${lastErr?.message||'?'}`);
 }
 function populateAccountSwitcher() {
   const sw=qs('account-switcher');
   if(accounts.length>1){ sw.style.display='block'; sw.innerHTML=accounts.map(a=>`<option value="${a.id}" ${a.id===currentAccount?'selected':''}>${a.name}</option>`).join(''); }
   else sw.style.display='none';
 }
-async function switchAccount(id){ currentAccount=id; hourly.loadedFor=''; loadAcctState(); await loadAccount(); }
+async function switchAccount(id){ currentAccount=id; hourly.loadedFor=''; firstFilterApplied=false; budgetEdits={}; loadAcctState(); await loadAccount(); }
 
 async function connectAPI() {
   const tk=qs('inp-token').value.trim(), acc=qs('inp-account').value.trim();
@@ -1507,8 +1550,8 @@ async function init() {
     const r = await fetch('/api/config');
     if (r.ok) {
       const cfg = await r.json();
-      if (cfg.token && cfg.accounts?.length) {
-        token = cfg.token;
+      if (cfg.accounts?.length && (cfg.token || cfg.hasToken)) {
+        token = cfg.token || '';   // server không trả token (bảo mật) -> token='' , proxy dùng env token server-side
         accounts = await Promise.all(cfg.accounts.map(fetchAccountMeta));
         currentAccount = accounts[0].id; rangeMode = '7';
         loadAcctState(); populateAccountSwitcher(); switchTab('overview');

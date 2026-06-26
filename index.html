@@ -364,25 +364,31 @@
 <!-- HEATMAP -->
 <div id="page-heatmap" class="page">
   <div class="top-bar">
-    <span class="section-title">Heatmap chỉ số</span>
-    <div class="top-bar-left">
-      <div class="search-box"><i class="ti ti-search"></i><input id="hm-search" placeholder="Tìm chiến dịch..." oninput="renderHeatmap()" /></div>
-      <span style="font-size:12px;color:var(--text-2)">Biểu đồ:</span>
-      <span class="filter-pill active" onclick="setHeatMetric(this,'roas')">ROAS</span>
-      <span class="filter-pill" onclick="setHeatMetric(this,'spend')">Spend</span>
-      <span class="filter-pill" onclick="setHeatMetric(this,'cpi')">CPI</span>
-      <span class="filter-pill" onclick="setHeatMetric(this,'cvr')">CVR</span>
-      <span class="filter-pill" onclick="setHeatMetric(this,'ctr')">CTR</span>
-      <span class="filter-pill" onclick="setHeatMetric(this,'payrate')">Payrate</span>
-    </div>
+    <span class="section-title">Heatmap theo thời gian <small>xem khi nào ra đơn / tiêu / ROAS</small></span>
+    <div class="search-box"><i class="ti ti-search"></i><input id="hm-search" placeholder="Tìm camp..." oninput="renderHeatmap()" /></div>
+  </div>
+  <div class="top-bar" style="gap:18px">
+    <div class="top-bar-left"><span style="font-size:12px;color:var(--text-2)">Nhóm:</span>
+      <span class="filter-pill active" onclick="setPivotGroup(this,'camp')">Camp</span>
+      <span class="filter-pill" onclick="setPivotGroup(this,'usecase')">Usecase</span></div>
+    <div class="top-bar-left"><span style="font-size:12px;color:var(--text-2)">Chỉ số:</span>
+      <span class="filter-pill active" onclick="setPivotMetric(this,'purchases')">Purchase</span>
+      <span class="filter-pill" onclick="setPivotMetric(this,'spend')">Spend</span>
+      <span class="filter-pill" onclick="setPivotMetric(this,'roas')">ROAS</span></div>
+    <div class="top-bar-left"><span style="font-size:12px;color:var(--text-2)">Theo:</span>
+      <span class="filter-pill active" onclick="setPivotGran(this,'hour')">Giờ</span>
+      <span class="filter-pill" onclick="setPivotGran(this,'day')">Ngày</span>
+      <span class="filter-pill" onclick="setPivotGran(this,'month')">Tháng</span>
+      <span class="filter-pill" onclick="setPivotGran(this,'year')">Năm</span></div>
+    <button class="btn" onclick="loadPivot(true)" style="margin-left:auto"><i class="ti ti-refresh"></i> Tải lại</button>
   </div>
   <div class="card">
-    <div class="card-h">Tất cả chỉ số <span class="muted">Màu theo ngưỡng cấu hình — <b style="color:var(--green)">xanh tốt</b> · <b style="color:var(--amber)">vàng TB</b> · <b style="color:var(--red)">đỏ kém</b></span></div>
+    <div class="card-h">Bảng nhiệt <span class="muted" id="pivot-meta"></span></div>
     <div id="heatmap-grid" style="overflow-x:auto"></div>
   </div>
   <div class="card">
-    <div class="card-h" id="heat-chart-title">Phân bố ROAS theo chiến dịch</div>
-    <div style="position:relative;height:260px"><canvas id="heat-chart"></canvas></div>
+    <div class="card-h" id="heat-chart-title">Tổng theo thời gian</div>
+    <div style="position:relative;height:220px"><canvas id="heat-chart"></canvas></div>
   </div>
 </div>
 
@@ -605,7 +611,10 @@ let isDemo = false;
 let currentCampId = null;
 let statusFilter = 'all';
 let alertFilter = 'all';
-let heatMetric = 'roas';
+let pivotGroup = 'camp';          // camp | usecase
+let pivotMetric = 'purchases';    // purchases | spend | roas
+let pivotGran = 'hour';           // hour | day | month | year
+let pivot = { rows:{}, buckets:[], loadedFor:'', loading:false };
 let hourMetric = 'spend';
 let rangeMode = '7';
 let customFrom = '', customTo = '';
@@ -1050,22 +1059,50 @@ function heat(v, metric, tgt) {
   return `<span class="heat-cell ${cls}">${txt}</span>`;
 }
 
-const HM_METRICS = [['roas','ROAS'],['spend','Spend'],['ctr','CTR'],['cpm','CPM'],['installs','Inst'],['cvr','CVR'],['cpi','CPI'],['payrate','Payrate']];
+function usecaseOf(name){ const p=String(name||'').split('_'); return (p[2]||p[1]||p[0]||'Khác').trim()||'Khác'; }  // IIP555_Reelme_<usecase>_...
+function bucketLabel(bk){
+  if (pivotGran==='hour') return parseInt(bk,10)+'h';
+  if (pivotGran==='day') return bk.slice(5);
+  if (pivotGran==='month') return bk.slice(5)+'/'+bk.slice(2,4);
+  return bk;
+}
+const PIVOT_META = { hour:'gộp 7 ngày gần nhất theo giờ trong ngày', day:'30 ngày gần nhất', month:'12 tháng gần nhất', year:'3 năm gần nhất' };
 function renderHeatmap() {
-  if (!campaigns.length) return;
-  let arr = campaigns.slice();
+  const grid = qs('heatmap-grid'); if(!grid) return;
+  if (isDemo && !pivot.buckets.length) buildDemoPivot();
+  if (qs('pivot-meta')) qs('pivot-meta').textContent = PIVOT_META[pivotGran] || '';
+  if (!pivot.buckets.length) { grid.innerHTML = `<div class="empty"><i class="ti ti-table"></i><p>Chưa có dữ liệu.</p><button class="btn btn-primary" style="margin-top:12px" onclick="loadPivot(true)">Tải dữ liệu</button></div>`; return; }
   const q = (qs('hm-search')?.value||'').trim().toLowerCase();
-  if (q) arr = arr.filter(c=>c.name.toLowerCase().includes(q));
-  arr.sort((a,b)=>b.roas-a.roas);
-  const head = `<tr><th style="text-align:left;position:sticky;left:0;background:var(--surface-2);z-index:2">Chiến dịch</th>${HM_METRICS.map(m=>`<th style="text-align:center">${m[1]}</th>`).join('')}<th style="text-align:center">Score</th></tr>`;
-  const rows = arr.map(c=>{
-    const sc=scoreOf(c), scb=scoreBg(sc); const tgt=targetRoas[c.id]||config.roasMin;
-    return `<tr><td style="text-align:left;position:sticky;left:0;background:var(--surface)"><a class="camp-link" onclick="openDetail('${c.id}')"><span class="status-dot dot-${c.status==='ACTIVE'?'active':'paused'}"></span><span class="camp-name" style="max-width:210px" title="${c.name}">${c.name}</span></a></td>
-      ${HM_METRICS.map(m=>`<td style="text-align:center">${m[0]==='roas'?heat(c.roas,'roas',tgt):heat(c[m[0]],m[0])}</td>`).join('')}
-      <td style="text-align:center"><span class="score-pill" style="background:${scb.bg};color:${scb.c}">${sc}</span></td></tr>`;
-  }).join('');
-  qs('heatmap-grid').innerHTML = `<table class="data-table" style="min-width:780px"><thead>${head}</thead><tbody>${rows}</tbody></table>`;
-  drawHeatChart(arr);
+  // gom theo camp hoặc usecase
+  const ents = {};
+  Object.keys(pivot.rows).forEach(cid=>{
+    const row = pivot.rows[cid];
+    if (q && !(row.name||'').toLowerCase().includes(q)) return;
+    const key = pivotGroup==='usecase' ? usecaseOf(row.name) : cid;
+    const e = ents[key] = ents[key] || { name: pivotGroup==='usecase'?usecaseOf(row.name):row.name, cid: pivotGroup==='camp'?cid:'', b:{} };
+    pivot.buckets.forEach(bk=>{ const s=row.b[bk]; if(!s) return; const d=e.b[bk]=e.b[bk]||{spend:0,purch:0,rev:0}; d.spend+=s.spend; d.purch+=s.purch; d.rev+=s.rev; });
+  });
+  const val = d => !d ? null : (pivotMetric==='purchases'?d.purch : pivotMetric==='spend'?d.spend : (d.spend? d.rev/d.spend*0.7 : 0));
+  const rowTot = e => { if(pivotMetric==='roas'){ let s=0,r=0; pivot.buckets.forEach(bk=>{const d=e.b[bk]; if(d){s+=d.spend;r+=d.rev;}}); return s?r/s*0.7:0; } return pivot.buckets.reduce((x,bk)=>x+(val(e.b[bk])||0),0); };
+  const list = Object.values(ents).sort((a,b)=>rowTot(b)-rowTot(a));
+  let maxCell=0; if(pivotMetric!=='roas') list.forEach(e=>pivot.buckets.forEach(bk=>{const v=val(e.b[bk]); if(v) maxCell=Math.max(maxCell,v);}));
+  const fmtCell = v => v==null?'':(pivotMetric==='roas'?(v?fmtRoas(v)+'x':''):(pivotMetric==='spend'?fmtMoney(v):fmtNum(v)));
+  const ROASMAP = {'heat-g3':'#b7dd99','heat-g2':'#d3e9bd','heat-y':'#fad98c','heat-r2':'#f7c9b0','heat-r3':'#f3b0ac'};
+  const cellStyle = v => {
+    if (v==null||v===0) return 'color:var(--text-3)';
+    if (pivotMetric==='roas'){ const cl=(heat(v,'roas').match(/heat-[\w]+/)||['heat-na'])[0]; return `background:${ROASMAP[cl]||'transparent'};color:#3a2a14`; }
+    const t = maxCell? v/maxCell : 0;
+    return `background:rgba(34,160,107,${(0.10+0.80*t).toFixed(2)});color:${t>0.55?'#fff':'var(--text)'}`;
+  };
+  const totLabel = pivotMetric==='roas'?'ROAS':(pivotMetric==='spend'?'Σ Spend':'Σ Đơn');
+  const head = `<tr><th style="text-align:left;min-width:200px">${pivotGroup==='usecase'?'Usecase':'Chiến dịch'}</th>${pivot.buckets.map(bk=>`<th style="text-align:center;min-width:46px">${bucketLabel(bk)}</th>`).join('')}<th style="text-align:center;min-width:66px">${totLabel}</th></tr>`;
+  const body = list.map(e=>{
+    const cells = pivot.buckets.map(bk=>{ const v=val(e.b[bk]); return `<td style="text-align:center;padding:6px 4px;font-variant-numeric:tabular-nums;${cellStyle(v)}" title="${bucketLabel(bk)}: ${fmtCell(v)||'—'}">${fmtCell(v)}</td>`; }).join('');
+    const nameHtml = e.cid ? `<a class="camp-link" onclick="openDetail('${e.cid}')"><span class="camp-name" title="${e.name}">${e.name}</span></a>` : `<span class="camp-name" title="${e.name}">${e.name}</span>`;
+    return `<tr><td style="text-align:left">${nameHtml}</td>${cells}<td style="text-align:center;font-weight:700;font-variant-numeric:tabular-nums">${fmtCell(rowTot(e))}</td></tr>`;
+  }).join('') || `<tr><td colspan="${pivot.buckets.length+2}"><div class="empty"><p>Không có camp phù hợp</p></div></td></tr>`;
+  grid.innerHTML = `<table class="data-table" style="min-width:${200+pivot.buckets.length*46+66}px"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  drawHeatChart(list);
 }
 
 function renderHourly() {
@@ -1414,16 +1451,81 @@ function drawTrend(list = campaigns) {
     { type:'line', data:roas, borderColor:'#22a06b', tension:.35, pointRadius:2, yAxisID:'y1', borderWidth:2 }
   ]}, options:{ ...chartBase(), scales:{ y:{ position:'left', grid:{color:'#ececea'}, ticks:{callback:v=>fmtMoney(v),font:{size:10}} }, y1:{ position:'right', grid:{display:false}, ticks:{callback:v=>v+'x',font:{size:10}} }, x:{grid:{display:false},ticks:{font:{size:10}}} } } });
 }
-function drawHeatChart(arr) {
-  const m = heatMetric;
-  qs('heat-chart-title').textContent = 'Phân bố '+ (HM_METRICS.find(x=>x[0]===m)?.[1]||m) +' theo chiến dịch';
-  const data = arr.map(c=>+(c[m]||0).toFixed(2));
-  const colors = arr.map(c=>heatColor(c[m],m,targetRoas[c.id]||config.roasMin));
+// Biểu đồ tổng chỉ số theo từng bucket thời gian (toàn bộ hàng đang hiện) — thấy "khung giờ vàng" ra đơn
+function drawHeatChart(list) {
+  const labels = pivot.buckets.map(bucketLabel);
+  const data = pivot.buckets.map(bk=>{
+    if (pivotMetric==='roas'){ let s=0,r=0; list.forEach(e=>{const d=e.b[bk]; if(d){s+=d.spend;r+=d.rev;}}); return s?+(r/s*0.7).toFixed(2):0; }
+    return +list.reduce((sum,e)=>{ const d=e.b[bk]; return sum+(d?(pivotMetric==='spend'?d.spend:d.purch):0); },0).toFixed(2);
+  });
+  const mlabel = pivotMetric==='purchases'?'đơn (purchase)':pivotMetric==='spend'?'chi tiêu':'ROAS net';
+  const glabel = {hour:'giờ',day:'ngày',month:'tháng',year:'năm'}[pivotGran];
+  if (qs('heat-chart-title')) qs('heat-chart-title').textContent = `Tổng ${mlabel} theo ${glabel}`;
   const ctx = qs('heat-chart'); if(!ctx) return;
   charts.heat?.destroy();
-  charts.heat = new Chart(ctx,{ type:'bar', data:{ labels:arr.map(c=>c.name.length>24?c.name.slice(0,24)+'…':c.name), datasets:[{ data, backgroundColor:colors, borderRadius:4 }] }, options:{ ...chartBase(), indexAxis:'y', scales:{ x:{grid:{color:'#ececea'},ticks:{font:{size:10},callback:v=>m==='roas'?v+'x':(['spend','cpi','cpm'].includes(m)?fmtMoney(v):v)}}, y:{grid:{display:false},ticks:{font:{size:10}}} } } });
+  charts.heat = new Chart(ctx,{ type:'bar', data:{ labels, datasets:[{ data, backgroundColor:'rgba(34,160,107,.45)', borderRadius:3 }] }, options:{ ...chartBase(), scales:{ y:{grid:{color:'#ececea'},ticks:{font:{size:10},callback:v=>pivotMetric==='spend'?fmtMoney(v):(pivotMetric==='roas'?v+'x':v)}}, x:{grid:{display:false},ticks:{font:{size:9},maxRotation:0,autoSkip:true}} } } });
 }
-function heatColor(v,m,tgt){ const map={'heat-g3':'#9ccb6e','heat-g2':'#c2dfa3','heat-y':'#f5cd6f','heat-r2':'#f0a98a','heat-r3':'#e88f8a','heat-na':'#ddd'}; const cl=(heat(v,m,tgt).match(/heat-[\w]+/)||['heat-na'])[0]; return map[cl]||'#ccc'; }
+function ymdOf(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+// Tải dữ liệu pivot: mỗi camp -> map bucket(thời gian) -> {spend,purch,rev}. Bucket tuỳ granularity.
+async function loadPivot(force){
+  if (isDemo){ buildDemoPivot(); renderHeatmap(); return; }
+  if (!currentAccount) return;
+  const key = currentAccount+'|'+pivotGran;
+  if (pivot.loadedFor===key && !force){ renderHeatmap(); return; }
+  if (pivot.loading) return;
+  pivot.loading = true;
+  qs('heatmap-grid').innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-3)"><span class="loader"></span> Đang tải dữ liệu...</div>';
+  try {
+    const params = { level:'campaign', fields:'campaign_id,campaign_name,spend,actions,action_values', limit:2000 };
+    const now = new Date(); let bucketOf;
+    if (pivotGran==='hour'){
+      params.time_range = { since: acctDateStr(-6), until: acctDateStr(0) }; params.time_increment = 1;
+      params.breakdowns = 'hourly_stats_aggregated_by_advertiser_time_zone';
+      bucketOf = r => (r.hourly_stats_aggregated_by_advertiser_time_zone||'').slice(0,2);
+    } else if (pivotGran==='day'){
+      params.time_range = { since: acctDateStr(-29), until: acctDateStr(0) }; params.time_increment = 1;
+      bucketOf = r => r.date_start;
+    } else if (pivotGran==='month'){
+      params.time_range = { since: ymdOf(new Date(now.getFullYear(), now.getMonth()-11, 1)), until: ymdOf(now) }; params.time_increment = 'monthly';
+      bucketOf = r => (r.date_start||'').slice(0,7);
+    } else {
+      params.time_range = { since: ymdOf(new Date(now.getFullYear()-2, 0, 1)), until: ymdOf(now) }; params.time_increment = 'monthly';
+      bucketOf = r => (r.date_start||'').slice(0,4);
+    }
+    const res = await callMeta(`${currentAccount}/insights`, params);
+    const rows={}, bset=new Set();
+    (res.data||[]).forEach(r=>{
+      const cid=r.campaign_id, bk=bucketOf(r); if(!bk) return; bset.add(bk);
+      const d = (rows[cid]=rows[cid]||{name:r.campaign_name,b:{}}).b[bk] = (rows[cid].b[bk]||{spend:0,purch:0,rev:0});
+      d.spend+=parseFloat(r.spend)||0; d.purch+=pick(r.actions,PURCHASE_TYPES); d.rev+=pick(r.action_values,PURCHASE_TYPES);
+    });
+    const buckets = pivotGran==='hour' ? Array.from({length:24},(_,i)=>String(i).padStart(2,'0')) : [...bset].sort();
+    pivot = { rows, buckets, loadedFor:key, loading:false };
+    if (res.truncated) toast('⚠ Nhiều dữ liệu, có thể chưa tải hết','err');
+    renderHeatmap();
+  } catch(e){ pivot.loading=false; qs('heatmap-grid').innerHTML=`<div class="empty"><i class="ti ti-alert-circle"></i><p>Lỗi tải: ${e.message}</p></div>`; }
+}
+function buildDemoPivot(){
+  let buckets; const n=new Date();
+  if (pivotGran==='hour') buckets=Array.from({length:24},(_,i)=>String(i).padStart(2,'0'));
+  else if (pivotGran==='day'){ buckets=[]; for(let i=13;i>=0;i--) buckets.push(dateStr(-i)); }
+  else if (pivotGran==='month'){ buckets=[]; for(let i=11;i>=0;i--){const d=new Date(n.getFullYear(),n.getMonth()-i,1); buckets.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);} }
+  else { const y=n.getFullYear(); buckets=[String(y-2),String(y-1),String(y)]; }
+  const rows={};
+  campaigns.forEach((c,ci)=>{
+    const b={};
+    buckets.forEach((bk,idx)=>{
+      let w;
+      if (pivotGran==='hour'){ const h=idx; w=Math.max(0,Math.sin((h-2)/24*Math.PI)); w=w*w; if(h>=19||h<=22) w+=0.25; } // giờ vàng tối
+      else { w=0.35+0.65*Math.abs(Math.sin((idx+ci)*1.3)); }
+      const f=w*1.6/buckets.length;
+      const spend=Math.round(c.spend*f), purch=Math.round(c.purchases*f), rev=Math.round(c.revenue*f);
+      if(spend>0||purch>0) b[bk]={spend,purch,rev};
+    });
+    rows[c.id]={name:c.name,b};
+  });
+  pivot={rows,buckets,loadedFor:'demo',loading:false};
+}
 
 function drawDetailCharts(c) {
   charts.dspend?.destroy(); charts.droas?.destroy();
@@ -1585,6 +1687,7 @@ function switchTab(tab, fromDetail) {
   qs('page-'+tab).classList.add('active');
   if (!fromDetail && tab!=='detail' && tab!=='setup') qs('tab-'+tab)?.classList.add('active');
   if (tab==='hourly') loadHourly();
+  if (tab==='heatmap') loadPivot();
   if (tab==='history') { if(isDemo && !activityLog.length) buildDemoActivities(); renderHistory(); if(!isDemo && !activityLog.length && currentAccount) syncActivityLog(); }
   if (tab==='config') renderConfig();
   window.scrollTo(0,0);
@@ -1592,7 +1695,9 @@ function switchTab(tab, fromDetail) {
 function setStatusFilter(el,f){ el.parentElement.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); statusFilter=f; renderOverview(); }
 function setRange(el,r){ el.parentElement.querySelectorAll('.filter-pill').forEach(p=>{ if(['today','yesterday','7','14','30'].some(x=>p.getAttribute('onclick')?.includes(`'${x}'`)))p.classList.remove('active'); }); el.classList.add('active'); rangeMode=r; qs('ov-from').value='';qs('ov-to').value=''; loadAccount(); }
 function customRange(){ const f=qs('ov-from').value,t=qs('ov-to').value; if(f&&t){ customFrom=f;customTo=t;rangeMode='custom'; document.querySelectorAll('#page-overview .top-bar-left .filter-pill').forEach(p=>{ if(['today','yesterday','7','14','30'].some(x=>p.getAttribute('onclick')?.includes(`'${x}'`)))p.classList.remove('active'); }); loadAccount(); } }
-function setHeatMetric(el,m){ el.parentElement.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); heatMetric=m; renderHeatmap(); }
+function setPivotGroup(el,g){ el.parentElement.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); pivotGroup=g; renderHeatmap(); }
+function setPivotMetric(el,m){ el.parentElement.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); pivotMetric=m; renderHeatmap(); }
+function setPivotGran(el,g){ el.parentElement.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); pivotGran=g; loadPivot(true); }
 function setHourMetric(el,m){ el.parentElement.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); hourMetric=m; renderHourly(); }
 function setAlertFilter(el,f){ el.parentElement.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); alertFilter=f; renderAlerts(); }
 function setSort(k){ if(sortKey===k) sortDir*=-1; else { sortKey=k; sortDir=-1; } renderOverview(); }

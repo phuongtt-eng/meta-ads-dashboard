@@ -1237,8 +1237,9 @@ function parseExtra(raw, et){
 }
 function normalizeActivity(r){
   const ts = Date.parse(r.event_time)||0; const et = r.event_type||'';
+  let campId=''; try { const x = JSON.parse(r.extra_data||''); if (x && x.campaign_id) campId = String(x.campaign_id); } catch {}
   const o = { source:'meta', ts, time: ts?fmtTs(ts):'', actor:r.actor_name||'', app:r.application_name||'',
-    objType:r.object_type||'', objName:r.object_name||'', objId:r.object_id||'', eventType:et,
+    objType:r.object_type||'', objName:r.object_name||'', objId:r.object_id||'', campId, eventType:et,
     cat: actCat(et), key:(r.event_time||'')+'|'+et+'|'+(r.object_id||'') };
   o.label = ACT_VI[et] || r.translated_event_type || et;
   o.detail = parseExtra(r.extra_data, et);
@@ -1403,26 +1404,24 @@ function renderDetailHourly(id) {
   el.innerHTML = stats + hourStripHtml(id) + axis + sugBox;
 }
 // Lịch sử thay đổi THẬT của riêng 1 campaign (GET /{campaign_id}/activities) — gồm cả ad set/ad con
-async function loadCampaignActivities(campId) {
-  const now = Date.now(); const days = 30;
-  const since = Math.floor((now - days*86400000)/1000), until = Math.floor(now/1000);
-  const res = await callMeta(`${campId}/activities`, {
-    fields:'event_type,translated_event_type,event_time,actor_name,object_type,object_name,object_id,extra_data,application_name',
-    since, until, limit: 200
-  });
-  return (res.data||[]).map(normalizeActivity);
+// Lịch sử thay đổi của riêng 1 campaign = lọc từ Activity Log account đã đồng bộ.
+// (match theo object_id của camp, campaign_id trong extra_data, hoặc tên camp.)
+// Endpoint /{campaign_id}/activities của Meta trả rỗng (v21) nên không dùng.
+function campaignActivities(id) {
+  const camp = campaigns.find(x=>x.id===id);
+  return activityLog.filter(a => a.objId===id || a.campId===id || (camp && a.objName && a.objName===camp.name));
 }
 function renderDetailHistory(id) {
   const el = qs('detail-history');
-  const camp = campaigns.find(x=>x.id===id);
   const local = actionHistory.filter(h=>h.cid===id).map(h=>({ source:'tool', ts:h.ts||0, time:h.time, actor:'Bạn (qua tool)', app:'', objType:'', objName:'', label:h.action, detail:'', cat:LOCAL_CAT[h.kind]||'OTHER' }));
-  const paint = (meta)=>{ const items = local.concat(meta||[]).sort((a,b)=>(b.ts||0)-(a.ts||0));
-    el.innerHTML = items.length ? `<div class="history-list">${items.slice(0,80).map(histRowHtml).join('')}</div>` : '<div class="hint" style="padding:8px 0">Chưa có hành động/thay đổi nào.</div>'; };
-  if (isDemo) { if(!activityLog.length) buildDemoActivities(); paint(activityLog.filter(a=>a.objName && camp && a.objName===camp.name)); return; }
-  paint([]); // hiện log tool ngay, rồi tải Meta
-  el.insertAdjacentHTML('beforeend','<div class="hint" id="dh-load" style="padding:6px 0"><span class="loader"></span> Đang tải lịch sử camp từ Meta...</div>');
-  loadCampaignActivities(id).then(meta=>{ if(currentCampId===id) paint(meta); })
-    .catch(e=>{ const l=qs('dh-load'); if(l) l.innerHTML=`<span style="color:var(--red)">Lỗi tải lịch sử: ${e.message}</span>`; });
+  const paint = ()=>{ const items = local.concat(campaignActivities(id)).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    el.innerHTML = items.length ? `<div class="history-list">${items.slice(0,80).map(histRowHtml).join('')}</div>` : '<div class="hint" style="padding:8px 0">Chưa có thay đổi nào của camp này trong cửa sổ đã đồng bộ. Vào tab Lịch sử bấm "Đồng bộ từ Meta".</div>'; };
+  if (isDemo) { if(!activityLog.length) buildDemoActivities(); paint(); return; }
+  if (activityLog.length) { paint(); return; }
+  // chưa đồng bộ account log -> hiện log tool ngay rồi kéo về, lọc lại
+  paint();
+  el.insertAdjacentHTML('beforeend','<div class="hint" id="dh-load" style="padding:6px 0"><span class="loader"></span> Đang tải lịch sử từ Meta...</div>');
+  syncActivityLog().then(()=>{ if(currentCampId===id) paint(); }).catch(e=>{ const l=qs('dh-load'); if(l) l.innerHTML=`<span style="color:var(--red)">Lỗi tải lịch sử: ${e.message}</span>`; });
 }
 
 // ════════════════════════ ACTIONS ════════════════════════

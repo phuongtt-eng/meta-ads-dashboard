@@ -166,7 +166,12 @@
   .hour-cell { height: 30px; border-radius: 3px; position: relative; cursor: pointer; }
   .hour-axis { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; margin-top: 3px; }
   .hour-axis span { font-size: 8.5px; color: var(--text-3); text-align: center; }
-  .hl-row { display: grid; grid-template-columns: 210px 1fr; gap: 14px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .hl-row { display: grid; grid-template-columns: 210px 1fr; gap: 14px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .hl-foot { margin-top: 7px; display: flex; flex-direction: column; gap: 5px; }
+  .hl-stats { font-size: 11.5px; color: var(--text-2); }
+  .hl-stats b { color: var(--text); font-variant-numeric: tabular-nums; }
+  .hl-sugg { font-size: 11.5px; color: var(--text-2); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; line-height: 1.5; }
+  .hl-sugg i { color: var(--amber); }
   .hl-row:last-child { border-bottom: none; }
   .hl-name { font-size: 12px; font-weight: 600; overflow: hidden; }
   .hl-name a { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -553,7 +558,7 @@
     <div id="detail-hourly"></div>
   </div>
   <div class="card">
-    <div class="card-h">Lịch sử action của chiến dịch này</div>
+    <div class="card-h">Lịch sử thay đổi của chiến dịch này <span class="muted">Meta + thao tác trong tool</span></div>
     <div id="detail-history"></div>
   </div>
 </div>
@@ -1083,12 +1088,23 @@ function hourlyVerdict(cid) {
   return 'pace';
 }
 
-function hourlyRow(cid) {
+// Số liệu hôm nay của 1 camp theo giờ: tiền đã tiêu + ROAS net (dựng lại từ roas×spend mỗi giờ) + TB 3 ngày đến giờ này
+function hourlyTodayStats(cid) {
+  const h = hourly.byCamp[cid]; if (!h) return null;
+  const today = hourly.dates[hourly.dates.length-1];
+  const sp = h.spend[today]||[], rs = h.roas[today]||[];
+  let spend=0, rev=0; for (let i=0;i<24;i++){ spend+=sp[i]||0; rev+=(rs[i]||0)*(sp[i]||0); }
+  const st = hourlyStats(cid,'spend');
+  const lastClosed = st ? st.nowHour-1 : -1;
+  const sum = arr => (lastClosed>=0 ? arr.slice(0,lastClosed+1).reduce((a,b)=>a+b,0) : 0);
+  const avgToNow = st ? sum(st.avg) : 0, todayToNow = st ? sum(st.today) : 0;
+  return { spend, roas: spend?rev/spend:0, avgToNow, dev: avgToNow>0?(todayToNow-avgToNow)/avgToNow*100:0, lastClosed };
+}
+
+function hourStripHtml(cid) {
   const st = hourlyStats(cid); if(!st) return '';
   const max = Math.max(...st.today, ...st.avg, hourMetric==='roas'?0.1:1);
   const nowH = st.nowHour;
-  const verdict = hourlyVerdict(cid);
-  const badge = {fast:'<span class="badge badge-warn">Tiêu nhanh</span>',slow:'<span class="badge badge-warn">Tiêu chậm</span>',stopped:'<span class="badge badge-danger">Dừng tiêu</span>',pace:'<span class="badge badge-ok">Đúng nhịp</span>',na:'<span class="badge badge-mut">Ít data</span>'}[verdict];
   const cells = st.today.map((tv,h)=>{
     const av = st.avg[h]; const future = h > nowH;
     const hAvg = Math.min(1,av/max), hTod = Math.min(1,tv/max);
@@ -1103,9 +1119,39 @@ function hourlyRow(cid) {
       ${!future && tv>0 ? `<span style="position:absolute;bottom:0;left:2px;right:2px;height:${barH}px;background:${todColor};border-radius:2px;opacity:.88"></span>`:''}
     </div>`;
   }).join('');
+  return `<div class="hour-strip">${cells}</div>`;
+}
+
+// Gợi ý action cho từng camp dựa trên nhịp tiêu theo giờ (3 ngày gần nhất) + ROAS net hôm nay
+function hourlySuggestion(cid) {
+  const v = hourlyVerdict(cid);
+  const ts = hourlyTodayStats(cid); if(!ts) return null;
+  const c = campaigns.find(x=>x.id===cid);
+  const tgt = targetRoas[cid] || config.roasMin;
+  const roasOK = ts.roas >= tgt;
+  const cbo = !!(c && c.budget>0 && c.budgetType!=='adset');
+  const lc = ts.lastClosed;
+  if (v==='na') return { sev:'low', text:'Chưa đủ dữ liệu giờ để gợi ý.', actions:[] };
+  if (v==='stopped') return { sev:'high', text:'Dừng tiêu nhiều giờ qua — kiểm tra ad bị từ chối / hết hạn mức / lỗi thanh toán; cân nhắc bật lại hoặc đổi creative.', actions:['detail'] };
+  if (v==='slow') return { sev:'mid', text:`Tiêu chậm hơn TB 3 ngày ${Math.abs(ts.dev).toFixed(0)}% (đến ${lc}h). ` + (roasOK?`ROAS net ${fmtRoas(ts.roas)}x vẫn đạt → tăng budget ${config.upPct}% để gỡ nhịp.`:`ROAS ${fmtRoas(ts.roas)}x dưới target ${fmtRoas(tgt)}x → soát creative/audience trước khi đẩy budget.`), actions: (roasOK&&cbo)?['up','detail']:['detail'] };
+  if (v==='fast') return { sev:'mid', text:`Tiêu nhanh hơn TB 3 ngày ${ts.dev.toFixed(0)}% (đến ${lc}h). ` + (roasOK?`ROAS net ${fmtRoas(ts.roas)}x tốt → có thể scale tiếp, theo dõi để khỏi cháy ngân sách.`:`Nhưng ROAS ${fmtRoas(ts.roas)}x dưới target → giảm budget ${config.downPct}% để chặn lỗ.`), actions: (!roasOK&&cbo)?['down','detail']:['detail'] };
+  return { sev:'low', text:`Nhịp tiêu bám sát TB 3 ngày. ROAS net ${fmtRoas(ts.roas)}x ${roasOK?'đạt':'dưới'} target ${fmtRoas(tgt)}x.`, actions: roasOK?[]:['detail'] };
+}
+
+function hourlyRow(cid) {
+  const st = hourlyStats(cid); if(!st) return '';
+  const verdict = hourlyVerdict(cid);
+  const badge = {fast:'<span class="badge badge-warn">Tiêu nhanh</span>',slow:'<span class="badge badge-warn">Tiêu chậm</span>',stopped:'<span class="badge badge-danger">Dừng tiêu</span>',pace:'<span class="badge badge-ok">Đúng nhịp</span>',na:'<span class="badge badge-mut">Ít data</span>'}[verdict];
+  const ts = hourlyTodayStats(cid), sug = hourlySuggestion(cid);
+  const roasCls = (ts && ts.roas >= (targetRoas[cid]||config.roasMin)) ? 'var(--green)' : 'var(--text)';
   return `<div class="hl-row">
     <div class="hl-name"><a class="camp-link" onclick="openDetail('${cid}')" title="${st.name||cid}">${st.name||cid}</a><small>${badge}</small></div>
-    <div><div class="hour-strip">${cells}</div></div>
+    <div>${hourStripHtml(cid)}
+      <div class="hl-foot">
+        <span class="hl-stats">Đã tiêu hôm nay <b>${fmtMoney(ts.spend)}₫</b> · ROAS net <b style="color:${roasCls}">${fmtRoas(ts.roas)}x</b> · TB 3 ngày cùng giờ ${fmtMoney(ts.avgToNow)}₫</span>
+        ${sug?`<span class="hl-sugg"><i class="ti ti-bulb"></i> ${sug.text} ${alertButtons({cid, actions:sug.actions})}</span>`:''}
+      </div>
+    </div>
   </div>`;
 }
 
@@ -1228,6 +1274,18 @@ async function syncActivityLog(){
 function setHistFilter(el,f){ el.parentElement.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); historyFilter=f; renderHistory(); }
 const LOCAL_CAT = { pause:'STATUS', resume:'STATUS', budget:'BUDGET', target:'OTHER', sync:'OTHER' };
 const HIST_ICON = { BUDGET:['coin','var(--blue-bg)','var(--blue)'], STATUS:['toggle-right','var(--amber-bg)','var(--amber)'], CREATIVE:['photo','var(--violet-bg)','var(--violet)'], TARGETING:['target','var(--green-bg)','var(--green)'], ACCOUNT:['building-bank','var(--red-bg)','var(--red)'], OTHER:['point','var(--surface-3)','var(--text-2)'] };
+function histRowHtml(x) {
+  const ic = HIST_ICON[x.cat]||HIST_ICON.OTHER;
+  const src = x.source==='meta' ? '<span class="badge badge-info">Meta</span>' : '<span class="badge badge-mut">Tool</span>';
+  const obj = x.objName ? `${x.objType?objLabel(x.objType)+' · ':''}${x.objName}` : '';
+  const who = x.actor ? `${x.actor}${x.app?' · '+x.app:''}` : '';
+  return `<div class="history-item"><div class="history-ico" style="background:${ic[1]};color:${ic[2]}"><i class="ti ti-${ic[0]}"></i></div>
+    <span class="history-time">${x.time||''}</span>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="font-size:12.5px">${x.label||''}</b>${src}${x.detail?`<span style="color:var(--text-2);font-size:12px" class="tnum">${x.detail}</span>`:''}</div>
+      ${obj||who?`<div style="font-size:11px;color:var(--text-3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${obj}${obj&&who?' — ':''}${who}</div>`:''}
+    </div></div>`;
+}
 function renderHistory() {
   const cont = qs('history-container'); if(!cont) return;
   const local = actionHistory.map(h=>({ source:'tool', ts:h.ts||0, time:h.time, actor:'Bạn (qua tool)', app:'',
@@ -1240,18 +1298,7 @@ function renderHistory() {
   qs('hist-count').textContent = `(${items.length})`;
   if (!items.length){ cont.innerHTML = `<div class="empty"><i class="ti ti-history"></i><p>${isDemo?'Chưa có log.':'Chưa có log — bấm "Đồng bộ từ Meta" để kéo lịch sử thay đổi.'}</p></div>`; return; }
   const cap = 400; const shown = items.slice(0,cap);
-  cont.innerHTML = shown.map(x=>{
-    const ic = HIST_ICON[x.cat]||HIST_ICON.OTHER;
-    const src = x.source==='meta' ? '<span class="badge badge-info">Meta</span>' : '<span class="badge badge-mut">Tool</span>';
-    const obj = x.objName ? `${x.objType?objLabel(x.objType)+' · ':''}${x.objName}` : '';
-    const who = x.actor ? `${x.actor}${x.app?' · '+x.app:''}` : '';
-    return `<div class="history-item"><div class="history-ico" style="background:${ic[1]};color:${ic[2]}"><i class="ti ti-${ic[0]}"></i></div>
-      <span class="history-time">${x.time||''}</span>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="font-size:12.5px">${x.label||''}</b>${src}${x.detail?`<span style="color:var(--text-2);font-size:12px" class="tnum">${x.detail}</span>`:''}</div>
-        <div style="font-size:11px;color:var(--text-3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${obj}${obj&&who?' — ':''}${who}</div>
-      </div></div>`;
-  }).join('') + (items.length>cap?`<div class="hint" style="text-align:center;padding:10px">Hiển thị ${cap}/${items.length} — lọc bớt để xem cụ thể</div>`:'');
+  cont.innerHTML = shown.map(histRowHtml).join('') + (items.length>cap?`<div class="hint" style="text-align:center;padding:10px">Hiển thị ${cap}/${items.length} — lọc bớt để xem cụ thể</div>`:'');
 }
 function buildDemoActivities(){
   const now = Date.now();
@@ -1348,12 +1395,34 @@ function renderDetailHourly(id) {
   const el = qs('detail-hourly');
   if (!hourly.dates.length) { el.innerHTML = `<div style="padding:10px;text-align:center"><button class="btn btn-sm" onclick="loadHourly(true)">Tải dữ liệu khung giờ</button></div>`; return; }
   if (!hourly.byCamp[id]) { el.innerHTML='<div class="hint" style="padding:10px">Camp này chưa có dữ liệu khung giờ trong 4 ngày qua.</div>'; return; }
-  const strip = (hourlyRow(id).match(/<div><div class="hour-strip">[\s\S]*?<\/div><\/div>/)||[''])[0];
-  el.innerHTML = `${strip}<div class="hour-axis">${Array.from({length:24},(_,i)=>`<span>${i%3===0?i+'h':''}</span>`).join('')}</div>`;
+  const ts = hourlyTodayStats(id), sug = hourlySuggestion(id);
+  const axis = `<div class="hour-axis">${Array.from({length:24},(_,i)=>`<span>${i%3===0?i+'h':''}</span>`).join('')}</div>`;
+  const stats = ts ? `<div class="hl-stats" style="margin-bottom:8px">Đã tiêu hôm nay <b>${fmtMoney(ts.spend)}₫</b> · ROAS net <b>${fmtRoas(ts.roas)}x</b> · TB 3 ngày cùng giờ <b>${fmtMoney(ts.avgToNow)}₫</b>${ts.avgToNow?` (${ts.dev>=0?'+':''}${ts.dev.toFixed(0)}%)`:''}</div>` : '';
+  const sugAct = sug ? alertButtons({cid:id, actions:(sug.actions||[]).filter(a=>a!=='detail')}) : '';
+  const sugBox = sug ? `<div class="hl-sugg" style="margin-top:10px;padding:11px 13px;background:var(--surface-2);border-radius:9px"><i class="ti ti-bulb"></i><span><b>Gợi ý:</b> ${sug.text}</span>${sugAct}</div>` : '';
+  el.innerHTML = stats + hourStripHtml(id) + axis + sugBox;
+}
+// Lịch sử thay đổi THẬT của riêng 1 campaign (GET /{campaign_id}/activities) — gồm cả ad set/ad con
+async function loadCampaignActivities(campId) {
+  const now = Date.now(); const days = 30;
+  const since = Math.floor((now - days*86400000)/1000), until = Math.floor(now/1000);
+  const res = await callMeta(`${campId}/activities`, {
+    fields:'event_type,translated_event_type,event_time,actor_name,object_type,object_name,object_id,extra_data,application_name',
+    since, until, limit: 200
+  });
+  return (res.data||[]).map(normalizeActivity);
 }
 function renderDetailHistory(id) {
-  const items = actionHistory.filter(h=>h.cid===id);
-  qs('detail-history').innerHTML = items.length? `<div class="history-list">${items.map(h=>`<div class="history-item"><span class="history-time">${h.time}</span><span class="history-action">${h.action}</span></div>`).join('')}</div>` : '<div class="hint" style="padding:8px 0">Chưa có hành động nào.</div>';
+  const el = qs('detail-history');
+  const camp = campaigns.find(x=>x.id===id);
+  const local = actionHistory.filter(h=>h.cid===id).map(h=>({ source:'tool', ts:h.ts||0, time:h.time, actor:'Bạn (qua tool)', app:'', objType:'', objName:'', label:h.action, detail:'', cat:LOCAL_CAT[h.kind]||'OTHER' }));
+  const paint = (meta)=>{ const items = local.concat(meta||[]).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    el.innerHTML = items.length ? `<div class="history-list">${items.slice(0,80).map(histRowHtml).join('')}</div>` : '<div class="hint" style="padding:8px 0">Chưa có hành động/thay đổi nào.</div>'; };
+  if (isDemo) { if(!activityLog.length) buildDemoActivities(); paint(activityLog.filter(a=>a.objName && camp && a.objName===camp.name)); return; }
+  paint([]); // hiện log tool ngay, rồi tải Meta
+  el.insertAdjacentHTML('beforeend','<div class="hint" id="dh-load" style="padding:6px 0"><span class="loader"></span> Đang tải lịch sử camp từ Meta...</div>');
+  loadCampaignActivities(id).then(meta=>{ if(currentCampId===id) paint(meta); })
+    .catch(e=>{ const l=qs('dh-load'); if(l) l.innerHTML=`<span style="color:var(--red)">Lỗi tải lịch sử: ${e.message}</span>`; });
 }
 
 // ════════════════════════ ACTIONS ════════════════════════

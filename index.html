@@ -708,7 +708,9 @@ const ROAS_GETTERS = {
   get cvr()     { return this.clicks ? this.installs/this.clicks*100 : 0; },
   get cpm()     { return this.impressions ? this.spend/this.impressions*1000 : 0; },
   get cpi()     { return this.installs ? this.spend/this.installs : 0; },
-  get payrate() { return this.installs ? this.purchases/this.installs*100 : 0; }
+  get payrate() { return this.installs ? this.purchases/this.installs*100 : 0; },
+  get cpp()     { return this.purchases ? this.spend/this.purchases : 0; },   // cost per purchase
+  get cpc()     { return this.clicks ? this.spend/this.clicks : 0; }          // cost per click
 };
 function withGetters(o) { return Object.defineProperties(o, Object.getOwnPropertyDescriptors(ROAS_GETTERS)); }
 
@@ -769,7 +771,7 @@ async function loadAccount(showLoading = true) {
     toast(`Đã tải ${campaigns.length} chiến dịch`);
   } catch (e) {
     toast('Lỗi tải dữ liệu: ' + e.message, 'err'); console.error(e);
-    if (!campaigns.length) qs('ov-body').innerHTML = `<tr><td colspan="16"><div class="empty"><i class="ti ti-alert-circle"></i><p>${e.message}</p></div></td></tr>`;
+    if (!campaigns.length) qs('ov-body').innerHTML = `<tr><td colspan="15"><div class="empty"><i class="ti ti-alert-circle"></i><p>${e.message}</p></div></td></tr>`;
   } finally { setSyncing(false); }
 }
 
@@ -944,11 +946,12 @@ function renderAll() {
   if (qs('page-hourly').classList.contains('active')) renderHourly();
 }
 
+// Thứ tự cột theo yêu cầu UA: Status / Budget / Spend / ROAS / Purchase / Cost-per-purchase / Payrate / Install / CPI / CTR / CVR / CPC / Impression
 const COLS = [
-  { k:'name', l:'Chiến dịch', left:true }, { k:'status', l:'Status' }, { k:'spend', l:'Spend' },
-  { k:'impressions', l:'Impr' }, { k:'clicks', l:'Clicks' }, { k:'ctr', l:'CTR' }, { k:'cpm', l:'CPM' },
-  { k:'installs', l:'Inst' }, { k:'cvr', l:'CVR' }, { k:'cpi', l:'CPI' }, { k:'purchases', l:'Purch' },
-  { k:'payrate', l:'Payrate' }, { k:'roas', l:'ROAS' }, { k:'score', l:'Score' }, { k:'budget', l:'Budget' }, { k:'act', l:'' }
+  { k:'name', l:'Chiến dịch', left:true }, { k:'status', l:'Status' }, { k:'budget', l:'Budget' },
+  { k:'spend', l:'Spend' }, { k:'roas', l:'ROAS' }, { k:'purchases', l:'Purch' }, { k:'cpp', l:'Cost/Purch' },
+  { k:'payrate', l:'Payrate' }, { k:'installs', l:'Install' }, { k:'cpi', l:'CPI' }, { k:'ctr', l:'CTR' },
+  { k:'cvr', l:'CVR' }, { k:'cpc', l:'CPC' }, { k:'impressions', l:'Impr' }, { k:'act', l:'' }
 ];
 
 function filteredCampaigns(searchId) {
@@ -962,7 +965,12 @@ function filteredCampaigns(searchId) {
 function renderOverview() {
   if (!campaigns.length) return;
   let arr = filteredCampaigns('ov-search');
-  arr.sort((a,b)=>{ let va=a[sortKey], vb=b[sortKey]; if(sortKey==='score'){va=scoreOf(a);vb=scoreOf(b);} if(sortKey==='name'){return sortDir*a.name.localeCompare(b.name);} return sortDir*((va||0)-(vb||0)); });
+  arr.sort((a,b)=>{
+    const aA=a.status==='ACTIVE'?0:1, bA=b.status==='ACTIVE'?0:1; if(aA!==bA) return aA-bA;   // camp đang chạy luôn lên đầu
+    if(sortKey==='name') return sortDir*a.name.localeCompare(b.name);
+    const va = sortKey==='score'?scoreOf(a):a[sortKey], vb = sortKey==='score'?scoreOf(b):b[sortKey];
+    return sortDir*((va||0)-(vb||0));
+  });
   // Tổng & chart phản ánh đúng danh sách đã lọc (search + status)
   const filterQ = (qs('ov-search')?.value||'').trim();
   const tot = arr.reduce((a,c)=>({spend:a.spend+c.spend,rev:a.rev+c.revenue,inst:a.inst+c.installs,pur:a.pur+c.purchases,clicks:a.clicks+c.clicks,impr:a.impr+c.impressions}),{spend:0,rev:0,inst:0,pur:0,clicks:0,impr:0});
@@ -983,26 +991,25 @@ function renderOverview() {
 
   qs('ov-count').textContent = `(${arr.length})`;
   qs('ov-body').innerHTML = arr.map(c => {
-    const sc = scoreOf(c); const scb = scoreBg(sc); const tgt = targetRoas[c.id]||config.roasMin;
+    const tgt = targetRoas[c.id]||config.roasMin;
     return `<tr>
       <td><a class="camp-link" onclick="openDetail('${c.id}')"><span class="status-dot dot-${c.status==='ACTIVE'?'active':c.status==='PAUSED'?'paused':'error'}"></span><span class="camp-name" title="${c.name}">${c.name}</span></a></td>
       <td>${statusBadge(c.status)}</td>
-      <td class="tnum">${fmtMoney(c.spend)}</td>
-      <td class="tnum">${fmtNum(c.impressions)}</td>
-      <td class="tnum">${fmtNum(c.clicks)}</td>
-      <td class="tnum">${heat(c.ctr,'ctr')}</td>
-      <td class="tnum">${fmtMoney(c.cpm)}</td>
-      <td class="tnum">${fmtNum(c.installs)}</td>
-      <td class="tnum">${heat(c.cvr,'cvr')}</td>
-      <td class="tnum">${c.installs?fmtMoney(c.cpi):'—'}</td>
-      <td class="tnum">${fmtNum(c.purchases)}</td>
-      <td class="tnum">${c.installs?heat(c.payrate,'payrate'):'—'}</td>
-      <td class="tnum">${heat(c.roas,'roas',tgt)}</td>
-      <td><span class="score-pill" style="background:${scb.bg};color:${scb.c}">${sc}</span></td>
       <td class="tnum">${c.budget?fmtMoney(c.budget):(c.budgetType==='adset'?'<span style="color:var(--text-3)">adset</span>':'—')}</td>
+      <td class="tnum">${fmtMoney(c.spend)}</td>
+      <td class="tnum">${heat(c.roas,'roas',tgt)}</td>
+      <td class="tnum">${fmtNum(c.purchases)}</td>
+      <td class="tnum">${c.purchases?fmtMoney(c.cpp):'—'}</td>
+      <td class="tnum">${c.installs?heat(c.payrate,'payrate'):'—'}</td>
+      <td class="tnum">${fmtNum(c.installs)}</td>
+      <td class="tnum">${c.installs?fmtMoney(c.cpi):'—'}</td>
+      <td class="tnum">${heat(c.ctr,'ctr')}</td>
+      <td class="tnum">${heat(c.cvr,'cvr')}</td>
+      <td class="tnum">${c.clicks?fmtMoney(c.cpc):'—'}</td>
+      <td class="tnum">${fmtNum(c.impressions)}</td>
       <td><button class="btn btn-sm btn-ghost" onclick="openDetail('${c.id}')"><i class="ti ti-chevron-right"></i></button></td>
     </tr>`;
-  }).join('') || `<tr><td colspan="16"><div class="empty"><i class="ti ti-search-off"></i><p>Không có chiến dịch phù hợp</p></div></td></tr>`;
+  }).join('') || `<tr><td colspan="15"><div class="empty"><i class="ti ti-search-off"></i><p>Không có chiến dịch phù hợp</p></div></td></tr>`;
   drawTrend(arr);
 }
 
@@ -1221,11 +1228,9 @@ function actCat(et){ et = et||'';
 }
 function objLabel(t){ return ({CAMPAIGN_GROUP:'Camp',CAMPAIGN:'AdSet',ADGROUP:'Ad',AD:'Ad',ADSET:'AdSet',ACCOUNT:'Account'})[t]||t||''; }
 function fmtTs(ts){ return new Date(ts).toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
-function parseExtra(raw, et){
-  let x; try { x = JSON.parse(raw||''); } catch { return ''; }
-  if (!x || typeof x!=='object') return '';
+function fmtExtra(ov, nv, et){
   const sc = v => (v==null||typeof v==='object') ? '' : String(v);
-  const o = sc(x.old_value), n = sc(x.new_value);
+  const o = sc(ov), n = sc(nv);
   if (o==='' && n==='') return '';
   if (/budget|spend_limit|spend_cap/.test(et)) {
     const off = curOffset();
@@ -1235,14 +1240,35 @@ function parseExtra(raw, et){
   const cut = s => s.length>44 ? s.slice(0,44)+'…' : s;
   return `${o!==''?cut(o):'—'} → ${n!==''?cut(n):'—'}`;
 }
+// Nhãn action ghi RÕ chiều: "Bật/Tắt camp", "Tăng/Giảm ngân sách adset"...
+function metaLabel(et, ov, nv, objType, translated){
+  const obj = ({CAMPAIGN_GROUP:'camp',CAMPAIGN:'adset',ADGROUP:'ad',AD:'ad',ADSET:'adset',ACCOUNT:'account'})[objType] || 'camp';
+  if (/run_status/.test(et) || et==='ad_account_update_status') {
+    const n = (nv==null?'':String(nv)).toLowerCase();
+    if (/active|deliver|running|enabled/.test(n)) return `Bật ${obj}`;
+    if (/paus/.test(n)) return `Tắt ${obj}`;
+    if (/delet|archiv/.test(n)) return `Xoá/lưu trữ ${obj}`;
+    if (/disabl|closed|unsettled/.test(n)) return `Khoá ${obj}`;
+    return `Đổi trạng thái ${obj}`;
+  }
+  if (/budget|spend_cap|spend_limit/.test(et)) {
+    const o=parseFloat(ov), n=parseFloat(nv);
+    const what = /spend_cap|spend_limit/.test(et) ? 'hạn mức' : 'ngân sách';
+    if (!isNaN(o)&&!isNaN(n)) { if(n>o) return `Tăng ${what} ${obj}`; if(n<o) return `Giảm ${what} ${obj}`; }
+    return `Đổi ${what} ${obj}`;
+  }
+  return ACT_VI[et] || translated || et;
+}
 function normalizeActivity(r){
   const ts = Date.parse(r.event_time)||0; const et = r.event_type||'';
-  let campId=''; try { const x = JSON.parse(r.extra_data||''); if (x && x.campaign_id) campId = String(x.campaign_id); } catch {}
+  let x=null; try { x = JSON.parse(r.extra_data||''); } catch {}
+  const campId = (x && x.campaign_id) ? String(x.campaign_id) : '';
+  const ov = x?x.old_value:undefined, nv = x?x.new_value:undefined;
   const o = { source:'meta', ts, time: ts?fmtTs(ts):'', actor:r.actor_name||'', app:r.application_name||'',
     objType:r.object_type||'', objName:r.object_name||'', objId:r.object_id||'', campId, eventType:et,
     cat: actCat(et), key:(r.event_time||'')+'|'+et+'|'+(r.object_id||'') };
-  o.label = ACT_VI[et] || r.translated_event_type || et;
-  o.detail = parseExtra(r.extra_data, et);
+  o.label = metaLabel(et, ov, nv, r.object_type, r.translated_event_type);
+  o.detail = fmtExtra(ov, nv, et);
   return o;
 }
 function loadActivityArchive(){ activityLog = (load('activities_'+currentAccount, []) || []); }

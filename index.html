@@ -351,7 +351,10 @@
   </div>
   <div class="section-header">
     <span class="section-title">Danh sách chiến dịch <small id="ov-count"></small></span>
-    <button class="btn" onclick="switchTab('heatmap')"><i class="ti ti-layout-grid"></i> Heatmap</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="sendReportToDiscord()"><i class="ti ti-photo-up"></i> Gửi ảnh Discord</button>
+      <button class="btn" onclick="switchTab('heatmap')"><i class="ti ti-layout-grid"></i> Heatmap</button>
+    </div>
   </div>
   <div class="table-wrap">
     <table class="data-table" id="ov-table">
@@ -643,10 +646,10 @@ let activitySyncing = false;
 let discord = { webhook:'', onAlerts:false, onActions:true };   // cấu hình thông báo Discord
 
 const DEFAULT_CONFIG = {
-  roasGood: 1.5, roasMin: 1.0, ctrMin: 1.0, cvrMin: 25, installMin: 10,
+  roasGood: 0.4, roasMin: 0.3, ctrMin: 1.0, cvrMin: 25, installMin: 10,
   payrateMin: 5, cpiMax: 50000, cpmMax: 80000,
   slowSpend: 60, overSpend: 110, stopHours: 4, roasDrop: 30, hourDev: 60,
-  upRoas: 1.5, upPct: 20, downRoas: 0.8, downPct: 20, maxBudget: 0
+  upRoas: 0.5, upPct: 20, downRoas: 0.2, downPct: 20, maxBudget: 0
 };
 
 const ZERO_DECIMAL = ['VND','JPY','KRW','CLP','ISK','HUF','TWD','UGX','VUV','XAF','XOF','KMF','GNF','PYG','RWF','DJF','BIF'];
@@ -709,6 +712,13 @@ function save(k, v) { try { localStorage.setItem('mam_'+k, JSON.stringify(v)); }
 function load(k, def) { try { const v = localStorage.getItem('mam_'+k); return v ? JSON.parse(v) : def; } catch { return def; } }
 function loadAll() {
   config = Object.assign({}, DEFAULT_CONFIG, load('config', {}));
+  // Recalibrate ROAS thresholds 1 lần sang thang app (net ≥40% = tốt) — đè cấu hình cũ kiểu e-commerce
+  if (!load('roasCalibApp', 0)) {
+    config.roasGood = 0.4; config.roasMin = 0.3;
+    if (config.upRoas >= 1) config.upRoas = 0.5;
+    if (config.downRoas >= 0.5) config.downRoas = 0.2;
+    save('config', config); save('roasCalibApp', 1);
+  }
   actionHistory = load('history', []);
   defaultFilter = load('defaultFilter', 'ptt');
   discord = Object.assign({ webhook:'', onAlerts:false, onActions:true }, load('discord', {}));
@@ -1322,6 +1332,80 @@ async function testDiscord() {
   const el = qs('cfg-discord-webhook'); if (el) discord.webhook = el.value.trim();
   const ok = await notifyDiscord(`✅ Test từ Meta Ads Manager lúc ${new Date().toLocaleString('vi-VN')}`);
   toast(ok?'Đã gửi tin nhắn test — kiểm tra kênh Discord':'Thất bại — kiểm tra webhook URL hoặc env DISCORD_WEBHOOK_URL', ok?'ok':'err');
+}
+// ────────── BÁO CÁO DẠNG ẢNH (bảng màu theo campaign) → Discord ──────────
+function heatCls(v,m,tgt){ return (heat(v,m,tgt).match(/heat-(g3|g2|y|r2|r3|na)/)||['heat-na'])[0]; }
+const HEAT_RGB = { 'heat-g3':['#b7dd99','#234d09'], 'heat-g2':['#d3e9bd','#355f18'], 'heat-y':['#fad98c','#6b4407'], 'heat-r2':['#f7c9b0','#7a3413'], 'heat-r3':['#f3b0ac','#7d1f1c'], 'heat-na':['#f6f6f4','#9a9a94'] };
+function rangeLabel(){ const r=rangeDates(); return r.since===r.until ? r.since : `${r.since}→${r.until}`; }
+function buildReportImageDataURL(){
+  const COLS = [
+    {k:'name',label:'Chiến dịch',w:300,align:'left'},
+    {k:'status',label:'Status',w:58,align:'center'},
+    {k:'spend',label:'Spend',w:74,align:'right'},
+    {k:'roas',label:'ROAS',w:62,align:'right',color:'roas'},
+    {k:'purchases',label:'Pur',w:46,align:'right'},
+    {k:'cpp',label:'CPP',w:70,align:'right'},
+    {k:'installs',label:'Inst',w:46,align:'right'},
+    {k:'payrate',label:'Payrate',w:66,align:'right',color:'payrate'},
+    {k:'ctr',label:'CTR',w:58,align:'right',color:'ctr'},
+    {k:'cvr',label:'CVR',w:58,align:'right',color:'cvr'},
+    {k:'cpm',label:'CPM',w:70,align:'right'},
+  ];
+  const list = campaigns.slice().sort((a,b)=>b.spend-a.spend).slice(0,40);
+  const PAD=12, titleH=48, headH=30, rowH=26, scale=2;
+  const W = COLS.reduce((s,c)=>s+c.w,0)+PAD*2;
+  const H = titleH+headH+list.length*rowH+16;
+  const cv=document.createElement('canvas'); cv.width=Math.round(W*scale); cv.height=Math.round(H*scale);
+  const g=cv.getContext('2d'); g.scale(scale,scale); g.textBaseline='middle';
+  g.fillStyle='#ffffff'; g.fillRect(0,0,W,H);
+  const acct=(accounts.find(a=>a.id===currentAccount)||{}).name||currentAccount;
+  g.fillStyle='#1c1c1a'; g.font='600 15px -apple-system,Segoe UI,sans-serif'; g.textAlign='left';
+  g.fillText(`META — Campaign Breakdown · ${acct}`, PAD, 18);
+  g.fillStyle='#6e6e69'; g.font='11px -apple-system,Segoe UI,sans-serif';
+  g.fillText(`${list.length} camp "${defaultFilter}" · ${rangeLabel()} · tạo ${new Date().toLocaleString('vi-VN')} · ROAS net ≥${config.roasGood}=tốt`, PAD, 36);
+  // header
+  let y=titleH; g.fillStyle='#f0efeb'; g.fillRect(0,y,W,headH);
+  let cx=PAD; g.font='600 11px -apple-system,Segoe UI,sans-serif'; g.fillStyle='#6e6e69';
+  COLS.forEach(c=>{ g.textAlign=c.align==='left'?'left':(c.align==='center'?'center':'right'); const tx=c.align==='left'?cx+4:c.align==='center'?cx+c.w/2:cx+c.w-6; g.fillText(c.label,tx,y+headH/2); cx+=c.w; });
+  // rows
+  const fmtCell=(c,camp)=>{ const v=camp[c.k];
+    if(c.k==='name') return camp.name.length>44?camp.name.slice(0,44)+'…':camp.name;
+    if(c.k==='status') return camp.status==='ACTIVE'?'Active':camp.status==='PAUSED'?'Paused':'—';
+    if(c.k==='roas') return fmtRoas(v)+'x';
+    if(c.k==='cpp') return camp.purchases?fmtMoney(v):'—';
+    if(c.k==='cpi') return camp.installs?fmtMoney(v):'—';
+    if(c.k==='cpm') return fmtMoney(v);
+    if(c.k==='spend') return fmtMoney(v);
+    if(['ctr','cvr','payrate'].includes(c.k)) return (camp.installs||c.k==='ctr'||c.k==='cvr')?fmtPct(v):'—';
+    return fmtNum(v);
+  };
+  list.forEach((camp,i)=>{
+    const ry=titleH+headH+i*rowH; cx=PAD;
+    COLS.forEach(c=>{
+      const txt=fmtCell(c,camp);
+      let fg='#1c1c1a';
+      if(c.color && !(c.color==='payrate'&&!camp.installs)){
+        const tgt = c.color==='roas' ? (targetRoas[camp.id]||config.roasMin) : undefined;
+        const cls=heatCls(camp[c.k], c.color, tgt); const rgb=HEAT_RGB[cls]||HEAT_RGB['heat-na'];
+        g.fillStyle=rgb[0]; g.fillRect(cx+2, ry+3, c.w-4, rowH-6); fg=rgb[1];
+      }
+      g.fillStyle=fg; g.font='11px -apple-system,Segoe UI,sans-serif';
+      g.textAlign=c.align==='left'?'left':(c.align==='center'?'center':'right');
+      const tx=c.align==='left'?cx+4:c.align==='center'?cx+c.w/2:cx+c.w-6;
+      g.fillText(txt, tx, ry+rowH/2);
+      cx+=c.w;
+    });
+    g.strokeStyle='#ececea'; g.lineWidth=1; g.beginPath(); g.moveTo(0,ry+rowH+0.5); g.lineTo(W,ry+rowH+0.5); g.stroke();
+  });
+  return cv.toDataURL('image/png');
+}
+async function sendReportToDiscord(){
+  if(!campaigns.length){ toast('Chưa có dữ liệu để gửi','err'); return; }
+  toast('Đang tạo ảnh báo cáo...');
+  let dataURL; try{ dataURL=buildReportImageDataURL(); }catch(e){ toast('Lỗi tạo ảnh: '+e.message,'err'); return; }
+  const acct=(accounts.find(a=>a.id===currentAccount)||{}).name||currentAccount;
+  const ok=await postDiscord({ imageBase64:dataURL, filename:`report_${dateStr(0)}.png`, content:`📊 **Báo cáo Meta Ads — ${acct}** · ${rangeLabel()}` });
+  toast(ok?'Đã gửi ảnh báo cáo về Discord':'Gửi thất bại — kiểm tra cấu hình Discord', ok?'ok':'err');
 }
 
 // ────────── META ACTIVITY LOG (lịch sử thay đổi thật) ──────────

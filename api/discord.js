@@ -37,6 +37,25 @@ export default async function handler(req, res) {
   const webhookOk = /^https:\/\/(discord|discordapp)\.com\/api\/webhooks\/[0-9]+\/[\w-]+/.test(webhook);
   if (!botMode && !webhookOk) return res.status(400).json({ error: { message: 'Chưa cấu hình Discord: cần Webhook URL hợp lệ, hoặc DISCORD_BOT_TOKEN + DISCORD_CHANNEL_ID để có nút bấm.' } });
 
+  // Gửi ẢNH (report dạng hình) qua multipart
+  if (body.imageBase64) {
+    try {
+      const b64 = String(body.imageBase64).replace(/^data:image\/\w+;base64,/, '');
+      const buf = Buffer.from(b64, 'base64');
+      if (!buf.length) return res.status(400).json({ error: { message: 'Ảnh rỗng/không hợp lệ' } });
+      if (buf.length > 8 * 1024 * 1024) return res.status(400).json({ error: { message: 'Ảnh quá lớn (>8MB)' } });
+      const filename = String(body.filename || 'report.png').replace(/[^\w.\-]/g, '_');
+      const fd = new FormData();
+      fd.append('payload_json', JSON.stringify({ content: String(body.content || '').slice(0, 1900), allowed_mentions: { parse: [] } }));
+      fd.append('files[0]', new Blob([buf], { type: 'image/png' }), filename);
+      const r = botMode
+        ? await fetch(`https://discord.com/api/v10/channels/${channel}/messages`, { method: 'POST', headers: { 'Authorization': 'Bot ' + botToken }, body: fd })
+        : await fetch(webhook, { method: 'POST', body: fd });
+      if (!r.ok) { const t = await r.text().catch(() => ''); return res.status(502).json({ error: { message: 'Discord lỗi ' + r.status + ': ' + t.slice(0, 150) } }); }
+      return res.status(200).json({ ok: true, mode: botMode ? 'bot' : 'webhook' });
+    } catch (e) { return res.status(502).json({ error: { message: 'Lỗi gửi ảnh: ' + (e.message || e) } }); }
+  }
+
   let msgs = Array.isArray(body.messages) && body.messages.length
     ? body.messages
     : (body.content ? [{ content: body.content, components: body.components }] : []);

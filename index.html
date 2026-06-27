@@ -382,9 +382,20 @@
       <span class="filter-pill" onclick="setPivotGran(this,'year')">Năm</span></div>
     <button class="btn" onclick="loadPivot(true)" style="margin-left:auto"><i class="ti ti-refresh"></i> Tải lại</button>
   </div>
+  <div class="top-bar" id="pivot-hourwin" style="margin-top:-6px">
+    <div class="top-bar-left"><span style="font-size:12px;color:var(--text-2)"><i class="ti ti-calendar-search" style="font-size:14px;vertical-align:-2px"></i> Khung ngày:</span>
+      <span class="filter-pill" onclick="setPivotWin(this,'today')">Hôm nay</span>
+      <span class="filter-pill" onclick="setPivotWin(this,'yesterday')">Hôm qua</span>
+      <span class="filter-pill" onclick="setPivotWin(this,'3')">3 ngày</span>
+      <span class="filter-pill active" onclick="setPivotWin(this,'7')">7 ngày</span></div>
+  </div>
   <div class="card">
     <div class="card-h">Bảng nhiệt <span class="muted" id="pivot-meta"></span></div>
     <div id="heatmap-grid" style="overflow-x:auto"></div>
+  </div>
+  <div class="card" id="pivot-playbook-card">
+    <div class="card-h">Gợi ý khung giờ hôm nay <span class="muted">dựa trên giờ vàng ra đơn của 3 ngày gần nhất</span></div>
+    <div id="pivot-playbook"></div>
   </div>
   <div class="card">
     <div class="card-h" id="heat-chart-title">Tổng theo thời gian</div>
@@ -614,7 +625,8 @@ let alertFilter = 'all';
 let pivotGroup = 'camp';          // camp | usecase
 let pivotMetric = 'purchases';    // purchases | spend | roas
 let pivotGran = 'hour';           // hour | day | month | year
-let pivot = { rows:{}, buckets:[], loadedFor:'', loading:false };
+let pivotHourWin = '7';           // today | yesterday | 3 | 7  (chỉ áp cho chế độ Giờ)
+let pivot = { rows:{}, buckets:[], loadedFor:'', loading:false, hourRaw:null, hourDates:[] };
 let hourMetric = 'spend';
 let rangeMode = '7';
 let customFrom = '', customTo = '';
@@ -1067,11 +1079,15 @@ function bucketLabel(bk){
   return bk;
 }
 const PIVOT_META = { hour:'gộp 7 ngày gần nhất theo giờ trong ngày', day:'30 ngày gần nhất', month:'12 tháng gần nhất', year:'3 năm gần nhất' };
+const WINMETA = { today:'hôm nay theo giờ', yesterday:'hôm qua theo giờ', '3':'3 ngày gần nhất · gộp theo giờ', '7':'7 ngày gần nhất · gộp theo giờ' };
 function renderHeatmap() {
   const grid = qs('heatmap-grid'); if(!grid) return;
+  const isHour = pivotGran==='hour';
+  const winRow=qs('pivot-hourwin'); if(winRow) winRow.style.display = isHour?'':'none';
+  const pbCard=qs('pivot-playbook-card'); if(pbCard) pbCard.style.display = isHour?'':'none';
   if (isDemo && !pivot.buckets.length) buildDemoPivot();
-  if (qs('pivot-meta')) qs('pivot-meta').textContent = PIVOT_META[pivotGran] || '';
-  if (!pivot.buckets.length) { grid.innerHTML = `<div class="empty"><i class="ti ti-table"></i><p>Chưa có dữ liệu.</p><button class="btn btn-primary" style="margin-top:12px" onclick="loadPivot(true)">Tải dữ liệu</button></div>`; return; }
+  if (qs('pivot-meta')) qs('pivot-meta').textContent = isHour ? (WINMETA[pivotHourWin]||'') : (PIVOT_META[pivotGran] || '');
+  if (!pivot.buckets.length) { grid.innerHTML = `<div class="empty"><i class="ti ti-table"></i><p>Chưa có dữ liệu.</p><button class="btn btn-primary" style="margin-top:12px" onclick="loadPivot(true)">Tải dữ liệu</button></div>`; if(qs('pivot-playbook')) qs('pivot-playbook').innerHTML=''; return; }
   const q = (qs('hm-search')?.value||'').trim().toLowerCase();
   // gom theo camp hoặc usecase
   const ents = {};
@@ -1103,6 +1119,7 @@ function renderHeatmap() {
   }).join('') || `<tr><td colspan="${pivot.buckets.length+2}"><div class="empty"><p>Không có camp phù hợp</p></div></td></tr>`;
   grid.innerHTML = `<table class="data-table" style="min-width:${200+pivot.buckets.length*46+66}px"><thead>${head}</thead><tbody>${body}</tbody></table>`;
   drawHeatChart(list);
+  if (isHour) renderPlaybook();
 }
 
 function renderHourly() {
@@ -1471,27 +1488,35 @@ async function loadPivot(force){
   if (isDemo){ buildDemoPivot(); renderHeatmap(); return; }
   if (!currentAccount) return;
   const key = currentAccount+'|'+pivotGran;
-  if (pivot.loadedFor===key && !force){ renderHeatmap(); return; }
+  if (pivot.loadedFor===key && !force){ if(pivotGran==='hour') aggregateHourWindow(); renderHeatmap(); return; }
   if (pivot.loading) return;
   pivot.loading = true;
   qs('heatmap-grid').innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-3)"><span class="loader"></span> Đang tải dữ liệu...</div>';
   try {
     const params = { level:'campaign', fields:'campaign_id,campaign_name,spend,actions,action_values', limit:2000 };
-    const now = new Date(); let bucketOf;
+    const now = new Date();
     if (pivotGran==='hour'){
+      // luôn kéo 7 ngày theo giờ (kèm purchases), lưu per-day -> đổi cửa sổ ngày & playbook không cần fetch lại
       params.time_range = { since: acctDateStr(-6), until: acctDateStr(0) }; params.time_increment = 1;
       params.breakdowns = 'hourly_stats_aggregated_by_advertiser_time_zone';
-      bucketOf = r => (r.hourly_stats_aggregated_by_advertiser_time_zone||'').slice(0,2);
-    } else if (pivotGran==='day'){
-      params.time_range = { since: acctDateStr(-29), until: acctDateStr(0) }; params.time_increment = 1;
-      bucketOf = r => r.date_start;
-    } else if (pivotGran==='month'){
-      params.time_range = { since: ymdOf(new Date(now.getFullYear(), now.getMonth()-11, 1)), until: ymdOf(now) }; params.time_increment = 'monthly';
-      bucketOf = r => (r.date_start||'').slice(0,7);
-    } else {
-      params.time_range = { since: ymdOf(new Date(now.getFullYear()-2, 0, 1)), until: ymdOf(now) }; params.time_increment = 'monthly';
-      bucketOf = r => (r.date_start||'').slice(0,4);
+      const res = await callMeta(`${currentAccount}/insights`, params);
+      const hourRaw={};
+      (res.data||[]).forEach(r=>{
+        const cid=r.campaign_id; const hh=parseInt((r.hourly_stats_aggregated_by_advertiser_time_zone||'').slice(0,2),10); const d=r.date_start;
+        if(isNaN(hh)||!d) return;
+        const hr=hourRaw[cid]=hourRaw[cid]||{name:r.campaign_name,byDate:{}};
+        const arr=hr.byDate[d]=hr.byDate[d]||Array.from({length:24},()=>({spend:0,purch:0,rev:0}));
+        arr[hh].spend+=parseFloat(r.spend)||0; arr[hh].purch+=pick(r.actions,PURCHASE_TYPES); arr[hh].rev+=pick(r.action_values,PURCHASE_TYPES);
+      });
+      pivot.hourRaw=hourRaw; pivot.hourDates=[acctDateStr(-6),acctDateStr(-5),acctDateStr(-4),acctDateStr(-3),acctDateStr(-2),acctDateStr(-1),acctDateStr(0)];
+      pivot.loadedFor=key; pivot.loading=false;
+      if (res.truncated) toast('⚠ Nhiều dữ liệu, có thể chưa tải hết','err');
+      aggregateHourWindow(); renderHeatmap(); return;
     }
+    let bucketOf;
+    if (pivotGran==='day'){ params.time_range = { since: acctDateStr(-29), until: acctDateStr(0) }; params.time_increment = 1; bucketOf = r => r.date_start; }
+    else if (pivotGran==='month'){ params.time_range = { since: ymdOf(new Date(now.getFullYear(), now.getMonth()-11, 1)), until: ymdOf(now) }; params.time_increment = 'monthly'; bucketOf = r => (r.date_start||'').slice(0,7); }
+    else { params.time_range = { since: ymdOf(new Date(now.getFullYear()-2, 0, 1)), until: ymdOf(now) }; params.time_increment = 'monthly'; bucketOf = r => (r.date_start||'').slice(0,4); }
     const res = await callMeta(`${currentAccount}/insights`, params);
     const rows={}, bset=new Set();
     (res.data||[]).forEach(r=>{
@@ -1499,32 +1524,92 @@ async function loadPivot(force){
       const d = (rows[cid]=rows[cid]||{name:r.campaign_name,b:{}}).b[bk] = (rows[cid].b[bk]||{spend:0,purch:0,rev:0});
       d.spend+=parseFloat(r.spend)||0; d.purch+=pick(r.actions,PURCHASE_TYPES); d.rev+=pick(r.action_values,PURCHASE_TYPES);
     });
-    const buckets = pivotGran==='hour' ? Array.from({length:24},(_,i)=>String(i).padStart(2,'0')) : [...bset].sort();
-    pivot = { rows, buckets, loadedFor:key, loading:false };
+    pivot = { rows, buckets:[...bset].sort(), loadedFor:key, loading:false, hourRaw:null, hourDates:[] };
     if (res.truncated) toast('⚠ Nhiều dữ liệu, có thể chưa tải hết','err');
     renderHeatmap();
   } catch(e){ pivot.loading=false; qs('heatmap-grid').innerHTML=`<div class="empty"><i class="ti ti-alert-circle"></i><p>Lỗi tải: ${e.message}</p></div>`; }
 }
+// Gộp dữ liệu giờ (per-day) theo cửa sổ ngày đang chọn -> pivot.rows[cid].b['00'..'23']
+function aggregateHourWindow(){
+  if(!pivot.hourRaw){ pivot.rows={}; pivot.buckets=[]; return; }
+  const all = pivot.hourDates; const last = all.length-1;
+  let dates;
+  if (pivotHourWin==='today') dates=[all[last]];
+  else if (pivotHourWin==='yesterday') dates=[all[last-1]];
+  else dates = all.slice(all.length - (pivotHourWin==='3'?3:7));
+  const rows={};
+  Object.keys(pivot.hourRaw).forEach(cid=>{ const hr=pivot.hourRaw[cid]; const b={};
+    for(let h=0;h<24;h++){ let sp=0,pu=0,rev=0; dates.forEach(d=>{ const a=hr.byDate[d]; if(a&&a[h]){ sp+=a[h].spend; pu+=a[h].purch; rev+=a[h].rev; } }); if(sp||pu) b[String(h).padStart(2,'0')]={spend:sp,purch:pu,rev}; }
+    rows[cid]={name:hr.name,b};
+  });
+  pivot.rows=rows; pivot.buckets=Array.from({length:24},(_,i)=>String(i).padStart(2,'0'));
+}
+function setPivotWin(el,w){ el.parentElement.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); pivotHourWin=w; if(pivot.hourRaw){ aggregateHourWindow(); renderHeatmap(); } else loadPivot(); }
+
+// Playbook: từ giờ vàng ra đơn 3 ngày gần nhất -> gợi ý action cho từng khung giờ hôm nay (toàn account, theo bộ lọc tìm kiếm)
+function renderPlaybook(){
+  const el=qs('pivot-playbook'); if(!el) return;
+  if(!pivot.hourRaw || pivot.hourDates.length<2){ el.innerHTML='<div class="hint">Chưa đủ dữ liệu giờ để gợi ý.</div>'; return; }
+  const dates=pivot.hourDates; const today=dates[dates.length-1]; const prev=dates.slice(Math.max(0,dates.length-4), dates.length-1); // tối đa 3 ngày trước
+  const q=(qs('hm-search')?.value||'').trim().toLowerCase();
+  const todayArr=new Array(24).fill(0), avgArr=new Array(24).fill(0);
+  Object.values(pivot.hourRaw).forEach(hr=>{ if(q && !(hr.name||'').toLowerCase().includes(q)) return;
+    for(let h=0;h<24;h++){ const t=hr.byDate[today]; if(t&&t[h]) todayArr[h]+=t[h].purch;
+      let s=0; prev.forEach(d=>{ const a=hr.byDate[d]; if(a&&a[h]) s+=a[h].purch; }); avgArr[h]+= prev.length? s/prev.length : 0; }
+  });
+  const maxAvg=Math.max(...avgArr,0.0001); const nowH=acctNow().hour;
+  const golden=[], dead=[];
+  for(let h=0;h<24;h++){ if(avgArr[h]>0 && avgArr[h]>=0.7*maxAvg) golden.push(h); else if(avgArr[h]<=0.12*maxAvg) dead.push(h); }
+  const cells=Array.from({length:24},(_,h)=>{
+    const a=avgArr[h], t=todayArr[h]; const isG=golden.includes(h), isD=dead.includes(h);
+    const bg = a<=0 ? 'var(--surface-2)' : isG? `rgba(26,127,90,${(0.35+0.6*(a/maxAvg)).toFixed(2)})` : isD? 'var(--surface-3)' : `rgba(34,160,107,${(0.15+0.4*(a/maxAvg)).toFixed(2)})`;
+    const tip=`${h}h — TB 3 ngày: ${a.toFixed(1)} đơn · hôm nay: ${t} đơn${isG?' · 🔥 giờ vàng':isD?' · 💤 ít đơn':''}`;
+    return `<div class="hour-cell" title="${tip}" style="background:${bg};color:${isG?'#fff':'rgba(0,0,0,.5)'};font-size:8.5px;${h===nowH?'outline:1.5px solid var(--blue);outline-offset:-1px;':''}">${a>=0.5?Math.round(a):''}</div>`;
+  }).join('');
+  const fmtHrs=arr=>arr.length?arr.map(h=>h+'h').join(', '):'—';
+  const todayCum=todayArr.slice(0,Math.max(0,nowH)+1).reduce((x,y)=>x+y,0);
+  const avgCum=avgArr.slice(0,Math.max(0,nowH)+1).reduce((x,y)=>x+y,0);
+  const pace=avgCum>0?(todayCum-avgCum)/avgCum*100:0;
+  const upcoming=golden.filter(h=>h>=nowH);
+  el.innerHTML = `<div class="hour-strip">${cells}</div>
+    <div class="hour-axis">${Array.from({length:24},(_,i)=>`<span>${i%3===0?i+'h':''}</span>`).join('')}</div>
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:7px;font-size:12.5px">
+      <div><b style="color:var(--green)">🔥 Giờ vàng (ra nhiều đơn nhất 3 ngày):</b> ${fmtHrs(golden)} <span style="color:var(--text-2)">→ đảm bảo camp ACTIVE & đủ budget trước các khung này; ưu tiên tăng/giữ budget, tránh chạm hạn mức làm tụt phân phối.</span></div>
+      <div><b style="color:var(--text-2)">💤 Giờ ít đơn:</b> ${fmtHrs(dead)} <span style="color:var(--text-2)">→ cân nhắc giảm budget hoặc lên lịch tắt để dồn ngân sách cho giờ vàng.</span></div>
+      ${upcoming.length?`<div><b style="color:var(--blue)">⏰ Giờ vàng sắp tới hôm nay:</b> ${fmtHrs(upcoming)} → chuẩn bị đủ/tăng budget trước ${upcoming[0]}h.</div>`:''}
+      <div><b>📊 Hôm nay đến ${nowH}h:</b> ${todayCum} đơn (TB 3 ngày cùng mốc ${avgCum.toFixed(1)}) — <b style="color:${pace>=0?'var(--green)':'var(--red)'}">${pace>=0?'+':''}${pace.toFixed(0)}%</b> ${pace>=0?'trên nhịp':'dưới nhịp'}.</div>
+    </div>`;
+}
 function buildDemoPivot(){
-  let buckets; const n=new Date();
-  if (pivotGran==='hour') buckets=Array.from({length:24},(_,i)=>String(i).padStart(2,'0'));
-  else if (pivotGran==='day'){ buckets=[]; for(let i=13;i>=0;i--) buckets.push(dateStr(-i)); }
+  const n=new Date();
+  if (pivotGran==='hour'){
+    const dates=[]; for(let i=6;i>=0;i--) dates.push(dateStr(-i));
+    const nowH=new Date().getHours(); const hourRaw={};
+    campaigns.forEach((c,ci)=>{ const byDate={};
+      dates.forEach((d,di)=>{ const isToday=di===dates.length-1; const arr=Array.from({length:24},()=>({spend:0,purch:0,rev:0}));
+        for(let h=0;h<24;h++){ if(isToday&&h>nowH) continue;
+          let w=Math.max(0,Math.sin((h-2)/24*Math.PI)); w=w*w; if(h>=19&&h<=22) w+=0.3;
+          const f=w*1.6/12*(0.85+0.05*di);
+          arr[h]={ spend:Math.round(c.spend*f), purch:Math.round(c.purchases*f*1.2), rev:Math.round(c.revenue*f) };
+        }
+        byDate[d]=arr;
+      });
+      hourRaw[c.id]={name:c.name,byDate};
+    });
+    pivot.hourRaw=hourRaw; pivot.hourDates=dates; pivot.loadedFor='demo'; pivot.loading=false;
+    aggregateHourWindow(); return;
+  }
+  let buckets;
+  if (pivotGran==='day'){ buckets=[]; for(let i=13;i>=0;i--) buckets.push(dateStr(-i)); }
   else if (pivotGran==='month'){ buckets=[]; for(let i=11;i>=0;i--){const d=new Date(n.getFullYear(),n.getMonth()-i,1); buckets.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);} }
   else { const y=n.getFullYear(); buckets=[String(y-2),String(y-1),String(y)]; }
   const rows={};
-  campaigns.forEach((c,ci)=>{
-    const b={};
-    buckets.forEach((bk,idx)=>{
-      let w;
-      if (pivotGran==='hour'){ const h=idx; w=Math.max(0,Math.sin((h-2)/24*Math.PI)); w=w*w; if(h>=19||h<=22) w+=0.25; } // giờ vàng tối
-      else { w=0.35+0.65*Math.abs(Math.sin((idx+ci)*1.3)); }
-      const f=w*1.6/buckets.length;
-      const spend=Math.round(c.spend*f), purch=Math.round(c.purchases*f), rev=Math.round(c.revenue*f);
-      if(spend>0||purch>0) b[bk]={spend,purch,rev};
-    });
+  campaigns.forEach((c,ci)=>{ const b={};
+    buckets.forEach((bk,idx)=>{ const w=0.35+0.65*Math.abs(Math.sin((idx+ci)*1.3)); const f=w*1.6/buckets.length;
+      const spend=Math.round(c.spend*f), purch=Math.round(c.purchases*f), rev=Math.round(c.revenue*f); if(spend>0||purch>0) b[bk]={spend,purch,rev}; });
     rows[c.id]={name:c.name,b};
   });
-  pivot={rows,buckets,loadedFor:'demo',loading:false};
+  pivot={rows,buckets,loadedFor:'demo',loading:false,hourRaw:null,hourDates:[]};
 }
 
 function drawDetailCharts(c) {

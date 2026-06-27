@@ -488,13 +488,14 @@
     </div>
   </div>
   <div class="config-section">
-    <h3><i class="ti ti-filter"></i> Bộ lọc mặc định</h3>
-    <div class="hint">Khi mở tool, danh sách + tổng + biểu đồ tự lọc theo từ khóa này (vd tag <b>ptt</b> trong tên camp của bạn). Để trống = hiện tất cả. Có thể xóa từ khóa ở ô tìm kiếm bất cứ lúc nào để xem toàn bộ.</div>
-    <div class="config-row"><label>Từ khóa lọc tên camp <small>áp cho cả Tổng quan / Heatmap / Khung giờ</small></label><input type="text" id="cfg-defaultFilter" style="width:170px;text-align:left" placeholder="vd: ptt" /></div>
+    <h3><i class="ti ti-lock"></i> Chỉ lấy camp có tag (khóa cứng)</h3>
+    <div class="hint">Tool <b>chỉ tải & hiển thị</b> camp có tag này trong tên (vd <b>ptt</b> — nhận cả <b>Ptt</b>/<b>ptt</b>, ở đầu/giữa/cuối tên). Áp cho mọi tab + tổng + cảnh báo + heatmap. Để trống = lấy tất cả. Ô tìm kiếm dùng để tìm tiếp trong tập đã khóa.</div>
+    <div class="config-row"><label>Tag camp của bạn <small>khóa toàn bộ dữ liệu theo tag này</small></label><input type="text" id="cfg-defaultFilter" style="width:170px;text-align:left" placeholder="vd: ptt" /></div>
   </div>
   <div class="config-section">
     <h3><i class="ti ti-brand-discord"></i> Thông báo Discord</h3>
-    <div class="hint">Gửi cảnh báo xấu (khẩn/budget) & action camp (tắt/đổi budget) về kênh Discord. Lấy webhook: <b>Discord → Server Settings → Integrations → Webhooks → New Webhook → chọn kênh → Copy Webhook URL</b>. Dán vào ô dưới, hoặc set env <b>DISCORD_WEBHOOK_URL</b> trên Vercel (an toàn hơn).</div>
+    <div class="hint"><b>Cách 1 — chỉ nhận thông báo (text):</b> Discord → Server Settings → Integrations → Webhooks → New Webhook → chọn kênh → Copy Webhook URL → dán vào ô dưới (hoặc set env <b>DISCORD_WEBHOOK_URL</b>).<br>
+    <b>Cách 2 — có NÚT bấm action (tắt/giảm/tăng budget ngay trong Discord):</b> tạo Discord App + Bot, set env <b>DISCORD_BOT_TOKEN</b>, <b>DISCORD_CHANNEL_ID</b>, <b>DISCORD_PUBLIC_KEY</b> trên Vercel, và đặt Interactions Endpoint URL = <b>/api/discord-interactions</b>. (Nhờ mình set giúp nếu cần.)</div>
     <div class="config-row"><label>Webhook URL <small>để trống nếu đã set env DISCORD_WEBHOOK_URL</small></label><input type="text" id="cfg-discord-webhook" style="width:230px;text-align:left" placeholder="https://discord.com/api/webhooks/..." /></div>
     <div class="config-row"><label>Tự động gửi cảnh báo xấu mỗi khi bấm "Đồng bộ"</label><input type="checkbox" id="cfg-discord-alerts" style="width:auto;flex:none" /></div>
     <div class="config-row"><label>Tự động gửi khi tắt/bật camp hoặc đổi budget</label><input type="checkbox" id="cfg-discord-actions" style="width:auto;flex:none" /></div>
@@ -771,6 +772,14 @@ function normalize(cfg, ins) {
   });
 }
 
+// KHÓA CỨNG: chỉ lấy camp có tag (vd "ptt"/"Ptt") như 1 token trong tên — không phân biệt hoa thường.
+// defaultFilter (config "Chỉ lấy camp có đuôi/tag") đóng vai trò khóa này. Rỗng = lấy tất cả.
+function lockMatch(name) {
+  const tag = (defaultFilter || '').trim();
+  if (!tag) return true;
+  const esc = tag.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp('(^|[^a-z0-9])' + esc + '([^a-z0-9]|$)', 'i').test(String(name || ''));
+}
 async function loadAccount(showLoading = true) {
   if (isDemo) return;
   const { since, until } = rangeDates();
@@ -785,7 +794,7 @@ async function loadAccount(showLoading = true) {
       fields: 'campaign_id,campaign_name,spend,impressions,clicks,actions,action_values', limit: 500
     });
     const insByCamp = {}; (insRes.data || []).forEach(r => insByCamp[r.campaign_id] = r);
-    campaigns = cfgs.map(c => normalize(c, insByCamp[c.id]));
+    campaigns = cfgs.map(c => normalize(c, insByCamp[c.id])).filter(c => lockMatch(c.name));
 
     // daily breakdown for charts
     const dailyRes = await callMeta(`${currentAccount}/insights`, {
@@ -844,6 +853,7 @@ async function loadHourly(force = false) {
       byCamp[cid].purch[d][hh] = pick(r.actions, PURCHASE_TYPES);
       byCamp[cid].roas[d][hh] = sp>0 ? +(pick(r.action_values, PURCHASE_TYPES)/sp*0.7).toFixed(2) : 0;
     });
+    Object.keys(byCamp).forEach(cid=>{ if(!lockMatch(byCamp[cid].name)) delete byCamp[cid]; });
     hourly = { byCamp, dates, loadedFor: key, loading: false };
     renderHourly();
     if (currentCampId && qs('page-detail').classList.contains('active')) renderDetailHourly(currentCampId);
@@ -980,7 +990,7 @@ let alertCache = [];
 function setSearchBoxes(val) { ['ov-search','hm-search','hr-search'].forEach(id=>{ const el=qs(id); if(el) el.value = val||''; }); }
 function renderAll() {
   if (!campaigns.length) return;
-  if (!firstFilterApplied) { firstFilterApplied = true; if (defaultFilter) setSearchBoxes(defaultFilter); }
+  // lock (defaultFilter) lọc ở tầng dữ liệu rồi — không prefill vào ô search nữa (ô search để tìm trong tập đã khóa)
   renderOverview(); renderHeatmap(); renderAlerts(); renderConfig();
   if (qs('page-hourly').classList.contains('active')) renderHourly();
 }
@@ -1018,7 +1028,7 @@ function renderOverview() {
   const activeN = arr.filter(c=>c.status==='ACTIVE').length;
   const roasCls = netRoas>=config.roasGood?'good':netRoas>=config.roasMin?'warn':'bad';
   qs('ov-metrics').innerHTML = [
-    ['Tổng chi tiêu', fmtMoney(tot.spend)+'₫', `${arr.length} camp${filterQ?` · lọc "${filterQ}"`:''} · ${activeN} đang chạy`, ''],
+    ['Tổng chi tiêu', fmtMoney(tot.spend)+'₫', `${arr.length} camp${defaultFilter?` · chỉ "${defaultFilter}"`:''}${filterQ?` · tìm "${filterQ}"`:''} · ${activeN} đang chạy`, ''],
     ['Doanh thu', fmtMoney(tot.rev)+'₫', `Gross ROAS ${fmtRoas(tot.spend?tot.rev/tot.spend:0)}x`, ''],
     ['ROAS net', fmtRoas(netRoas)+'x', `mục tiêu ${config.roasMin}x`, roasCls],
     ['Installs', fmtNum(tot.inst), `CPI ${fmtMoney(cpi)}₫`, ''],
@@ -1273,24 +1283,40 @@ function alertButtons(a) {
 }
 
 // ────────── DISCORD NOTIFY ──────────
-async function notifyDiscord(content) {
+async function postDiscord(payload) {
   try {
     const headers = { 'Content-Type':'application/json' };
     const ps = load('proxySecret',''); if (ps) headers['x-proxy-secret'] = ps;
-    const r = await fetch('/api/discord', { method:'POST', headers, body: JSON.stringify({ content, webhook: discord.webhook || undefined }) });
+    if (discord.webhook) payload.webhook = discord.webhook;
+    const r = await fetch('/api/discord', { method:'POST', headers, body: JSON.stringify(payload) });
     return r.ok;
   } catch { return false; }
 }
+async function notifyDiscord(content) { return postDiscord({ content }); }
 function stripTags(s){ return String(s||'').replace(/<[^>]+>/g,''); }
+// nút action trên tin Discord (chỉ hoạt động khi gửi bằng bot — env DISCORD_BOT_TOKEN+CHANNEL_ID)
+function alertButtonsDiscord(c){
+  const btns=[{type:2,style:4,label:'Tắt camp',custom_id:`pause:${c.id}`}];
+  if(c.budget>0 && c.budgetType!=='adset'){
+    btns.push({type:2,style:2,label:`Giảm ${config.downPct}%`,custom_id:`down:${c.id}:${config.downPct}`});
+    btns.push({type:2,style:3,label:`Tăng ${config.upPct}%`,custom_id:`up:${c.id}:${config.upPct}`});
+  }
+  return [{ type:1, components:btns }];
+}
 async function sendAlertsToDiscord() {
   const list = (alertCache && alertCache.length ? alertCache : buildAlerts());
   const bad = list.filter(a => a.sev==='high' || a.sev==='mid');
   if (!bad.length) { toast('Không có cảnh báo xấu để gửi'); return; }
   const acct = (accounts.find(x=>x.id===currentAccount)||{}).name || currentAccount;
   const lines = bad.slice(0,18).map(a => { const c=campaigns.find(x=>x.id===a.cid); const tag=a.sev==='high'?'🔴':'🟠'; return `${tag} **${a.title}** — ${c?c.name:a.cid}\n   ${stripTags(a.desc)}`; });
-  const content = `**⚠️ Cảnh báo Meta Ads — ${acct}** (${bad.length} mục)\n` + lines.join('\n') + (bad.length>18?`\n… +${bad.length-18} cảnh báo khác`:'');
-  const ok = await notifyDiscord(content);
-  toast(ok?`Đã gửi ${bad.length} cảnh báo về Discord`:'Gửi Discord thất bại — kiểm tra webhook', ok?'ok':'err');
+  const messages = [{ content: `**⚠️ Cảnh báo Meta Ads — ${acct}** (${bad.length} mục)\n` + lines.join('\n') + (bad.length>18?`\n… +${bad.length-18} cảnh báo khác`:'') }];
+  // mỗi camp xấu (tối đa 6) gửi kèm nút action (Tắt / Giảm / Tăng)
+  const seen=new Set();
+  bad.forEach(a=>{ if(messages.length>=7) return; const c=campaigns.find(x=>x.id===a.cid); if(!c||seen.has(c.id)) return; seen.add(c.id);
+    messages.push({ content:`${a.sev==='high'?'🔴':'🟠'} **${c.name}** — ${a.title}`, components: alertButtonsDiscord(c) });
+  });
+  const ok = await postDiscord({ messages });
+  toast(ok?`Đã gửi ${bad.length} cảnh báo về Discord`:'Gửi Discord thất bại — kiểm tra cấu hình', ok?'ok':'err');
 }
 async function testDiscord() {
   const el = qs('cfg-discord-webhook'); if (el) discord.webhook = el.value.trim();
@@ -1514,6 +1540,7 @@ async function loadPivot(force){
         const arr=hr.byDate[d]=hr.byDate[d]||Array.from({length:24},()=>({spend:0,purch:0,rev:0}));
         arr[hh].spend+=parseFloat(r.spend)||0; arr[hh].purch+=pick(r.actions,PURCHASE_TYPES); arr[hh].rev+=pick(r.action_values,PURCHASE_TYPES);
       });
+      Object.keys(hourRaw).forEach(cid=>{ if(!lockMatch(hourRaw[cid].name)) delete hourRaw[cid]; });
       pivot.hourRaw=hourRaw; pivot.hourDates=[acctDateStr(-6),acctDateStr(-5),acctDateStr(-4),acctDateStr(-3),acctDateStr(-2),acctDateStr(-1),acctDateStr(0)];
       pivot.loadedFor=key; pivot.loading=false;
       if (res.truncated) toast('⚠ Nhiều dữ liệu, có thể chưa tải hết','err');
@@ -1530,6 +1557,7 @@ async function loadPivot(force){
       const d = (rows[cid]=rows[cid]||{name:r.campaign_name,b:{}}).b[bk] = (rows[cid].b[bk]||{spend:0,purch:0,rev:0});
       d.spend+=parseFloat(r.spend)||0; d.purch+=pick(r.actions,PURCHASE_TYPES); d.rev+=pick(r.action_values,PURCHASE_TYPES);
     });
+    Object.keys(rows).forEach(cid=>{ if(!lockMatch(rows[cid].name)) delete rows[cid]; });
     pivot = { rows, buckets:[...bset].sort(), loadedFor:key, loading:false, hourRaw:null, hourDates:[] };
     if (res.truncated) toast('⚠ Nhiều dữ liệu, có thể chưa tải hết','err');
     renderHeatmap();
@@ -1824,13 +1852,17 @@ async function applyBudgets() {
 function clearHistory() { confirmModal('Xóa lịch sử','Xóa log tool + kho lịch sử Meta đã lưu của account này?\n(Có thể bấm "Đồng bộ từ Meta" để tải lại bất cứ lúc nào.)', ()=>{ actionHistory=[]; save('history',[]); activityLog=[]; if(!isDemo) save('activities_'+currentAccount,[]); renderHistory(); toast('Đã xóa lịch sử'); }); }
 function saveConfig() {
   Object.keys(DEFAULT_CONFIG).forEach(k=>{ const el=qs('cfg-'+k); if(el){ const v=parseFloat(el.value); config[k]=isNaN(v)?DEFAULT_CONFIG[k]:v; } });
+  const oldLock = defaultFilter;
   const dfEl = qs('cfg-defaultFilter'); if(dfEl){ defaultFilter = dfEl.value.trim(); save('defaultFilter', defaultFilter); }
   const dw=qs('cfg-discord-webhook'), da=qs('cfg-discord-alerts'), dac=qs('cfg-discord-actions');
   if(dw) discord.webhook = dw.value.trim(); if(da) discord.onAlerts = da.checked; if(dac) discord.onActions = dac.checked;
   save('discord', discord);
   save('config', config);
-  setSearchBoxes(defaultFilter);   // áp ngay từ khóa mới vào các ô tìm kiếm
-  toast('Đã lưu cấu hình'); renderAll();
+  toast('Đã lưu cấu hình');
+  if (defaultFilter !== oldLock) {   // đổi khóa camp -> lọc lại từ dữ liệu
+    hourly.loadedFor=''; pivot.loadedFor=''; pivot.buckets=[]; pivot.hourRaw=null;
+    if (isDemo) loadDemo(); else loadAccount();
+  } else renderAll();
 }
 
 // ════════════════════════ CONFIRM MODAL ════════════════════════
@@ -1906,7 +1938,7 @@ function loadDemo() {
   isDemo=true; token=''; currentAccount='demo';
   accounts=[{id:'demo',name:'Demo Account',currency:'VND',offset:0,tz:'Asia/Ho_Chi_Minh'}];
   targetRoas={}; budgetEdits={}; activityLog=[];
-  campaigns = DEMO_RAW.map(d=>withGetters(Object.assign({},d)));
+  campaigns = DEMO_RAW.map(d=>withGetters(Object.assign({},d))).filter(c=>lockMatch(c.name));
   populateAccountSwitcher(); buildDemoHourly();
   switchTab('overview'); renderAll();
   toast('Đang xem dữ liệu demo');

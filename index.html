@@ -558,9 +558,12 @@
       <div class="detail-sub" id="detail-sub"></div>
     </div>
     <button class="btn" onclick="togglePauseCamp()" id="btn-pause"><i class="ti ti-player-pause"></i> Tạm dừng</button>
-    <button class="btn btn-primary" onclick="quickBudget(1.2)"><i class="ti ti-trending-up"></i> Tăng budget 20%</button>
   </div>
   <div class="metrics-grid" id="detail-metrics"></div>
+  <div class="card">
+    <div class="card-h">Ngân sách & trạng thái</div>
+    <div id="detail-budget-controls"></div>
+  </div>
   <div class="card">
     <div class="card-h">Target ROAS</div>
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
@@ -823,7 +826,7 @@ async function loadHourly(force = false) {
     const res = await callMeta(`${currentAccount}/insights`, {
       level: 'campaign', time_range: { since, until }, time_increment: 1,
       breakdowns: 'hourly_stats_aggregated_by_advertiser_time_zone',
-      fields: 'campaign_id,campaign_name,spend,action_values', limit: 2000
+      fields: 'campaign_id,campaign_name,spend,actions,action_values', limit: 2000
     });
     const dates = [acctDateStr(-3), acctDateStr(-2), acctDateStr(-1), acctDateStr(0)];
     if (res.truncated) toast('⚠ Dữ liệu giờ rất nhiều, có thể chưa tải hết', 'err');
@@ -832,11 +835,13 @@ async function loadHourly(force = false) {
       const cid = r.campaign_id;
       const hh = parseInt((r.hourly_stats_aggregated_by_advertiser_time_zone||'0').slice(0,2));
       const d = r.date_start;
-      byCamp[cid] = byCamp[cid] || { name: r.campaign_name, spend: {}, roas: {} };
+      byCamp[cid] = byCamp[cid] || { name: r.campaign_name, spend: {}, roas: {}, purch: {} };
       byCamp[cid].spend[d] = byCamp[cid].spend[d] || new Array(24).fill(0);
       byCamp[cid].roas[d] = byCamp[cid].roas[d] || new Array(24).fill(0);
+      byCamp[cid].purch[d] = byCamp[cid].purch[d] || new Array(24).fill(0);
       const sp = parseFloat(r.spend)||0;
       byCamp[cid].spend[d][hh] = sp;
+      byCamp[cid].purch[d][hh] = pick(r.actions, PURCHASE_TYPES);
       byCamp[cid].roas[d][hh] = sp>0 ? +(pick(r.action_values, PURCHASE_TYPES)/sp*0.7).toFixed(2) : 0;
     });
     hourly = { byCamp, dates, loadedFor: key, loading: false };
@@ -1095,7 +1100,8 @@ function renderHeatmap() {
     const row = pivot.rows[cid];
     if (q && !(row.name||'').toLowerCase().includes(q)) return;
     const key = pivotGroup==='usecase' ? usecaseOf(row.name) : cid;
-    const e = ents[key] = ents[key] || { name: pivotGroup==='usecase'?usecaseOf(row.name):row.name, cid: pivotGroup==='camp'?cid:'', b:{} };
+    const e = ents[key] = ents[key] || { name: pivotGroup==='usecase'?usecaseOf(row.name):row.name, cid: pivotGroup==='camp'?cid:'', cids:[], b:{} };
+    e.cids.push(cid);
     pivot.buckets.forEach(bk=>{ const s=row.b[bk]; if(!s) return; const d=e.b[bk]=e.b[bk]||{spend:0,purch:0,rev:0}; d.spend+=s.spend; d.purch+=s.purch; d.rev+=s.rev; });
   });
   const val = d => !d ? null : (pivotMetric==='purchases'?d.purch : pivotMetric==='spend'?d.spend : (d.spend? d.rev/d.spend*0.7 : 0));
@@ -1119,7 +1125,7 @@ function renderHeatmap() {
   }).join('') || `<tr><td colspan="${pivot.buckets.length+2}"><div class="empty"><p>Không có camp phù hợp</p></div></td></tr>`;
   grid.innerHTML = `<table class="data-table" style="min-width:${200+pivot.buckets.length*46+66}px"><thead>${head}</thead><tbody>${body}</tbody></table>`;
   drawHeatChart(list);
-  if (isHour) renderPlaybook();
+  if (isHour) renderPlaybook(list);
 }
 
 function renderHourly() {
@@ -1547,38 +1553,55 @@ function aggregateHourWindow(){
 function setPivotWin(el,w){ el.parentElement.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); pivotHourWin=w; if(pivot.hourRaw){ aggregateHourWindow(); renderHeatmap(); } else loadPivot(); }
 
 // Playbook: từ giờ vàng ra đơn 3 ngày gần nhất -> gợi ý action cho từng khung giờ hôm nay (toàn account, theo bộ lọc tìm kiếm)
-function renderPlaybook(){
+// hồ sơ giờ của 1 nhóm cid: avgArr (TB 3 ngày trước/giờ), todayArr (hôm nay/giờ), golden, bad
+function entHourProfile(cids){
+  const dates=pivot.hourDates; if(!dates||dates.length<2) return null;
+  const today=dates[dates.length-1]; const prev=dates.slice(Math.max(0,dates.length-4), dates.length-1);
+  const avg=new Array(24).fill(0), tod=new Array(24).fill(0);
+  cids.forEach(cid=>{ const hr=pivot.hourRaw[cid]; if(!hr) return;
+    for(let h=0;h<24;h++){ const t=hr.byDate[today]; if(t&&t[h]) tod[h]+=t[h].purch; let s=0; prev.forEach(d=>{const a=hr.byDate[d]; if(a&&a[h]) s+=a[h].purch;}); avg[h]+= prev.length? s/prev.length:0; }
+  });
+  const max=Math.max(...avg,0.0001); const golden=[],bad=[];
+  for(let h=0;h<24;h++){ if(avg[h]>0&&avg[h]>=0.7*max) golden.push(h); else if(avg[h]<=0.12*max) bad.push(h); }
+  return { avg, tod, golden, bad, max };
+}
+function renderPlaybook(list){
   const el=qs('pivot-playbook'); if(!el) return;
   if(!pivot.hourRaw || pivot.hourDates.length<2){ el.innerHTML='<div class="hint">Chưa đủ dữ liệu giờ để gợi ý.</div>'; return; }
-  const dates=pivot.hourDates; const today=dates[dates.length-1]; const prev=dates.slice(Math.max(0,dates.length-4), dates.length-1); // tối đa 3 ngày trước
-  const q=(qs('hm-search')?.value||'').trim().toLowerCase();
-  const todayArr=new Array(24).fill(0), avgArr=new Array(24).fill(0);
-  Object.values(pivot.hourRaw).forEach(hr=>{ if(q && !(hr.name||'').toLowerCase().includes(q)) return;
-    for(let h=0;h<24;h++){ const t=hr.byDate[today]; if(t&&t[h]) todayArr[h]+=t[h].purch;
-      let s=0; prev.forEach(d=>{ const a=hr.byDate[d]; if(a&&a[h]) s+=a[h].purch; }); avgArr[h]+= prev.length? s/prev.length : 0; }
-  });
-  const maxAvg=Math.max(...avgArr,0.0001); const nowH=acctNow().hour;
-  const golden=[], dead=[];
-  for(let h=0;h<24;h++){ if(avgArr[h]>0 && avgArr[h]>=0.7*maxAvg) golden.push(h); else if(avgArr[h]<=0.12*maxAvg) dead.push(h); }
+  const nowH=acctNow().hour;
+  const allCids=(list||[]).flatMap(e=>e.cids||[]);
+  const acc=entHourProfile(allCids); if(!acc){ el.innerHTML='<div class="hint">Chưa đủ dữ liệu.</div>'; return; }
+  const maxAvg=Math.max(...acc.avg,0.0001);
   const cells=Array.from({length:24},(_,h)=>{
-    const a=avgArr[h], t=todayArr[h]; const isG=golden.includes(h), isD=dead.includes(h);
+    const a=acc.avg[h]; const isG=acc.golden.includes(h), isD=acc.bad.includes(h);
     const bg = a<=0 ? 'var(--surface-2)' : isG? `rgba(26,127,90,${(0.35+0.6*(a/maxAvg)).toFixed(2)})` : isD? 'var(--surface-3)' : `rgba(34,160,107,${(0.15+0.4*(a/maxAvg)).toFixed(2)})`;
-    const tip=`${h}h — TB 3 ngày: ${a.toFixed(1)} đơn · hôm nay: ${t} đơn${isG?' · 🔥 giờ vàng':isD?' · 💤 ít đơn':''}`;
-    return `<div class="hour-cell" title="${tip}" style="background:${bg};color:${isG?'#fff':'rgba(0,0,0,.5)'};font-size:8.5px;${h===nowH?'outline:1.5px solid var(--blue);outline-offset:-1px;':''}">${a>=0.5?Math.round(a):''}</div>`;
+    return `<div class="hour-cell" title="${h}h — TB 3 ngày: ${a.toFixed(1)} đơn · hôm nay: ${acc.tod[h]} đơn${isG?' · 🔥':isD?' · 💤':''}" style="background:${bg};color:${isG?'#fff':'rgba(0,0,0,.5)'};font-size:8.5px;${h===nowH?'outline:1.5px solid var(--blue);outline-offset:-1px;':''}">${a>=0.5?Math.round(a):''}</div>`;
   }).join('');
-  const fmtHrs=arr=>arr.length?arr.map(h=>h+'h').join(', '):'—';
-  const todayCum=todayArr.slice(0,Math.max(0,nowH)+1).reduce((x,y)=>x+y,0);
-  const avgCum=avgArr.slice(0,Math.max(0,nowH)+1).reduce((x,y)=>x+y,0);
-  const pace=avgCum>0?(todayCum-avgCum)/avgCum*100:0;
-  const upcoming=golden.filter(h=>h>=nowH);
+  const tc=acc.tod.slice(0,nowH+1).reduce((x,y)=>x+y,0), ac=acc.avg.slice(0,nowH+1).reduce((x,y)=>x+y,0);
+  const pace=ac>0?(tc-ac)/ac*100:0; const upcoming=acc.golden.filter(h=>h>=nowH);
+  // per-entity rows
+  const rows = (list||[]).map(e=>{
+    const p=entHourProfile(e.cids||[]); if(!p) return '';
+    const c = e.cid ? campaigns.find(x=>x.id===e.cid) : null;
+    const cbo = c && c.budget>0 && c.budgetType!=='adset';
+    const btns = (e.cid && cbo) ? `<button class="btn btn-sm" onclick="actBudget('${e.cid}',${(1+config.upPct/100).toFixed(4)})" title="Tăng budget"><i class="ti ti-trending-up"></i></button><button class="btn btn-sm" onclick="actBudget('${e.cid}',${(1-config.downPct/100).toFixed(4)})" title="Giảm budget"><i class="ti ti-trending-down"></i></button>` : '';
+    const open = e.cid ? `<button class="btn btn-sm btn-ghost" onclick="openDetail('${e.cid}')" title="Chi tiết"><i class="ti ti-chevron-right"></i></button>` : '';
+    return `<tr><td style="text-align:left;max-width:220px;overflow:hidden;text-overflow:ellipsis"><span class="camp-name" title="${e.name}">${e.name}</span></td>
+      <td style="color:var(--green);font-weight:600">${hourRanges(p.golden)}</td>
+      <td style="color:var(--text-3)">${hourRanges(p.bad)}</td>
+      <td style="text-align:center;white-space:nowrap">${btns}${open}</td></tr>`;
+  }).join('');
+  const fmtHrs=a=>a.length?hourRanges(a):'—';
   el.innerHTML = `<div class="hour-strip">${cells}</div>
     <div class="hour-axis">${Array.from({length:24},(_,i)=>`<span>${i%3===0?i+'h':''}</span>`).join('')}</div>
-    <div style="margin-top:12px;display:flex;flex-direction:column;gap:7px;font-size:12.5px">
-      <div><b style="color:var(--green)">🔥 Giờ vàng (ra nhiều đơn nhất 3 ngày):</b> ${fmtHrs(golden)} <span style="color:var(--text-2)">→ đảm bảo camp ACTIVE & đủ budget trước các khung này; ưu tiên tăng/giữ budget, tránh chạm hạn mức làm tụt phân phối.</span></div>
-      <div><b style="color:var(--text-2)">💤 Giờ ít đơn:</b> ${fmtHrs(dead)} <span style="color:var(--text-2)">→ cân nhắc giảm budget hoặc lên lịch tắt để dồn ngân sách cho giờ vàng.</span></div>
+    <div style="margin:12px 0;display:flex;flex-direction:column;gap:7px;font-size:12.5px">
+      <div><b style="color:var(--green)">🔥 Giờ vàng toàn account:</b> ${fmtHrs(acc.golden)} <span style="color:var(--text-2)">→ đảm bảo camp ACTIVE & đủ budget; ưu tiên tăng/giữ budget vào khung này.</span></div>
+      <div><b style="color:var(--text-2)">💤 Giờ ít đơn:</b> ${fmtHrs(acc.bad)} <span style="color:var(--text-2)">→ cân nhắc giảm budget/tắt theo lịch.</span></div>
       ${upcoming.length?`<div><b style="color:var(--blue)">⏰ Giờ vàng sắp tới hôm nay:</b> ${fmtHrs(upcoming)} → chuẩn bị đủ/tăng budget trước ${upcoming[0]}h.</div>`:''}
-      <div><b>📊 Hôm nay đến ${nowH}h:</b> ${todayCum} đơn (TB 3 ngày cùng mốc ${avgCum.toFixed(1)}) — <b style="color:${pace>=0?'var(--green)':'var(--red)'}">${pace>=0?'+':''}${pace.toFixed(0)}%</b> ${pace>=0?'trên nhịp':'dưới nhịp'}.</div>
-    </div>`;
+      <div><b>📊 Hôm nay đến ${nowH}h:</b> ${tc} đơn (TB 3 ngày ${ac.toFixed(1)}) — <b style="color:${pace>=0?'var(--green)':'var(--red)'}">${pace>=0?'+':''}${pace.toFixed(0)}%</b> ${pace>=0?'trên nhịp':'dưới nhịp'}.</div>
+    </div>
+    <div style="font-size:11.5px;color:var(--text-2);margin-bottom:6px;font-weight:600">Gợi ý theo từng ${pivotGroup==='usecase'?'usecase':'camp'}:</div>
+    <div class="table-wrap"><table class="data-table" style="font-size:12px"><thead><tr><th style="text-align:left">${pivotGroup==='usecase'?'Usecase':'Chiến dịch'}</th><th style="text-align:left">🔥 Giờ vàng</th><th style="text-align:left">💤 Giờ ít đơn</th><th style="text-align:center">Action</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function buildDemoPivot(){
   const n=new Date();
@@ -1623,6 +1646,34 @@ function drawDetailCharts(c) {
 }
 
 // ════════════════════════ DETAIL ════════════════════════
+function renderDetailBudget(c){
+  const el=qs('detail-budget-controls'); if(!el) return;
+  const statusBtn = c.status==='ACTIVE'
+    ? `<button class="btn btn-danger" onclick="togglePauseCamp()"><i class="ti ti-player-pause"></i> Tắt camp</button>`
+    : `<button class="btn" onclick="togglePauseCamp()"><i class="ti ti-player-play"></i> Bật camp</button>`;
+  if (c.budgetType!=='daily'){
+    el.innerHTML = `<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:12.5px">
+      <span style="color:var(--text-2)">Trạng thái:</span> ${statusBadge(c.status)} ${statusBtn}
+      <span class="hint" style="margin:0">${c.budgetType==='lifetime'?'Camp dùng lifetime budget':'Budget ở cấp ad set (ABO)'} — chỉnh budget/ngày trên Ads Manager.</span>
+    </div>`;
+    return;
+  }
+  el.innerHTML = `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <span style="font-size:12.5px;color:var(--text-2)">Budget/ngày:</span>
+    <span style="font-weight:650" class="tnum">${fmtFull(c.budget)}₫</span>
+    <input type="number" id="detail-budget-input" class="inp" style="width:140px" placeholder="đặt budget mới" />
+    <button class="btn btn-primary btn-sm" onclick="detailSetBudget()"><i class="ti ti-check"></i> Đặt</button>
+    <span style="width:1px;height:20px;background:var(--border-2)"></span>
+    <button class="btn btn-sm" onclick="quickBudget(${(1-config.downPct/100).toFixed(4)})"><i class="ti ti-trending-down"></i> Giảm ${config.downPct}%</button>
+    <button class="btn btn-sm" onclick="quickBudget(${(1+config.upPct/100).toFixed(4)})"><i class="ti ti-trending-up"></i> Tăng ${config.upPct}%</button>
+    <span style="width:1px;height:20px;background:var(--border-2)"></span>
+    ${statusBtn}
+  </div>`;
+}
+function detailSetBudget(){
+  const v=parseFloat(qs('detail-budget-input').value); if(!(v>0)){ toast('Nhập số budget hợp lệ','err'); return; }
+  actBudgetTo(currentCampId, Math.round(v));
+}
 function openDetail(id) {
   const c = campaigns.find(x=>x.id===id); if(!c) return;
   currentCampId = id;
@@ -1643,9 +1694,33 @@ function openDetail(id) {
   qs('detail-target-roas').placeholder = config.roasMin;
   qs('detail-roas-status').innerHTML='';
   qs('btn-pause').innerHTML = c.status==='ACTIVE'?'<i class="ti ti-player-pause"></i> Tạm dừng':'<i class="ti ti-player-play"></i> Bật lại';
+  renderDetailBudget(c);
   drawDetailCharts(c);
   renderDetailHistory(id);
   renderDetailHourly(id);
+}
+// gom các giờ liền nhau thành range: [19,20,21] -> "19-21h"
+function hourRanges(hrs){ if(!hrs||!hrs.length) return '—'; hrs=hrs.slice().sort((a,b)=>a-b); const out=[]; let s=hrs[0],p=hrs[0]; for(let i=1;i<hrs.length;i++){ if(hrs[i]===p+1) p=hrs[i]; else { out.push(s===p?`${s}h`:`${s}-${p}h`); s=p=hrs[i]; } } out.push(s===p?`${s}h`:`${s}-${p}h`); return out.join(', '); }
+// Giờ vàng / giờ xấu của 1 camp dựa trên purchases TB 3 ngày gần nhất (dùng dữ liệu hourly)
+function campGoldenBad(id){
+  const h=hourly.byCamp&&hourly.byCamp[id]; if(!h||!h.purch||!hourly.dates.length) return null;
+  const prev=hourly.dates.slice(0,-1); if(!prev.length) return null;
+  const avg=new Array(24).fill(0);
+  prev.forEach(d=>{ const a=h.purch[d]; if(a) for(let i=0;i<24;i++) avg[i]+=(a[i]||0); });
+  for(let i=0;i<24;i++) avg[i]/=prev.length;
+  const max=Math.max(...avg,0.0001); const golden=[],bad=[]; let tot=0;
+  for(let i=0;i<24;i++){ tot+=avg[i]; if(avg[i]>0&&avg[i]>=0.7*max) golden.push(i); else if(avg[i]<=0.12*max) bad.push(i); }
+  return { golden, bad, hasOrders: tot>0.3 };
+}
+function goldenBadBox(id){
+  const gb = campGoldenBad(id); if(!gb||!gb.hasOrders) return '';
+  const c = campaigns.find(x=>x.id===id); const cbo = c && c.budget>0 && c.budgetType!=='adset';
+  const up = cbo ? `<button class="btn btn-sm" onclick="actBudget('${id}',${1+config.upPct/100})"><i class="ti ti-trending-up"></i> Tăng ${config.upPct}%</button>` : '';
+  const down = cbo ? `<button class="btn btn-sm" onclick="actBudget('${id}',${1-config.downPct/100})"><i class="ti ti-trending-down"></i> Giảm ${config.downPct}%</button>` : '';
+  return `<div style="margin-top:10px;padding:11px 13px;background:var(--surface-2);border-radius:9px;font-size:12.5px;display:flex;flex-direction:column;gap:6px">
+    <div><b style="color:var(--green)">🔥 Giờ vàng ra đơn:</b> ${hourRanges(gb.golden)} <span style="color:var(--text-2)">→ giữ/tăng budget & đảm bảo không chạm hạn mức vào khung này.</span> ${up}</div>
+    <div><b style="color:var(--text-2)">💤 Giờ ít đơn:</b> ${hourRanges(gb.bad)} <span style="color:var(--text-2)">→ cân nhắc giảm budget/tắt theo lịch để dồn ngân sách cho giờ vàng.</span> ${down}</div>
+  </div>`;
 }
 function renderDetailHourly(id) {
   const el = qs('detail-hourly');
@@ -1656,7 +1731,7 @@ function renderDetailHourly(id) {
   const stats = ts ? `<div class="hl-stats" style="margin-bottom:8px">Đã tiêu hôm nay <b>${fmtMoney(ts.spend)}₫</b> · ROAS net <b>${fmtRoas(ts.roas)}x</b> · TB 3 ngày cùng giờ <b>${fmtMoney(ts.avgToNow)}₫</b>${ts.avgToNow?` (${ts.dev>=0?'+':''}${ts.dev.toFixed(0)}%)`:''}</div>` : '';
   const sugAct = sug ? alertButtons({cid:id, actions:(sug.actions||[]).filter(a=>a!=='detail')}) : '';
   const sugBox = sug ? `<div class="hl-sugg" style="margin-top:10px;padding:11px 13px;background:var(--surface-2);border-radius:9px"><i class="ti ti-bulb"></i><span><b>Gợi ý:</b> ${sug.text}</span>${sugAct}</div>` : '';
-  el.innerHTML = stats + hourStripHtml(id) + axis + sugBox;
+  el.innerHTML = stats + hourStripHtml(id) + axis + goldenBadBox(id) + sugBox;
 }
 // Lịch sử thay đổi THẬT của riêng 1 campaign (GET /{campaign_id}/activities) — gồm cả ad set/ad con
 // Lịch sử thay đổi của riêng 1 campaign = lọc từ Activity Log account đã đồng bộ.
@@ -1855,9 +1930,9 @@ function buildDemoHourly() {
   const dates=[dateStr(-3),dateStr(-2),dateStr(-1),dateStr(0)];
   const byCamp={}; const nowH=new Date().getHours();
   campaigns.forEach(c=>{
-    const spend={},roas={};
+    const spend={},roas={},purch={};
     dates.forEach((d,di)=>{
-      const sArr=new Array(24).fill(0), rArr=new Array(24).fill(0);
+      const sArr=new Array(24).fill(0), rArr=new Array(24).fill(0), pArr=new Array(24).fill(0);
       const isToday=di===dates.length-1;
       const daySpend=c.budget*(0.85+0.05*di);
       for(let h=0;h<24;h++){
@@ -1868,10 +1943,11 @@ function buildDemoHourly() {
         if(c.id==='c6'&&isToday&&h>=Math.max(0,nowH-5)) val=0;
         if(c.id==='c1'&&isToday&&h>=10&&h<=Math.min(14,nowH)) val*=2.3;
         sArr[h]=Math.round(val); rArr[h]=+(c.revenue/c.spend*0.7).toFixed(2);
+        pArr[h]=Math.round(c.purchases*(val/(c.spend||1))*1.1);
       }
-      spend[d]=sArr; roas[d]=rArr;
+      spend[d]=sArr; roas[d]=rArr; purch[d]=pArr;
     });
-    byCamp[c.id]={name:c.name,spend,roas};
+    byCamp[c.id]={name:c.name,spend,roas,purch};
   });
   hourly={byCamp,dates,loadedFor:'demo',loading:false};
 }

@@ -72,7 +72,7 @@ function render(rows, accts){
   const totRoas=tot.s?tot.rev/tot.s:0;
   return h('div',{style:{display:'flex',flexDirection:'column',width:TW+24,padding:12,background:'#ffffff',fontFamily:'sans-serif'}},
     h('div',{style:{display:'flex',fontSize:17,fontWeight:700,color:'#1c1c1a'}}, `META — Campaign + Gợi ý (ptt · ${accts} account)`),
-    h('div',{style:{display:'flex',fontSize:11,color:'#6e6e69',marginTop:2,marginBottom:8}}, `hôm nay · ROAS≥0.4 xanh<0.3 đỏ · CVR/Pay tính theo install hoặc registration · gợi ý theo ROAS`),
+    h('div',{style:{display:'flex',fontSize:11,color:'#6e6e69',marginTop:2,marginBottom:8}}, `hôm nay · ROAS >=0.4 xanh, <0.3 đỏ · CVR/Pay theo install hoặc registration · gợi ý theo ROAS`),
     header, ...body,
     h('div',{style:{display:'flex',marginTop:8,fontSize:13,fontWeight:600,color:'#1c1c1a'}}, `Tổng: ${fmtMoney(tot.s)}đ · ROAS ${totRoas.toFixed(2)} · ${Math.round(tot.p)} đơn${rows.length>cap?`  (+${rows.length-cap} camp)`:''}`));
 }

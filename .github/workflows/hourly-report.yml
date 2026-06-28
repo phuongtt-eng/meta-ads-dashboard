@@ -10,4 +10,4 @@ jobs:
     steps:
       - name: Trigger image report
         run: |
-          curl -fsS "https://meta-ads-deploy-three.vercel.app/api/cron-image?key=${{ secrets.CRON_SECRET }}" || exit 1
+          curl -fsS "https://meta-ads-deploy-three.vercel.app/api/cron-image?key=${{ secrets.CRON_SECRET }}&t=$(date +%s)" || exit 1

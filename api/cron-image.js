@@ -47,7 +47,7 @@ async function buildRows(){
       const impr=parseFloat(r.impressions)||0, clicks=parseFloat(r.clicks)||0;
       const purch=pick(r.actions,PURCHASE), install=pick(r.actions,INSTALL), reg=pick(r.actions,REG), rev=pick(r.action_values,PURCHASE);
       const conv=install>0?install:reg;
-      out.push({ name, spend, purch, install, conv,
+      out.push({ id: r.campaign_id, name, spend, purch, install, conv, golden:[],
         cpm: impr? spend/impr*1000:0, cpi: install>0? spend/install:0, cpp: purch? spend/purch:0,
         roas: spend? rev/spend*0.7:0, ctr: impr? clicks/impr*100:0, cvr: clicks? conv/clicks*100:0, pay: conv? purch/conv*100:0 });
     });
@@ -55,15 +55,35 @@ async function buildRows(){
   out.sort((a,b)=>b.spend-a.spend);
   return { accts: accts.length, rows: out };
 }
+const hourRanges=hrs=>{ if(!hrs||!hrs.length)return ''; hrs=[...hrs].sort((a,b)=>a-b); const o=[]; let s=hrs[0],p=hrs[0]; for(let i=1;i<hrs.length;i++){ if(hrs[i]===p+1)p=hrs[i]; else {o.push(s===p?s+'h':s+'-'+p+'h'); s=p=hrs[i];}} o.push(s===p?s+'h':s+'-'+p+'h'); return o.join(','); };
+const isStrong=c=>c.roas>0.6 && c.ctr>1 && (c.install===0 || c.cpi<=150000);
+// Tính giờ vàng ra đơn (3 ngày) cho các camp đủ điều kiện tăng x2 — fetch hourly riêng từng camp (ít camp nên nhanh)
+async function attachGolden(rows){
+  const token=process.env.META_ACCESS_TOKEN||'';
+  const ymd=d=>`${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+  const now=new Date(), until=ymd(now), s=new Date(now); s.setUTCDate(s.getUTCDate()-3); const since=ymd(s);
+  const strong=rows.filter(isStrong).slice(0,8);
+  await Promise.all(strong.map(async c=>{ try{
+    const r=await gget(`${c.id}/insights`,{ time_range:JSON.stringify({since,until}), time_increment:'1', breakdowns:'hourly_stats_aggregated_by_advertiser_time_zone', fields:'actions', limit:'400' }, token);
+    const byHour=new Array(24).fill(0);
+    (r.data||[]).forEach(row=>{ const hh=parseInt((row.hourly_stats_aggregated_by_advertiser_time_zone||'').slice(0,2),10); if(!isNaN(hh)) byHour[hh]+=pick(row.actions,PURCHASE); });
+    const max=Math.max(...byHour); if(max>0){ const g=[]; for(let i=0;i<24;i++) if(byHour[i]>=0.6*max) g.push(i); c.golden=g; }
+  }catch{} }));
+}
 
 // ───── RULE ACTION (ưu tiên trên xuống, gặp đầu tiên là dùng) ─────
 function suggest(c){
+  // TẮT: 0 đơn + dấu hiệu lãng phí
   if (c.purch===0 && c.spend>=R.KILL_SPEND && c.cpm>=R.KILL_CPM) return ['TẮT CAMP — 2M+ & CPM>1tr, 0 đơn', RED];
   if (c.purch===0 && c.spend>=R.KILL_SPEND)                       return ['TẮT CAMP — tiêu 2M+, 0 đơn', RED];
   if (c.purch===0 && c.cpm>=R.KILL_CPM)                           return ['TẮT — CPM>1tr, 0 đơn', RED];
   if (c.purch===0 && c.install>0 && c.cpi>R.CPI_MAX)              return ['TẮT — CPI>200k, 0 đơn', RED];
+  // TĂNG X2 vào giờ vàng: ROAS>0.6 & CPI<=150k & CTR>1%
+  if (isStrong(c)) { const g=hourRanges(c.golden); return ['Tăng X2 budget vào giờ vàng' + (g?' '+g:' của camp'), GREEN]; }
+  // GIẢM 50% (sàn 1tr): ROAS<0.3 & CPI>200k
+  if (c.roas<0.3 && c.install>0 && c.cpi>R.CPI_MAX)               return ['Giảm 50% (sàn 1tr) — ROAS<0.3 & CPI>200k', RED];
   if (c.purch>0 && c.spend>=1000000 && c.roas<=R.ROAS_KILL)       return [`Giảm ${R.DOWN2}% / cân nhắc tắt — ROAS rất thấp`, RED];
-  if (c.roas>=R.ROAS_STRONG)                                      return [`Tăng budget ${R.UP2}% — ROAS mạnh`, GREEN];
+  // TĂNG thường: ROAS tốt
   if (c.roas>=R.ROAS_GOOD)                                        return [`Tăng budget ${R.UP1}% — ROAS tốt`, GREEN];
   if (c.install>0 && c.cpi>R.CPI_MAX)                             return [`Giảm ${R.DOWN1}% — CPI>200k`, RED];
   if (c.purch>0 && c.roas<=R.ROAS_CUT)                            return [`Giảm budget ${R.DOWN1}% — ROAS thấp`, RED];
@@ -107,7 +127,7 @@ function render(rows, accts){
   const totRoas=tot.s?tot.rev/tot.s:0;
   return h('div',{style:{display:'flex',flexDirection:'column',width:TW+24,padding:12,background:'#ffffff',fontFamily:'sans-serif'}},
     h('div',{style:{display:'flex',fontSize:17,fontWeight:700,color:'#1c1c1a'}}, `META — Campaign + Gợi ý action (ptt · ${accts} account)`),
-    h('div',{style:{display:'flex',fontSize:11,color:'#6e6e69',marginTop:2,marginBottom:8}}, `hôm nay · Rule: TẮT nếu 0 đơn & (tiêu>=2M hoặc CPM>=1tr hoặc CPI>200k) · ROAS>=0.6 tăng 30% · >=0.4 tăng 20% · <=0.2 giảm 20%`),
+    h('div',{style:{display:'flex',fontSize:11,color:'#6e6e69',marginTop:2,marginBottom:8}}, `hôm nay · TẮT nếu 0 đơn & (tiêu>=2M / CPM>=1tr / CPI>200k) · ROAS>0.6 & CPI<=150k & CTR>1% -> X2 budget vào giờ vàng · ROAS<0.3 & CPI>200k -> giảm 50%`),
     header, ...body,
     h('div',{style:{display:'flex',marginTop:8,fontSize:13,fontWeight:600,color:'#1c1c1a'}}, `Tổng: ${fmtMoney(tot.s)}đ · ROAS ${totRoas.toFixed(2)} · ${Math.round(tot.p)} đơn${rows.length>cap?`  (+${rows.length-cap} camp)`:''}`));
 }
@@ -118,6 +138,7 @@ export default async function handler(req){
     if(k!==process.env.CRON_SECRET && a!=='Bearer '+process.env.CRON_SECRET) return new Response('unauthorized',{status:401}); }
   try{
     const { rows, accts } = await buildRows();
+    await attachGolden(rows);
     const cap=Math.min(rows.length,32);
     const height = 54 + 30 + (cap+1)*29 + 34;
     const img = new ImageResponse(render(rows, accts), { width: TW+24, height });
